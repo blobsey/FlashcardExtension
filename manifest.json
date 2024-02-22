@@ -1,0 +1,32 @@
+{
+  "manifest_version": 2,
+  "name": "Flashcard-Extension",
+  "version": "1.0",
+  "description": "Periodically quizzes the user with flashcards when they are doomscrolling",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "<all_urls>",
+    "alarms",
+    "tabs"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/*", "*://*.youtube.com/*", "http://crouton.net/"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_title": "Configure Flashcard Extension"
+  },
+  "web_accessible_resources": ["configuration.html"],
+  "icons": {
+    "48": "icon.png"
+  }
+}
