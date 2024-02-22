@@ -4,6 +4,7 @@ function nextFlashcard() {
     // Send a message to background.js to fetch a flashcard
     return browser.runtime.sendMessage({action: "nextFlashcard"})
     .then(response => {
+        console.log(response)
         if (response.result === "error") {
             console.error("Error fetching next flashcard:", response.message);
             throw new Error(response.message);
@@ -13,8 +14,8 @@ function nextFlashcard() {
             if (response.data.message) {
                 throw new Error(response.data.message);
             }
-            else if (response.data.flashcard) {
-                return response.data.flashcard;
+            else {
+                return response.data; // response.data holds a flashcard object
             }
         }
     });
