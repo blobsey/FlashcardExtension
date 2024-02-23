@@ -62,30 +62,30 @@ function injectOverlayStyles() {
         const style = document.createElement('style');
         style.id = styleId;
         style.textContent = `
-            #darken {
+            #blobsey-flashcard-darken {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background: rgba(0, 0, 0, 0.5); z-index: 9998;
             }
-            #overlay, #overlay * {
+            #blobsey-flashcard-overlay, #blobsey-flashcard-overlay * {
                 all: initial;
                 box-sizing: border-box;
             }
-            #overlay {
+            #blobsey-flashcard-overlay {
                 position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
                 max-width: 60em; width: 90%; height: auto; max-height: 90%; margin: auto; padding: 2em;
                 background: rgba(0, 0, 0, 0.75); border-radius: 15px; color: white;
                 display: flex; flex-direction: column; align-items: center;
-                font-family: 'Arial Black', sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                font-family: 'Trebuchet MS', sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 overflow-y: auto; z-index: 10000;
             }
-            #overlay div, #overlay input, #overlay button {
+            #blobsey-flashcard-overlay div, #blobsey-flashcard-overlay input, #blobsey-flashcard-overlay button {
                 font-family: 'Trebuchet MS', sans-serif; color: white;
             }
-            #overlay input {
+            #blobsey-flashcard-overlay input {
                 border: 2px solid rgba(255, 255, 255, 0.5); background: none;
                 border-radius: 15px; outline: none;
             }
-            #overlay button {
+            #blobsey-flashcard-overlay button {
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -102,30 +102,37 @@ function injectOverlayStyles() {
                 outline: none;
                 transition: background-color 0.3s, border-color 0.3s, color 0.3s;
             }            
-            #overlay button:focus {
+            #blobsey-flashcard-overlay button:focus {
                 background-color: rgba(255, 255, 255, 0.2); /* Slightly visible background */
                 border-color: rgba(255, 255, 255, 0.75);
             }
-            #overlay button:active {
+            #blobsey-flashcard-overlay button:active {
                 background-color: rgba(255, 255, 255, 0.3); /* More visible background for active state */
                 border-color: white; /* Brighter border for active state */
             }
-            #overlay pre, #overlay code {
-                white-space: pre-wrap;
-                display: block;
+            #blobsey-flashcard-overlay pre, #blobsey-flashcard-overlay code {
                 font-size: 16px; /* Good for readability */
-                overflow-x: auto; /* Allows horizontal scrolling for long lines */
                 font-family: 'Fira Code', monospace; /* Using a web-friendly monospace font */
                 color: #d1d5db; /* Soft white/gray for less harsh contrast */
                 background-color: rgba(0, 0, 0, .25); /* Dark background for contrast */
-                padding: .5em; /* Adds space inside the elements */
                 border-radius: 4px; /* Softens the corners */
                 border: 1px solid rgba(255, 255, 255, .1); /* Subtle border to define the edges */
-            }         
+            }       
+
+            #blobsey-flashcard-overlay code {
+                padding: .20em;
+            }
+            
+            #blobsey-flashcard-overlay pre {
+                white-space: pre-wrap;
+                display: block;
+                overflow-x: auto; 
+                padding: .5em;
+            }
 
             /* Shared styles for inputs and textareas */
-            #overlay .edit-screen-input-back, 
-            #overlay .edit-screen-textarea-front {
+            #blobsey-flashcard-overlay .edit-screen-input-back, 
+            #blobsey-flashcard-overlay .edit-screen-textarea-front {
                 font-size: 16px;
                 font-family: 'Fira Code', monospace;
                 margin: 10px 0;
@@ -138,7 +145,7 @@ function injectOverlayStyles() {
                 transition: border-color 0.3s;
             }
 
-            #overlay .edit-screen-textarea-front {
+            #blobsey-flashcard-overlay .edit-screen-textarea-front {
                 width: 100%;
                 height: 20em;
                 padding: 10px;
@@ -148,19 +155,19 @@ function injectOverlayStyles() {
                 resize: vertical; /* Make the textarea vertically resizable */
             }
 
-            #overlay .edit-screen-input-back {
+            #blobsey-flashcard-overlay .edit-screen-input-back {
                 width: 40%;
                 padding: 8px;
                 text-align: center;
             }
 
-            #overlay .edit-screen-input-back:focus, 
-            #overlay .edit-screen-textarea-front:focus {
+            #blobsey-flashcard-overlay .edit-screen-input-back:focus, 
+            #blobsey-flashcard-overlay .edit-screen-textarea-front:focus {
                 border-color: #007bff; /* Highlight color when focused */
             }
 
             /* Styling the form for greater width */
-            #overlay form {
+            #blobsey-flashcard-overlay form {
                 width: 90%;
                 max-width: 600px;
                 display: flex;
@@ -189,11 +196,11 @@ function createFlashcardOverlay(flashcard) {
     document.documentElement.style.overflow = 'hidden';
 
     let darken = document.createElement('div');
-    darken.id = 'darken';
+    darken.id = 'blobsey-flashcard-darken';
     document.body.appendChild(darken);
 
     let overlayDiv = document.createElement('div');
-    overlayDiv.id = 'overlay';
+    overlayDiv.id = 'blobsey-flashcard-overlay';
     document.body.appendChild(overlayDiv);
 
     createFlashcardScreen(overlayDiv, flashcard, 0);
@@ -387,11 +394,11 @@ function submitFlashcardEdit(cardId, frontText, backText) {
 
 function removeOverlay() {
     // Find and remove the darken element
-    let darken = document.getElementById('darken');
+    let darken = document.getElementById('blobsey-flashcard-darken');
     if (darken) darken.remove();
 
     // Find and remove the overlayDiv element
-    let overlayDiv = document.getElementById('overlay');
+    let overlayDiv = document.getElementById('blobsey-flashcard-overlay');
     if (overlayDiv) overlayDiv.remove();
 
     // Restore the original overflow state
