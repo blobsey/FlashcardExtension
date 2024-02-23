@@ -1,15 +1,15 @@
-// Fetches a flashcard by sending message to background.js
+// Fetches the nextflashcard by
 // Throws an error if there are no cards due
 function nextFlashcard() {
     // Send a message to background.js to fetch a flashcard
     return browser.runtime.sendMessage({action: "nextFlashcard"})
     .then(response => {
-        console.log(response)
         if (response.result === "error") {
             console.error("Error fetching next flashcard:", response.message);
             throw new Error(response.message);
         }
 
+        // If no explicit errors, check for response.data.message and if it exists throw that as an error
         if (response.data) {
             if (response.data.message) {
                 throw new Error(response.data.message);
@@ -111,12 +111,14 @@ function injectOverlayStyles() {
                 border-color: white; /* Brighter border for active state */
             }
             #overlay pre, #overlay code {
+                white-space: pre-wrap;
+                display: block;
                 font-size: 16px; /* Good for readability */
                 overflow-x: auto; /* Allows horizontal scrolling for long lines */
                 font-family: 'Fira Code', monospace; /* Using a web-friendly monospace font */
                 color: #d1d5db; /* Soft white/gray for less harsh contrast */
                 background-color: rgba(0, 0, 0, .25); /* Dark background for contrast */
-                padding: .35em; /* Adds space inside the elements */
+                padding: .5em; /* Adds space inside the elements */
                 border-radius: 4px; /* Softens the corners */
                 border: 1px solid rgba(255, 255, 255, .1); /* Subtle border to define the edges */
             }         
@@ -141,6 +143,8 @@ function injectOverlayStyles() {
                 height: 20em;
                 padding: 10px;
                 overflow-y: auto;
+                display: block;
+                white-space: pre-wrap;
                 resize: vertical; /* Make the textarea vertically resizable */
             }
 
@@ -209,6 +213,7 @@ function createFlashcardScreen(overlayDiv, flashcard, count) {
     contentDiv.appendChild(form);
 
     const frontDiv = document.createElement('div');
+    frontDiv.style.whiteSpace = 'pre-wrap';
     frontDiv.innerHTML = flashcard.front;
     form.appendChild(frontDiv);
 
@@ -344,11 +349,8 @@ function createEditScreen(overlayDiv, flashcard, count = 0, userInput = null) {
 
     form.onsubmit = (event) => {
         event.preventDefault();
-        submitFlashcardEdit(flashcard.id, frontInput.value, backInput.value);
-        
-        let updatedFlashcard;
-        getFlashcard(flashcard.id).then(updatedFlashcard => { 
-            createConfirmScreen(overlayDiv, userInput, updatedFlashcard, count);
+        submitFlashcardEdit(flashcard.id, frontInput.value, backInput.value).then(response => { 
+            createConfirmScreen(overlayDiv, userInput, response.data.flashcard, count);
         }).catch(error => {
             console.error(error.message);
             setTimer(1);
@@ -358,8 +360,7 @@ function createEditScreen(overlayDiv, flashcard, count = 0, userInput = null) {
 
 
 function submitFlashcardEdit(cardId, frontText, backText) {
-    // Send a message to the background script
-    browser.runtime.sendMessage({
+    return browser.runtime.sendMessage({
         action: "editFlashcard",
         cardId: cardId,
         front: frontText,
@@ -368,16 +369,19 @@ function submitFlashcardEdit(cardId, frontText, backText) {
         // Handle the response from the background script
         if (response.result === "success") {
             console.log("Flashcard updated successfully");
-            // Optionally, refresh the UI or notify the user of success
+            return response; // Return response for further processing
         } else {
             // Handle failure
             console.error("Failed to update flashcard:", response.message);
+            throw new Error(response.message); // Throw an error for the caller to handle
         }
     }).catch(error => {
         // Handle errors in sending the message
         console.error("Error sending message to background script:", error);
+        throw error; // Rethrow to allow the caller to handle it
     });
 }
+
 
 
 
