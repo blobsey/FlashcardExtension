@@ -357,7 +357,6 @@ function createEditScreen(overlayDiv, flashcard, count = 0, userInput = null) {
     form.onsubmit = (event) => {
         event.preventDefault();
         submitFlashcardEdit(flashcard.card_id, frontInput.value, backInput.value).then(response => { 
-            console.log(response);  
             createConfirmScreen(overlayDiv, userInput, response.data.flashcard, count);
         }).catch(error => {
             console.error(error.message);
