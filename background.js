@@ -28,7 +28,7 @@ function setAlarmForOverlay(interval) {
   })
   
 }
-
+    
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === "showOverlayAlarm") {
@@ -86,11 +86,15 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// For messages which involve API calls
+
 function handleApiRequests(request, sendResponse) {
     getApiBaseUrl().then(API_BASE_URL => {
         let url;
-        const headers = { 'Content-Type': 'application/json' };
+        // Include the 'X-API-Key' in the headers object
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': 'testkey' // Replace 'your_api_key_here' with your actual API key
+        };
         let body = null;
         let method = 'GET'; // Default method is GET
 
@@ -100,15 +104,15 @@ function handleApiRequests(request, sendResponse) {
                 url = `${API_BASE_URL}/next`;
                 break;
             case "editFlashcard":
-                url = `${API_BASE_URL}/edit/${request.cardId}`;
+                url = `${API_BASE_URL}/edit/${request.card_id}`;
                 method = 'PUT';
-                body = JSON.stringify({ front: request.front, back: request.back });
+                body = JSON.stringify({ card_front: request.card_front, card_back: request.card_back });
                 break;
             case "getFlashcard":
-                url = `${API_BASE_URL}/get/${request.cardId}`;
+                url = `${API_BASE_URL}/get/${request.card_id}`;
                 break;
             case "reviewFlashcard":
-                url = `${API_BASE_URL}/review/${request.cardId}`;
+                url = `${API_BASE_URL}/review/${request.card_id}`;
                 method = 'POST';
                 body = JSON.stringify({ grade: request.grade });
                 break;

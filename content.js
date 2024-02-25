@@ -21,25 +21,25 @@ function nextFlashcard() {
     });
 }
 
-// Gets a specific flashcard by id. Not used to fetch the "next" flashcard
-function getFlashcard(cardId) {
-    // Return the promise chain so that it can be used outside this function
-    return browser.runtime.sendMessage({
-        action: "getFlashcard",
-        cardId: cardId
-    }).then(response => {
-        if (response.result === "success") {
-            console.log("Fetched flashcard successfully");
-            return response.flashcard; // Ensure to return the flashcard for the next then() in the chain
-        } else {
-            console.error("Failed to fetch flashcard:", response.message);
-            throw new Error(response.message); // Throw an error to be caught in catch()
-        }
-    }).catch(error => {
-        console.error("Error fetching updated flashcard:", error);
-        throw error; // Re-throw the error to be caught by the calling code
-    });
-}
+// // Gets a specific flashcard by id. Not used to fetch the "next" flashcard
+// function getFlashcard(cardId) {
+//     // Return the promise chain so that it can be used outside this function
+//     return browser.runtime.sendMessage({
+//         action: "getFlashcard",
+//         cardId: cardId
+//     }).then(response => {
+//         if (response.result === "success") {
+//             console.log("Fetched flashcard successfully");
+//             return response.flashcard; // Ensure to return the flashcard for the next then() in the chain
+//         } else {
+//             console.error("Failed to fetch flashcard:", response.message);
+//             throw new Error(response.message); // Throw an error to be caught in catch()
+//         }
+//     }).catch(error => {
+//         console.error("Error fetching updated flashcard:", error);
+//         throw error; // Re-throw the error to be caught by the calling code
+//     });
+// }
 
 function showOverlay() {
     nextFlashcard().then(flashcard => {
@@ -221,7 +221,7 @@ function createFlashcardScreen(overlayDiv, flashcard, count) {
 
     const frontDiv = document.createElement('div');
     frontDiv.style.whiteSpace = 'pre-wrap';
-    frontDiv.innerHTML = flashcard.front;
+    frontDiv.innerHTML = flashcard.card_front;
     form.appendChild(frontDiv);
 
     const userInput = document.createElement('input');
@@ -233,14 +233,14 @@ function createFlashcardScreen(overlayDiv, flashcard, count) {
         event.preventDefault();
 
         // Grade flashcard
-        const isCorrect = userInput.value.trim().toLowerCase() === flashcard.back.trim().toLowerCase();
+        const isCorrect = userInput.value.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
         if (isCorrect) { ++count; }
         
         // Send grading information
         const grade = isCorrect ? 3 : 1;
         browser.runtime.sendMessage({
             action: "reviewFlashcard",
-            cardId: flashcard.id,
+            card_id: flashcard.card_id,
             grade: grade
         });
 
@@ -261,11 +261,11 @@ function createConfirmScreen(overlayDiv, userInput, flashcard, count) {
 
     // Show question
     const frontDiv = document.createElement('div');
-    frontDiv.innerHTML = flashcard.front;
+    frontDiv.innerHTML = flashcard.card_front;
     contentDiv.appendChild(frontDiv);
 
     // Make diff div
-    const diffMessage = `Your answer: ${userInput.value}<br>Correct answer: ${flashcard.back}`;
+    const diffMessage = `Your answer: ${userInput.value}<br>Correct answer: ${flashcard.card_back}`;
     const diffDiv = document.createElement('div');
     diffDiv.innerHTML = diffMessage;
     diffDiv.style.display = 'block';
@@ -335,14 +335,14 @@ function createEditScreen(overlayDiv, flashcard, count = 0, userInput = null) {
 
     // Use textarea for the front input to allow multi-line text
     const frontInput = document.createElement('textarea');
-    frontInput.value = flashcard.front;
+    frontInput.value = flashcard.card_front;
     frontInput.placeholder = 'Front';
     frontInput.className = 'edit-screen-textarea-front'; // Adjusted class name
     form.appendChild(frontInput);
 
     const backInput = document.createElement('input');
     backInput.type = 'text';
-    backInput.value = flashcard.back;
+    backInput.value = flashcard.card_back;
     backInput.placeholder = 'Back';
     backInput.className = 'edit-screen-input-back'; // No change here
     form.appendChild(backInput);
@@ -356,7 +356,8 @@ function createEditScreen(overlayDiv, flashcard, count = 0, userInput = null) {
 
     form.onsubmit = (event) => {
         event.preventDefault();
-        submitFlashcardEdit(flashcard.id, frontInput.value, backInput.value).then(response => { 
+        submitFlashcardEdit(flashcard.card_id, frontInput.value, backInput.value).then(response => { 
+            console.log(response);  
             createConfirmScreen(overlayDiv, userInput, response.data.flashcard, count);
         }).catch(error => {
             console.error(error.message);
@@ -366,12 +367,12 @@ function createEditScreen(overlayDiv, flashcard, count = 0, userInput = null) {
 }
 
 
-function submitFlashcardEdit(cardId, frontText, backText) {
+function submitFlashcardEdit(card_id, frontText, backText) {
     return browser.runtime.sendMessage({
         action: "editFlashcard",
-        cardId: cardId,
-        front: frontText,
-        back: backText
+        card_id: card_id,
+        card_front: frontText,
+        card_back: backText
     }).then(response => {
         // Handle the response from the background script
         if (response.result === "success") {
