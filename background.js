@@ -1,4 +1,4 @@
-    function getApiBaseUrl() {
+function getApiBaseUrl() {
     return browser.storage.local.get("API_BASE_URL").then(storage => {
         if (storage.API_BASE_URL) {
             // Return the API base URL if it exists
@@ -9,6 +9,7 @@
     });
 }
 
+browser.tabs.insertCSS({file: 'styles.css'});
   
 
 function setAlarmForOverlay(interval) {

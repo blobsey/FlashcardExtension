@@ -1,0 +1,114 @@
+#blobsey-flashcard-darken {
+position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(0, 0, 0, 0.5); z-index: 9998;
+}
+
+#blobsey-flashcard-overlay, #blobsey-flashcard-overlay * {
+    all: initial;
+    box-sizing: border-box;
+    font-family: 'Trebuchet MS', sans-serif; 
+    color: white; 
+}
+
+#blobsey-flashcard-overlay {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    max-width: 60em; width: 90%; height: auto; max-height: 90%; margin: auto; padding: 2em;
+    background: rgba(0, 0, 0, 0.75); border-radius: 15px; color: white;
+    display: flex; flex-direction: column; align-items: center;
+    font-family: 'Trebuchet MS', sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow-y: auto; z-index: 10000;
+}
+
+#blobsey-flashcard-overlay div {
+    display: block;
+    text-align: center;
+    padding: .5em;
+    width: 100%;
+    white-space: pre-wrap;
+}
+
+#blobsey-flashcard-overlay input {
+    border: 2px solid rgba(255, 255, 255, 0.5); background: none;
+    border-radius: 5px; outline: none;
+    padding: .5em;
+    width: 60%;
+    margin-top: 1em;
+    display: flex; flex-direction: column; align-items: center;
+}
+
+#blobsey-flashcard-overlay #blobsey-flashcard-buttons-div {
+    display: flex; justify-content: center;
+}
+
+#blobsey-flashcard-overlay button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center; 
+    width: 6em;
+    padding: 10px 20px; 
+    margin-top: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: none;
+    margin: 0 10px;
+    border-radius: 15px;
+    outline: none;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}    
+
+#blobsey-flashcard-overlay button:focus {
+    background-color: rgba(255, 255, 255, 0.2); 
+    border-color: rgba(255, 255, 255, 0.75);
+}
+
+#blobsey-flashcard-overlay button:active {
+    background-color: rgba(255, 255, 255, 0.3); 
+    border-color: white; 
+}
+
+/* Shared for code and pre */
+#blobsey-flashcard-overlay pre, #blobsey-flashcard-overlay code {
+    font-size: 16px; 
+    font-family: 'Fira Code', monospace; 
+    color: #d1d5db; 
+    background-color: rgba(0, 0, 0, .25); 
+    border-radius: 4px; 
+    border: 1px solid rgba(255, 255, 255, .1); 
+}       
+
+#blobsey-flashcard-overlay code {
+    padding: .20em;
+}
+
+#blobsey-flashcard-overlay pre {
+    white-space: pre-wrap;
+    display: inline-block;
+    width: fit-content;
+    overflow-x: auto; 
+    padding: .5em;
+    margin: .25em auto .25em auto;
+}
+
+#blobsey-flashcard-overlay #edit-screen-textarea-front {
+    color: #d1d5db;
+    font-family: 'Fira Code', monospace;
+    border: 2px solid rgba(255, 255, 255, 0.1); 
+    border-radius: 5px;
+    outline: none;
+    width: 100%;
+    padding: 10px;
+    overflow-y: auto;
+    display: block;
+    height: auto;
+    white-space: pre-wrap;
+}
+
+#blobsey-flashcard-overlay form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: auto;
+    width: 100%;
+}

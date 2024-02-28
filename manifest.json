@@ -18,6 +18,7 @@
     {
       "matches": ["*://*.reddit.com/*", "*://*.youtube.com/*", "http://crouton.net/"],
       "js": ["content.js"],
+      "css": ["styles.css"],
       "run_at": "document_end"
     }
   ],
