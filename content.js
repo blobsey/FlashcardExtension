@@ -266,10 +266,9 @@
 
 
     function removeOverlay() {
-
-        // Find and remove the overlayDiv element
-        let overlayDiv = document.getElementById('blobsey-flashcard-overlay');
-        if (overlayDiv) overlayDiv.remove();
+        // Find and remove the root element
+        let root = document.getElementById('blobsey-flashcard-root');
+        if (root) root.remove();
 
         // Restore the original overflow state
         document.documentElement.style.overflow = originalOverflowState;
