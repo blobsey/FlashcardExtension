@@ -147,19 +147,21 @@
             document.body.appendChild(overlayDiv)
         }
         overlayDiv.innerHTML = '';
-    
-        // Animate blur/darken 
-        setTimeout(() => {
-            overlayDiv.style.backdropFilter = 'blur(10px)';
-            overlayDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
-        }, 10); // A delay of 10 milliseconds
 
+        // setTimeout workaround so blur will show up
+        setTimeout(() => {
+            // Blur the background
+            overlayDiv.style.backdropFilter = 'blur(10px)';
+            overlayDiv.style.opacity = '1';
+        }, 10); 
+    
         // Create container for UI
         uiBox = document.createElement('div');
         uiBox.id = 'blobsey-flashcard-ui';
         overlayDiv.appendChild(uiBox);
 
         createFlashcardScreen();
+
     }
 
 
@@ -339,13 +341,18 @@
         // Fade out
         if (overlayDiv) {
             overlayDiv.addEventListener('transitionend', function handler(e) {
-                console.log(e);
-                overlayDiv.remove();
-                overlayDiv.removeEventListener('transitionend', handler); // Clean up the event listener
+                // Specifically check for the opacity transition to ensure correct removal
+                if (e.propertyName === 'opacity') {
+                    overlayDiv.remove();
+                    overlayDiv.removeEventListener('transitionend', handler); // Clean up
+                }
             }, false);
-            overlayDiv.style.backdropFilter = 'blur(0px)';
-            overlayDiv.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+        
+            // Trigger the fade-out by setting opacity to 0
+            overlayDiv.style.opacity = '0';
+            overlayDiv.style.backdropFilter = 'blur(0px)'
         }
+        
         
         // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
