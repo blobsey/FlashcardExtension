@@ -314,13 +314,12 @@
 
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = 'blobsey-flashcard-buttons-div'
-        uiBox.appendChild(buttonsDiv);
+        form.appendChild(buttonsDiv);
 
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save';
         saveButton.type = 'submit';
         buttonsDiv.appendChild(saveButton);
-
 
         form.onsubmit = (event) => {
             event.preventDefault();
