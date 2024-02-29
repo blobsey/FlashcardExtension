@@ -1,3 +1,6 @@
+// content.js
+// Handles UI/UX, application logic
+
 (function() {
     /////////////////////////////////
     // Application Logic Functions //
@@ -277,6 +280,13 @@
         });
     }
 
+    // Helper function to make textarea grow vertically
+    function adjustHeight(textarea) {
+        const maxHeightVh = (window.innerHeight * 40) / 100; // 40vh == min height
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.max(maxHeightVh, textarea.scrollHeight)}px`;
+    }
+    
     function createEditScreen() {
         uiBox.innerHTML = ''; // Clear current content
 
@@ -288,13 +298,12 @@
         frontInput.id = 'edit-screen-textarea-front'; 
 
         // Make textarea expand when typing more
-        frontInput.addEventListener('input', function() {
-            this.style.height = 'auto'; 
-            this.style.height = (this.scrollHeight) + 'px';
-        });
+        frontInput.addEventListener('input', function() { adjustHeight(this) });
 
         form.appendChild(frontInput);
         uiBox.appendChild(form);
+        
+        adjustHeight(frontInput); // Initially fit textarea to content
 
         const backInput = document.createElement('input');
         backInput.type = 'text';
@@ -303,25 +312,28 @@
         backInput.id = 'edit-screen-input-back'; 
         form.appendChild(backInput);
 
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.id = 'blobsey-flashcard-buttons-div'
+        uiBox.appendChild(buttonsDiv);
+
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save';
         saveButton.type = 'submit';
-        form.appendChild(saveButton);
+        buttonsDiv.appendChild(saveButton);
 
 
         form.onsubmit = (event) => {
             event.preventDefault();
             submitFlashcardEdit(flashcard.card_id, frontInput.value, backInput.value).then(response => {
+                flashcard = response.data.flashcard;
                 createConfirmScreen();
             }).catch(error => {
                 console.error(error.message);
+                removeOverlay();
                 setTimer(1);
             });
         };
     }
-
-
-
 
 
     function removeOverlay() {
@@ -335,9 +347,8 @@
             overlayDiv.style.backdropFilter = 'blur(0px)';
             overlayDiv.style.backgroundColor = 'rgba(0, 0, 0, 0)';
         }
-            
-
-        // Restore the original overflow state
+        
+        // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
 
         // Reset the overlayActive flag

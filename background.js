@@ -1,3 +1,6 @@
+// background.js 
+// mostly for sending messages to the API
+
 function getApiBaseUrl() {
     return browser.storage.local.get("API_BASE_URL").then(storage => {
         if (storage.API_BASE_URL) {

@@ -8,6 +8,10 @@
     backdrop-filter: blur(0px); 
     transition: backdrop-filter 0.25s ease, background-color 0.25s ease; 
     z-index: 9998;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
 }
 
 
@@ -19,9 +23,10 @@
 }
 
 #blobsey-flashcard-ui {
-
-    width: auto; height: auto;
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    max-width: 120em;
+    width: 100%;
+    height: auto;
+    margin: 0;
     display: flex; flex-direction: column; align-items: center;
     overflow-y: auto; z-index: 10000;
 }
@@ -99,7 +104,7 @@
 
 #blobsey-flashcard-ui pre {
     white-space: pre-wrap;
-    display: inline-block;
+    display: block;
     width: max-content;
     overflow-x: auto; 
     padding: .5em;
@@ -112,11 +117,13 @@
     border: 2px solid rgba(255, 255, 255, 0.1); 
     border-radius: 5px;
     outline: none;
-    width: 100%;
+    width: 90%;
+    max-width: 60em;
     padding: 10px;
     overflow-y: auto;
     display: block;
-    height: auto;
+    height: max-content;
+    max-height: 75vh;
     white-space: pre-wrap;
 }
 
