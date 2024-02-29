@@ -1,5 +1,7 @@
-
 (function() {
+    /////////////////////////////////
+    // Application Logic Functions //
+    /////////////////////////////////
 
     // Fetches a flashcard by sending a message to background.js
     function nextFlashcard() {
@@ -24,17 +26,77 @@
             });
     }
 
+    // Edits a flashcard given a card_id
+    function submitFlashcardEdit(card_id, frontText, backText) {
+        return browser.runtime.sendMessage({
+            action: "editFlashcard",
+            card_id: card_id,
+            card_front: frontText,
+            card_back: backText
+        }).then(response => {
+            // Handle the response from the background script
+            if (response.result === "success") {
+                console.log("Flashcard updated successfully");
+                return response; // Return response for further processing
+            } else {
+                // Handle failure
+                console.error("Failed to update flashcard:", response.message);
+                throw new Error(response.message); // Throw an error for the caller to handle
+            }
+        }).catch(error => {
+            // Handle errors in sending the message
+            console.error("Error sending message to background script:", error);
+            throw error; // Rethrow to allow the caller to handle it
+        });
+    }
 
-    // Global State variables
-    let isOverlayActive = false;
-    let originalOverflowState = '';
-    let flashcard = null;
-    let userAnswer = '';
-    let parentDiv = null;
-    let uiBox = null;
-    let count = 0;
-    
+    // Sets alarm for "minutes" minutes to show next overlay
+    function setTimer(minutes) {
+        browser.runtime.sendMessage({
+            action: "resetTimer",
+            count: minutes
+        }); // Send the current count with the message
+    }
 
+    // Iterates through DOM and pauses any media
+    function pauseMediaPlayback() {
+        const mediaElements = document.querySelectorAll("video, audio");
+        mediaElements.forEach(media => {
+            if (!media.paused) {
+                media.pause();
+            }
+        });
+    }
+
+
+    // Listen for messages from the background script to show the overlay
+    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === "showOverlay") {
+            showOverlay();
+        }
+    });
+
+    // On page load, check if we should show the overlay
+    browser.storage.local.get("nextOverlayTime").then(data => {
+        const currentTime = Date.now();
+
+        // Check if 'nextOverlayTime' exists
+        if (data.hasOwnProperty('nextOverlayTime')) {
+            // 'nextOverlayTime' exists, check if the current time is past this timestamp
+            if (currentTime >= data.nextOverlayTime) {
+                // Time has passed, show the overlay
+                showOverlay();
+            } // If time has not passed, do nothing and wait for the next alarm
+        } else {
+            // 'nextOverlayTime' probably got deleted, show anyways
+            showOverlay();
+        }
+    }).catch(error => {
+        console.error("Error accessing storage in content script:", error);
+    });
+
+
+    // Function to kick off the UI creation 
     function showOverlay() {
         // If overlay is already active, don't fire
         if (isOverlayActive) { return; }
@@ -55,26 +117,44 @@
         });
     }
 
-    // Create parentDiv which will hold entire overlay, also darken the screen
+
+    
+    ///////////////////////////
+    // Functions to build UI //
+    ///////////////////////////
+
+    // Global State variables
+    let isOverlayActive = false;
+    let originalOverflowState = '';
+    let flashcard = null;
+    let userAnswer = '';
+    let overlayDiv = null;
+    let uiBox = null;
+    let count = 0;
+    
+
+
+    // Create overlayDiv which will hold entire overlay, also darken the screen
     function createOverlay() {
         // Get the root div of the overlay and wipe it out
-        parentDiv = document.getElementById('blobsey-flashcard-root');
-        if (!parentDiv) {
-            parentDiv = document.createElement('div');
-            parentDiv.id = 'blobsey-flashcard-root';
-            document.body.appendChild(parentDiv)
+        overlayDiv = document.getElementById('blobsey-flashcard-overlay');
+        if (!overlayDiv) {
+            overlayDiv = document.createElement('div');
+            overlayDiv.id = 'blobsey-flashcard-overlay';
+            document.body.appendChild(overlayDiv)
         }
-        parentDiv.innerHTML = '';
-
-        // Darken the screen
-        let darken = document.createElement('div');
-        darken.id = "blobsey-flashcard-darken";
-        parentDiv.appendChild(darken);
+        overlayDiv.innerHTML = '';
+    
+        // Animate blur/darken 
+        setTimeout(() => {
+            overlayDiv.style.backdropFilter = 'blur(10px)';
+            overlayDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
+        }, 10); // A delay of 10 milliseconds
 
         // Create container for UI
         uiBox = document.createElement('div');
-        uiBox.id = 'blobsey-flashcard-overlay';
-        parentDiv.appendChild(uiBox);
+        uiBox.id = 'blobsey-flashcard-ui';
+        overlayDiv.appendChild(uiBox);
 
         createFlashcardScreen();
     }
@@ -241,34 +321,21 @@
     }
 
 
-    function submitFlashcardEdit(card_id, frontText, backText) {
-        return browser.runtime.sendMessage({
-            action: "editFlashcard",
-            card_id: card_id,
-            card_front: frontText,
-            card_back: backText
-        }).then(response => {
-            // Handle the response from the background script
-            if (response.result === "success") {
-                console.log("Flashcard updated successfully");
-                return response; // Return response for further processing
-            } else {
-                // Handle failure
-                console.error("Failed to update flashcard:", response.message);
-                throw new Error(response.message); // Throw an error for the caller to handle
-            }
-        }).catch(error => {
-            // Handle errors in sending the message
-            console.error("Error sending message to background script:", error);
-            throw error; // Rethrow to allow the caller to handle it
-        });
-    }
+
 
 
     function removeOverlay() {
-        // Find and remove the root element
-        let root = document.getElementById('blobsey-flashcard-root');
-        if (root) root.remove();
+        // Fade out
+        if (overlayDiv) {
+            overlayDiv.addEventListener('transitionend', function handler(e) {
+                console.log(e);
+                overlayDiv.remove();
+                overlayDiv.removeEventListener('transitionend', handler); // Clean up the event listener
+            }, false);
+            overlayDiv.style.backdropFilter = 'blur(0px)';
+            overlayDiv.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+        }
+            
 
         // Restore the original overflow state
         document.documentElement.style.overflow = originalOverflowState;
@@ -276,48 +343,5 @@
         // Reset the overlayActive flag
         overlayActive = false;
     }
-
-
-    function setTimer(minutes) {
-        browser.runtime.sendMessage({
-            action: "resetTimer",
-            count: minutes
-        }); // Send the current count with the message
-    }
-
-    function pauseMediaPlayback() {
-        const mediaElements = document.querySelectorAll("video, audio");
-        mediaElements.forEach(media => {
-            if (!media.paused) {
-                media.pause();
-            }
-        });
-    }
-
-    // Listen for messages from the background script
-    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "showOverlay") {
-            showOverlay();
-        }
-    });
-
-    // On page load, check if we should show the overlay
-    browser.storage.local.get("nextOverlayTime").then(data => {
-        const currentTime = Date.now();
-
-        // Check if 'nextOverlayTime' exists
-        if (data.hasOwnProperty('nextOverlayTime')) {
-            // 'nextOverlayTime' exists, check if the current time is past this timestamp
-            if (currentTime >= data.nextOverlayTime) {
-                // Time has passed, show the overlay
-                showOverlay();
-            } // If time has not passed, do nothing and wait for the next alarm
-        } else {
-            // 'nextOverlayTime' probably got deleted, show anyways
-            showOverlay();
-        }
-    }).catch(error => {
-        console.error("Error accessing storage in content script:", error);
-    });
 
 })();
