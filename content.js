@@ -357,8 +357,8 @@
         // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
 
-        // Reset the overlayActive flag
-        overlayActive = false;
+        // Reset the isOverlayActive flag
+        isOverlayActive = false;
     }
 
 })();
