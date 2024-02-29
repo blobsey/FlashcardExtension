@@ -259,6 +259,7 @@
                 confirmButton.textContent = 'Confirm';
                 confirmButton.onclick = () => {
                     setTimer(count);
+                    count = 0;
                     removeOverlay();
                 };
                 buttonsDiv.appendChild(confirmButton);
