@@ -319,6 +319,14 @@
         buttonsDiv.id = 'blobsey-flashcard-buttons-div'
         form.appendChild(buttonsDiv);
 
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Cancel';
+        cancelButton.type = 'button';
+        cancelButton.addEventListener('click', function() {
+            createConfirmScreen();
+        });
+        buttonsDiv.appendChild(cancelButton);
+
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save';
         saveButton.type = 'submit';
