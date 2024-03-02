@@ -1,37 +1,10 @@
 // background.js 
-// mostly for sending messages to the API
+// Does a lot of the heavy lifting for handling configs, API Requests
 
-function getApiBaseUrl() {
-    return browser.storage.local.get("API_BASE_URL").then(storage => {
-        if (storage.API_BASE_URL) {
-            // Return the API base URL if it exists
-            return storage.API_BASE_URL;
-        } else {
-            throw new Error("API_BASE_URL not configured");
-        }
-    });
-}
-
-browser.tabs.insertCSS({file: 'styles.css'});
-  
-
-function setAlarmForOverlay(interval) {
-  const nextOverlayTime = Date.now() + (60000 * interval); // Current time + 1 minute in milliseconds
-
-  const currentTime = Date.now();
-  const currentDateTime = new Date(currentTime);
-  const nextOverlayDateTime = new Date(nextOverlayTime);
-
-  // Use toLocaleString() or similar methods to get a human-readable format
-  console.log(`Current time (datetime):\t${currentDateTime.toLocaleString()} \nNext overlay time (datetime):\t${nextOverlayDateTime.toLocaleString()}`);
+browser.tabs.insertCSS({file: 'styles.css'}); // Inject CSS
 
 
-  browser.storage.local.set({ nextOverlayTime }).then(() => {
-    // Set or replace an alarm to show the overlay
-    browser.alarms.create("showOverlayAlarm", { delayInMinutes: interval });
-  })
-  
-}
+
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
@@ -47,103 +20,113 @@ browser.alarms.onAlarm.addListener(alarm => {
 });
 
 
-browser.browserAction.onClicked.addListener(() => {
-    browser.tabs.create({ url: browser.runtime.getURL('configuration.html') });
-  });
-  
-
-// Listen for a reset message from content scripts
+// Boilerplate to turn a browser message into corresponding function
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "resetTimer") {
-      // Clear the existing alarm and set a new one to reset the timer
-      browser.alarms.clear("showOverlayAlarm").then(() => {
-          setAlarmForOverlay(request.count);
-      });
-  }
-});
-
-
-// handle messages
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    switch (request.action) {
-        case "resetTimer": // Set timer (alarm) for `count` minutes in the future, count == number of correct flashcards
-            browser.alarms.clear("showOverlayAlarm").then(() => {
-                setAlarmForOverlay(request.count);
-                sendResponse({ result: "success", message: "Timer reset successfully." });
-            }).catch(error => {
-                console.error(`Error resetting timer:`, error.message);
-                sendResponse({ result: "error", message: error.message });
-            });
-            return true; // Indicate an asynchronous response
-
-        case "nextFlashcard":
-        case "editFlashcard":
-        case "getFlashcard":
-        case "reviewFlashcard":
-            handleApiRequests(request, sendResponse);
-            return true; // Indicate an asynchronous response
-
-        default:
-            console.error("Unknown action:", request.action);
-            sendResponse({ result: "error", message: "Unknown action" });
-            // No need to return true here since we're synchronously sending a response
-    }
-});
-
-
-function handleApiRequests(request, sendResponse) {
-    getApiBaseUrl().then(API_BASE_URL => {
-        let url;
-        // Include the 'X-API-Key' in the headers object
-        const headers = {
-            'Content-Type': 'application/json',
-            'X-API-Key': 'testkey' // Replace 'your_api_key_here' with your actual API key
-        };
-        let body = null;
-        let method = 'GET'; // Default method is GET
-
-        // Determine the appropriate URL and method based on the action
-        switch (request.action) {
-            case "nextFlashcard":
-                url = `${API_BASE_URL}/next`;
-                break;
-            case "editFlashcard":
-                url = `${API_BASE_URL}/edit/${request.card_id}`;
-                method = 'PUT';
-                body = JSON.stringify({ card_front: request.card_front, card_back: request.card_back });
-                break;
-            case "getFlashcard":
-                url = `${API_BASE_URL}/get/${request.card_id}`;
-                break;
-            case "reviewFlashcard":
-                url = `${API_BASE_URL}/review/${request.card_id}`;
-                method = 'POST';
-                body = JSON.stringify({ grade: request.grade });
-                break;
+    (async () => { // functions are async, so need to use async IIFE
+        try {
+            if (requestHandlers.hasOwnProperty(request.action)) {
+                const data = await requestHandlers[request.action](request);
+                sendResponse({ result: "success", data });
+            } else {
+                throw new Error("Unknown action");
+            }
+        } catch (error) {
+            console.error(`Error handling action ${request.action}:`, error);
+            sendResponse({ result: "error", message: error.message });
         }
+    })();
 
-        // Perform the fetch operation
-        fetch(url, { method, headers, ...(body && { body }) })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Network error: ${response.status} ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) { // Assuming your API responds with an error property for logical errors
-                    throw new Error(`API error: ${data.error}`);
-                }
-                sendResponse({ result: "success", data: data });
-            })
-            .catch(error => {
-                console.error(`Error in ${request.action}:`, error.message);
-                sendResponse({ result: "error", message: error.message });
-            });
-    }).catch(err => {
-        console.error('Error retrieving API base URL:', err);
-        sendResponse({ result: "error", message: err.toString() });
-    });
+    return true; // This is crucial to indicate that sendResponse will be called asynchronously
+});
+
+
+// Function to get config
+async function getConfig() {
+    const { config } = await browser.storage.local.get("config"); // immediately destructure to avoid having to do config.config
+    if (!config) { throw new Error("Config not found."); }
+    return config;
+}
+
+// Handlers for requests
+const requestHandlers = {
+    "getConfig": async () => {
+        const config = await getConfig();
+        return config;
+    },
+    "setConfig": async (request) => {
+        await browser.storage.local.set({ config: request.config });
+        return request.config;
+    },
+    "resetTimer": async (request) => {
+        await browser.alarms.clear("showOverlayAlarm");
+        const nextOverlayTime = Date.now() + (60000 * request.count); // Current time + interval * 1 minute
+
+        console.log(`Next overlay time (datetime):\t${new Date(nextOverlayTime).toLocaleString()}`);
+    
+        await browser.storage.local.set({ nextOverlayTime }); // set in local storage as a fallback
+        browser.alarms.create("showOverlayAlarm", { delayInMinutes: request.count });
+        return "Timer reset successfully.";
+    },
+    "nextFlashcard": async () => {
+        const data = await handleApiRequest("/next");
+        return data;
+    },
+    "editFlashcard": async (request) => {
+        const body = { card_front: request.card_front, card_back: request.card_back };
+        const data = await handleApiRequest(`/edit/${request.card_id}`, {
+            method: 'PUT',
+            body: body
+        });
+        return data;
+    },
+    "reviewFlashcard": async (request) => {
+        const body = { grade: request.grade };
+        const data = await handleApiRequest(`/review/${request.card_id}`, {
+            method: 'POST',
+            body: body
+        });
+        return data;
+    }
+};
+
+
+async function handleApiRequest(path, options = {}) {
+    // Fetch the configuration to get the API base URL and API key
+    const config = await getConfig();
+    
+    // Construct the full URL
+    const baseUrl = config.apiBaseUrl || "https://flashcard-api.blobsey.com";
+    const url = `${config.apiBaseUrl}${path}`
+
+    // Ensure headers object exists in options to add Content-Type and API Key
+    if (!options.headers) {
+        options.headers = {};
+    }
+
+    // Add the API Key to the request headers
+    options.headers['X-API-Key'] = config.apiKey; // Ensure to access 'config' property correctly
+
+    // Set default header for JSON content if not already set
+    options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
+
+    // Stringify the body if it's an object and content type is JSON
+    if (options.body && typeof options.body === 'object' && options.headers['Content-Type'] === 'application/json') {
+        options.body = JSON.stringify(options.body);
+    }
+
+    const response = await fetch(url, options);
+
+    // Check if the response is OK (status in the range 200-299)
+    if (!response.ok) {
+        throw new Error(`Network response from API was not ok (status: ${response.status}, statusText: ${response.statusText})`);
+    }
+
+    // Parse the response body as JSON
+    const data = await response.json();
+
+    console.log(data);
+
+    return data; // Return the parsed JSON data
 }
 
 

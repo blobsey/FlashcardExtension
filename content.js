@@ -108,7 +108,7 @@
         nextFlashcard().then(fetchedCard => {
             // If a flashcard is successfully fetched, create and show the overlay
             originalOverflowState = document.documentElement.style.overflow; // Store the original overflow state
-            document.documentElement.style.overflow = 'hidden'; // Disable scrolling
+            document.documentElement.style.overflow  = 'hidden'; // Disable scrolling
             pauseMediaPlayback();
             flashcard = fetchedCard;
             createOverlay();

@@ -1,18 +1,28 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('configForm');
-    const apiBaseUrlInput = document.getElementById('apiBaseUrl');
-
-    // Load the current API base URL from storage and populate the form
-    browser.storage.local.get('API_BASE_URL').then((res) => {
-        apiBaseUrlInput.value = res.API_BASE_URL;
-    });
-
-    form.addEventListener('submit', function(e) {
+document.addEventListener('DOMContentLoaded', async () => {
+    const form = document.getElementById('config-form');
+    try {
+      // Load the current configuration
+      const config = await browser.storage.local.get('config');
+      if (config && config.config) {
+        document.getElementById('apiBaseUrl').value = config.config.apiBaseUrl || '';
+        document.getElementById('apiKey').value = config.config.apiKey || '';
+      }
+  
+      // Save configuration on form submit
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const apiBaseUrl = apiBaseUrlInput.value.trim();
-        // Save the API base URL to storage
-        browser.storage.local.set({ 'API_BASE_URL': apiBaseUrl }).then(() => {
-            alert('API Base URL saved successfully.');
+        await browser.storage.local.set({
+          config: {
+            apiBaseUrl: document.getElementById('apiBaseUrl').value,
+            apiKey: document.getElementById('apiKey').value
+          }
         });
-    });
-});
+        // Provide feedback or close the popup
+        alert('Configuration saved successfully!');
+        window.close(); // Optionally close the popup after saving
+      });
+    } catch (error) {
+      console.error('Failed to load or save configuration:', error);
+    }
+  });
+  
