@@ -140,24 +140,26 @@ async function handleApiRequest(path, options = {}) {
 
     // Check if the response is OK (status in the range 200-299)
     if (!response.ok) {
-        let errorMessage = response.statusText; // Default message
-        let errorDetails = {}; // Holds parsed JSON details
+        let errorMessage = response.statusText; // Default error message
+        const error = new Error(); // Initialize error object here
 
-        try {
-            // Attempt to parse response as JSON for detailed error info
-            errorDetails = await response.json();
+        try { // Try to parse response as JSON for more detailed info
+            const errorDetails = await response.json();
             errorMessage = errorDetails.detail || errorMessage; // Use detailed message if available
+
+            // Attach response details to the error object
+            error.message = `API Request not ok: ${errorMessage}`;
+            error.status = response.status;
+            error.statusText = response.statusText;
+            error.responseBody = errorDetails; // Attach the parsed details
+
+            
         } catch (e) {
-            // If response is not JSON, use the default text
+            // If parsing fails, use a generic error message but still include response status
+            error.message = `API Request not ok (response body malformed): ${errorMessage}`;
         }
 
-        // Create an Error object and attach response details to it
-        const error = new Error(errorMessage);
-        error.status = response.status;
-        error.statusText = response.statusText;
-        error.responseBody = errorDetails; // Attach the parsed details or an empty object
-
-        console.error(`API Request not ok: ${errorMessage}`);
+        console.error(error.message);
         throw error;
     }
 
