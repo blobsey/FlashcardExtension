@@ -3,8 +3,6 @@
 
 browser.tabs.insertCSS({file: 'styles.css'}); // Inject CSS
 
-
-
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
@@ -26,7 +24,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         try {
             if (requestHandlers.hasOwnProperty(request.action)) {
                 const data = await requestHandlers[request.action](request);
-                sendResponse({ result: "success", data });
+                sendResponse({ result: "success", ...data });
             } else {
                 throw new Error("Unknown action");
             }
@@ -39,23 +37,47 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // This is crucial to indicate that sendResponse will be called asynchronously
 });
 
+const defaultConfig = {
+    apiBaseUrl: 'https://flashcard-api.blobsey.com',
+    apiKey: '',
+};
 
-// Function to get config
+// Function to get config with defaults
 async function getConfig() {
-    const { config } = await browser.storage.local.get("config"); // immediately destructure to avoid having to do config.config
-    if (!config) { throw new Error("Config not found."); }
-    return config;
+    try {
+        const { config } = await browser.storage.local.get("config");
+
+        // Check if config is an object
+        if (config && typeof config === 'object') {
+            // Fetch config, fill in any default values
+            const mergedConfig = {
+                ...defaultConfig, // Start with defaultConfig
+                ...config // Override with values from config where they exist
+            };
+
+            return mergedConfig;
+        } else {
+            // If config is not an object, return defaultConfig
+            return defaultConfig;
+        }
+    } catch (error) {
+        console.error("Error loading config:", error);
+        // Return defaultConfig in case of any error
+        return defaultConfig;
+    }
 }
+
+
 
 // Handlers for requests
 const requestHandlers = {
     "getConfig": async () => {
         const config = await getConfig();
-        return config;
+        return {config};
     },
     "setConfig": async (request) => {
         await browser.storage.local.set({ config: request.config });
-        return request.config;
+        return {config: request.config};
     },
     "resetTimer": async (request) => {
         await browser.alarms.clear("showOverlayAlarm");
@@ -118,15 +140,29 @@ async function handleApiRequest(path, options = {}) {
 
     // Check if the response is OK (status in the range 200-299)
     if (!response.ok) {
-        throw new Error(`Network response from API was not ok (status: ${response.status}, statusText: ${response.statusText})`);
+        let errorMessage = response.statusText; // Default message
+        let errorDetails = {}; // Holds parsed JSON details
+
+        try {
+            // Attempt to parse response as JSON for detailed error info
+            errorDetails = await response.json();
+            errorMessage = errorDetails.detail || errorMessage; // Use detailed message if available
+        } catch (e) {
+            // If response is not JSON, use the default text
+        }
+
+        // Create an Error object and attach response details to it
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        error.statusText = response.statusText;
+        error.responseBody = errorDetails; // Attach the parsed details or an empty object
+
+        console.error(`API Request not ok: ${errorMessage}`);
+        throw error;
     }
 
     // Parse the response body as JSON
-    const data = await response.json();
-
-    console.log(data);
-
-    return data; // Return the parsed JSON data
+    return await response.json();
 }
 
 

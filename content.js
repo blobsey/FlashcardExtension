@@ -18,13 +18,11 @@
                     throw new Error(response.message);
                 }
 
-                // If no explicit errors, check for response.data.message and if it exists throw that as an error
-                if (response.data) {
-                    if (response.data.message) {
-                        throw new Error(response.data.message);
-                    } else {
-                        return response.data; // response.data holds a flashcard object
-                    }
+                // If no explicit errors, check for response.message and if it exists throw that as an error
+                if (response.message) {
+                    throw new Error(response.message);
+                } else {
+                    return response.flashcard;                   
                 }
             });
     }
@@ -40,16 +38,12 @@
             // Handle the response from the background script
             if (response.result === "success") {
                 console.log("Flashcard updated successfully");
-                return response; // Return response for further processing
+                return response.flashcard; // Return response for further processing
             } else {
                 // Handle failure
                 console.error("Failed to update flashcard:", response.message);
                 throw new Error(response.message); // Throw an error for the caller to handle
             }
-        }).catch(error => {
-            // Handle errors in sending the message
-            console.error("Error sending message to background script:", error);
-            throw error; // Rethrow to allow the caller to handle it
         });
     }
 
@@ -114,9 +108,8 @@
             createOverlay();
 
         }).catch(error => {
-            // If there are no cards to review or any other error occurs, log it
-            console.error(error.message);
             setTimer(1);
+            throw error;
         });
     }
 
@@ -335,7 +328,8 @@
         form.onsubmit = (event) => {
             event.preventDefault();
             submitFlashcardEdit(flashcard.card_id, frontInput.value, backInput.value).then(response => {
-                flashcard = response.data.flashcard;
+                console.log(response);
+                flashcard = response;
                 createConfirmScreen();
             }).catch(error => {
                 console.error(error.message);
