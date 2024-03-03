@@ -328,7 +328,6 @@
         form.onsubmit = (event) => {
             event.preventDefault();
             submitFlashcardEdit(flashcard.card_id, frontInput.value, backInput.value).then(response => {
-                console.log(response);
                 flashcard = response;
                 createConfirmScreen();
             }).catch(error => {

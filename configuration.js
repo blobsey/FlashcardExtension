@@ -1,10 +1,10 @@
+// Dynamically generate config form
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('config-form');
 
     try {
         // Load the current configuration
         const {result, config }= await browser.runtime.sendMessage({ action: "getConfig" });
-        console.log(config);
 
         // Dynamically create form inputs and labels based on config
         Object.keys(config).forEach(key => {
@@ -62,8 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             config: newConfig
         });
 
-        // Provide feedback or close the popup
-        window.close(); // Optionally close the popup after saving
+        window.close(); 
     });
 });
 
@@ -86,7 +85,7 @@ function adjustWidth(input) {
     // Set the span's content to the input's value or placeholder
     measurementSpan.textContent = input.value || input.placeholder;
     
-    // Update the input's width based on the span's width, plus a little extra padding
+    // Update the input's width based on the span's width
     input.style.width = `${measurementSpan.offsetWidth}px`;
 }
 
