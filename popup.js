@@ -155,7 +155,11 @@ async function createAddScreen() {
     textareaFront.value = savedFrontInput.cardFrontInput || ''; // Use saved value or default to empty string
     const savedBackInput = await browser.storage.local.get('cardBackInput');
     inputBack.value = savedBackInput.cardBackInput || '';
-    adjustSize(textareaFront); // Adjust size after setting value
+
+    // Janky workaround to fix the height not updating properly
+    requestAnimationFrame(() => {
+        adjustSize(textareaFront);
+    });; // Adjust size after setting value
 
 
     // Listeners to update local storage whenever user types
