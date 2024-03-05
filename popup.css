@@ -1,0 +1,82 @@
+body {
+    background-color: rgb(18, 18, 18);
+    overflow: hidden;
+}
+
+div {
+    font-family: system-ui, sans-serif;
+    font-size: 12px;
+    text-align: center;
+    color: white;
+}
+
+#content label {
+    display: block;
+    text-align: left;
+    padding: 0em 0em 0em .5em;
+    margin: .25em 0em 0em 0em;
+}
+
+#content input, #content button, #content textarea{
+    border: 1px solid rgba(255, 255, 255, 0.5); background: none;
+    border-radius: 5px; outline: none;
+    margin: .25em auto .25em auto;
+    padding: .5em;
+    color: inherit;
+    font-size: inherit;
+    font-family: monospace;
+    box-sizing: border-box; /* account for margin, outline, etc. */
+}
+
+span { /* span is used to auto-widen textarea */
+    font: inherit;
+    letter-spacing: normal;
+}
+
+#content textarea {
+    color: rgba(255, 255, 255, 0.75);
+    border-radius: 5px;
+    padding: 10px;
+    overflow-y: scroll;
+    overflow-x: scroll;
+    display: block;
+    min-width: 100%;
+    min-height: 20em;
+    max-width: 35em;
+    max-height: 35em;
+    white-space: pre;
+    resize: none;
+}
+
+#content input {
+    width: 100%;
+}
+
+#content button {
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}    
+
+#content button:focus {
+    background-color: rgba(255, 255, 255, 0.2); 
+    border-color: rgba(255, 255, 255, 0.75);
+}
+
+#navbar {
+    width: 20em;
+    display: flex;
+    justify-content: space-around;
+    background: rgb(18, 18, 18);
+    color: white;
+}
+
+
+#navbar button {
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+svg {
+    fill: white;
+}

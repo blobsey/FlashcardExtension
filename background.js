@@ -108,6 +108,14 @@ const requestHandlers = {
             body: body
         });
         return data;
+    },
+    "addFlashcard": async (request) => {
+        const body = { card_front: request.card_front, card_back: request.card_back };
+        const data = await handleApiRequest('/add', {
+            method: 'POST',
+            body: JSON.stringify(body) // No need to include user_id here
+        });
+        return data;
     }
 };
 
