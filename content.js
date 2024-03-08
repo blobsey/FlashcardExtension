@@ -179,23 +179,7 @@
 
         form.onsubmit = (event) => {
             event.preventDefault();
-
             userAnswer = userInput.value;
-
-            // Grade flashcard
-            const isCorrect = userInput.value.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
-            if (isCorrect) {
-                ++count;
-            }
-
-            // Send grading information
-            const grade = isCorrect ? 3 : 1;
-            browser.runtime.sendMessage({
-                action: "reviewFlashcard",
-                card_id: flashcard.card_id,
-                grade: grade
-            });
-
             createConfirmScreen();
         };
 
@@ -225,9 +209,28 @@
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = "blobsey-flashcard-buttons-div";
         contentDiv.appendChild(buttonsDiv);
+        
 
-        // Attempt to fetch the next flashcard, if fetch is successful then we will add "Another" button
-        nextFlashcard().then(fetchedCard => {
+        // Grade flashcard
+        const isCorrect = userAnswer.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
+        if (isCorrect) {
+            ++count;
+        }
+
+        // Send grading information
+        const grade = isCorrect ? 3 : 1;
+
+        // Does the following with strict ordering: Review -> Fetch next -> Show buttons
+        browser.runtime.sendMessage({
+            action: "reviewFlashcard",
+            card_id: flashcard.card_id,
+            grade: grade
+        })
+        .then(() => {
+            // Attempt to fetch the next flashcard, if fetch is successful then we will add "Another" button
+            return nextFlashcard()
+        })
+        .then(fetchedCard => {
             // Another button
             const anotherButton = document.createElement('button');
             anotherButton.textContent = 'Another';
@@ -236,17 +239,15 @@
                 createFlashcardScreen();
             };
             buttonsDiv.appendChild(anotherButton);
-
-        }).catch(error => {
+        })
+        .catch(error => {
             // Handle the case where no more flashcards are available
             const messageDiv = document.createElement('div');
             messageDiv.innerHTML = (error.message === "No cards to review right now.") ? "No more cards to review for today! :)" : error.message;
             contentDiv.appendChild(messageDiv);
-
-            setTimer(1); // Set timer to 1 just in case new cards get added
-
-        }).finally(() => {
-            // Confirm button 
+        })
+        .finally(() => {
+              // Confirm button 
             if (count > 0) {
                 const confirmButton = document.createElement('button');
                 confirmButton.textContent = 'Confirm';
@@ -266,13 +267,12 @@
             };
             buttonsDiv.appendChild(editButton);
 
-
             // Note for flashcard count
             const countNote = document.createElement('div');
             countNote.innerHTML = `Correct Answers: ${count}`;
             contentDiv.appendChild(countNote);
 
-            setTimer(1); // Set timer as a fallback or according to specific logic
+            setTimer(count); // Also set timer just in case page refresh
         });
     }
 

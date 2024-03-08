@@ -197,8 +197,8 @@ async function createAddScreen() {
 
             // Remove cached input
             browser.storage.local.remove(['cardFrontInput', 'cardBackInput']);
-
             console.log(response); // Log the response from background.js
+            window.close();
         } catch (error) {
             console.error('Error adding flashcard:', error);
         }
