@@ -152,8 +152,6 @@ async function createAddScreen() {
     contentDiv.innerHTML = ''; // Clear existing content
 
     // Create form elements
-    const form = document.createElement('form');
-    form.setAttribute('accept-charset', 'UTF-8');
     const textareaFront = document.createElement('textarea');
     textareaFront.placeholder = 'Front of the flashcard';
     textareaFront.addEventListener('input', function() { adjustSize(this) });
@@ -203,10 +201,8 @@ async function createAddScreen() {
 
     const buttonWithStatus = await createButtonWithStatus('Add Flashcard', submitAction);
 
-    form.appendChild(textareaFront);
-    form.appendChild(inputBack);
-
-    contentDiv.appendChild(form); 
+    contentDiv.appendChild(textareaFront);
+    contentDiv.appendChild(inputBack);
     contentDiv.appendChild(buttonWithStatus); 
 }
 

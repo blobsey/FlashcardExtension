@@ -90,13 +90,14 @@ span { /* span is used to auto-widen textarea */
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 5px;
 }
 
 #content #buttonsDiv button {
-    margin-left: 34px;
+    margin-left: 29px;
 }
 #content #buttonsDiv #statusIndicator {
+    margin-top: 2px;
     min-width: 24px;
     display: inline-block;
 }
