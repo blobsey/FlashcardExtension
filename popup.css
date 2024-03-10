@@ -1,7 +1,8 @@
 body {
     background-color: rgb(18, 18, 18);
     overflow: hidden;
-
+    max-width: 784px; /* 800 - 16 */
+    max-height: 584px; /* 600 - 16 */
 }
 
 div {
@@ -44,8 +45,6 @@ span { /* span is used to auto-widen textarea */
     display: block;
     min-width: 100%;
     min-height: 20em;
-    max-width: 35em;
-    max-height: 35em;
     white-space: pre;
     resize: none;
 }
@@ -72,11 +71,13 @@ span { /* span is used to auto-widen textarea */
 }
 
 #navbar {
-    width: 20em;
+    min-width: 300px;
+    width: 100%;
     display: flex;
-    justify-content: space-around;
+    justify-content: flex-end;
     background: rgb(18, 18, 18);
     color: white;
+    margin: 0 auto;
 }
 
 #navbar button {

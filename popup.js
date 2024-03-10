@@ -118,11 +118,30 @@ async function createConfigScreen() {
     contentDiv.appendChild(saveButton);
 }
 
+let maxHeight, maxWidth;
 // Helper function to grow a textarea based on content
 function adjustSize(textarea) {
-    // Adjust height
+
+    // If not already calculated, calculate max available height
+    if (!maxHeight || !maxWidth) {
+        const bodyComputedStyle = window.getComputedStyle(document.body);
+        const maxBodyHeight = parseInt(bodyComputedStyle.maxHeight, 10) || 584; // Fallback to default max height
+    
+        // Calculate height of all elements
+        let otherElementsHeight = [...document.body.children].reduce((total, element) => {
+            return total + element.offsetHeight;
+        }, 0);
+
+        // Calculate height minus the textarea
+        otherElementsHeight -= textarea.offsetHeight;
+
+        // Display the final height in an alert
+        maxHeight = maxBodyHeight - otherElementsHeight
+        maxWidth = parseInt(bodyComputedStyle.maxWidth, 10) || 784; // Fallback to default max width
+    }
+    
     textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
+    textarea.style.height = `${Math.min(maxHeight, textarea.scrollHeight)}px`;
 
     // Ensure measuringSpan is created and styled
     let measuringSpan = document.getElementById('measuringSpan');
@@ -144,7 +163,7 @@ function adjustSize(textarea) {
     measuringSpan.textContent = textarea.value || textarea.placeholder;
 
     // Adjust width based on measuringSpan - ensure no maxWidth constraint
-    textarea.style.width = `${measuringSpan.offsetWidth + 30}px`; 
+    textarea.style.width = `${Math.min(maxWidth, measuringSpan.offsetWidth + 30)}px`; 
 }
 
 async function createAddScreen() {
