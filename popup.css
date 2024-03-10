@@ -1,6 +1,7 @@
 body {
     background-color: rgb(18, 18, 18);
     overflow: hidden;
+
 }
 
 div {
@@ -55,7 +56,14 @@ span { /* span is used to auto-widen textarea */
 #content button {
     cursor: pointer;
     transition: background-color 0.3s, border-color 0.3s, color 0.3s;
-}    
+}  
+
+#content button:disabled {
+    background-color: #cccccc3b; /* Greyed out */
+    color: #666666; /* Darker text color to indicate it's disabled */
+    cursor: initial; /* Change cursor to indicate the action is not allowed */
+}
+
 
 #content button:focus {
     background-color: rgba(255, 255, 255, 0.2); 
@@ -70,13 +78,21 @@ span { /* span is used to auto-widen textarea */
     color: white;
 }
 
-
 #navbar button {
     cursor: pointer;
     border: none;
     background: none;
 }
 
-svg {
-    fill: white;
+#content #buttonsDiv {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    position: relative;
+}
+
+#content #statusIndicator {
+    position: absolute;
+    bottom: 5%; 
+    right: 18%; 
 }
