@@ -21,11 +21,12 @@ div {
 #content input, #content button, #content textarea{
     border: 1px solid rgba(255, 255, 255, 0.5); background: none;
     border-radius: 5px; outline: none;
-    margin: .25em auto .25em auto;
     padding: .5em;
     color: inherit;
     font-size: inherit;
     font-family: monospace;
+    margin-top: .25em;
+    margin-bottom: .25em;
     box-sizing: border-box; /* account for margin, outline, etc. */
 }
 
@@ -88,11 +89,14 @@ span { /* span is used to auto-widen textarea */
     display: flex;
     flex-direction: row;
     align-items: center;
-    position: relative;
+    justify-content: center;
+    gap: 10px;
 }
 
-#content #statusIndicator {
-    position: absolute;
-    bottom: 5%; 
-    right: 18%; 
+#content #buttonsDiv button {
+    margin-left: 34px;
+}
+#content #buttonsDiv #statusIndicator {
+    min-width: 24px;
+    display: inline-block;
 }

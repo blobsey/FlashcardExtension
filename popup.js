@@ -91,19 +91,12 @@ async function createConfigScreen() {
             form.appendChild(document.createElement('br'));
         });
 
-        // Add submit button to form
-        const submitButton = document.createElement('button');
-        submitButton.type = 'submit';
-        submitButton.textContent = 'Save';
-        form.appendChild(submitButton);
-
     } catch (error) {
         console.error('Failed to load configuration:', error);
     }
 
     // Event listener for form submission to save configuration
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    const saveAction = async () => {
         const formData = new FormData(form);
         const newConfig = {};
 
@@ -111,13 +104,18 @@ async function createConfigScreen() {
             newConfig[key] = value;
         }
 
-        await browser.runtime.sendMessage({
+        const response = await browser.runtime.sendMessage({
             action: "setConfig",
             config: newConfig
         });
 
-        window.close(); 
-    });
+        if (response.result !== "success")
+            throw new Error(response.message);
+    };
+
+    saveButton = await createButtonWithStatus("Save", saveAction);
+
+    contentDiv.appendChild(saveButton);
 }
 
 // Helper function to grow a textarea based on content
@@ -155,6 +153,7 @@ async function createAddScreen() {
 
     // Create form elements
     const form = document.createElement('form');
+    form.setAttribute('accept-charset', 'UTF-8');
     const textareaFront = document.createElement('textarea');
     textareaFront.placeholder = 'Front of the flashcard';
     textareaFront.addEventListener('input', function() { adjustSize(this) });
@@ -183,59 +182,69 @@ async function createAddScreen() {
     inputBack.addEventListener('input', function() {
         browser.storage.local.set({ cardBackInput: this.value });
     });
-    
 
-    const submitButton = document.createElement('button');
-    submitButton.textContent = 'Add Flashcard';
-
-    const statusDiv = document.createElement('div');
-    statusDiv.id = "statusIndicator";
-
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.id = "buttonsDiv";
-    buttonsDiv.appendChild(submitButton);
-    buttonsDiv.appendChild(statusDiv);
-    
-
-    // Append elements to the form
-    form.appendChild(textareaFront);
-    form.appendChild(inputBack);
-    form.appendChild(buttonsDiv);
-    contentDiv.appendChild(form);
-
-    // Add event listener for the form submission
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        submitButton.disabled = true;
+    // Submit button function
+    const submitAction = async () => {
         const cardFront = textareaFront.value;
         const cardBack = inputBack.value;
+        if (!cardFront || !cardBack) 
+            throw new Error(`${!cardFront ? "Front" : "Back"} is blank`);
 
-        statusDiv.innerHTML = loadingSvg;
+        const response = await browser.runtime.sendMessage({
+            action: 'addFlashcard',
+            card_front: cardFront,
+            card_back: cardBack
+        });
 
-        // Send message to background.js to add the flashcard
+        if(response.result !== "success") {
+            throw new Error(response.message);
+        }
+    };
+
+    const buttonWithStatus = await createButtonWithStatus('Add Flashcard', submitAction);
+
+    form.appendChild(textareaFront);
+    form.appendChild(inputBack);
+
+    contentDiv.appendChild(form); 
+    contentDiv.appendChild(buttonWithStatus); 
+}
+
+async function createButtonWithStatus(buttonText, actionFunction) {
+    // Create the button
+    const button = document.createElement('button');
+    button.textContent = buttonText;
+
+    // Create the status indicator div
+    const statusIndicator = document.createElement('div');
+    statusIndicator.id = 'statusIndicator'; // for styling
+
+    // Create a container for the button and the status indicator
+    const container = document.createElement('div');
+    container.id = 'buttonsDiv'; 
+    container.appendChild(button);
+    container.appendChild(statusIndicator);
+
+    // Attach the click event listener to the button
+    button.addEventListener('click', async () => {
+        button.disabled = true; // Disable the button to prevent multiple clicks
+        statusIndicator.innerHTML = loadingSvg; // Show loading indicator
+
         try {
-            const response = await browser.runtime.sendMessage({
-                action: 'addFlashcard',
-                card_front: cardFront,
-                card_back: cardBack
-            });
-            
-            switch(response.result) {
-                case "success":
-                    statusDiv.innerHTML = successSvg;
-                    statusDiv.title = "";
-                    break;
-                default:
-                    statusDiv.innerHTML = errorSvg;
-                    statusDiv.title = response.message;
-                    throw new Error(response.message);
-                    break;
-            }
+            // Await the action function
+            await actionFunction();
+            // On success, show the success indicator
+            statusIndicator.innerHTML = successSvg;
+            statusIndicator.title = ""; // Reset or set success title
         } catch (error) {
-            statusDiv.innerHTML = errorSvg;
-            console.error('Error adding flashcard:', error);
+            // On error, show the error indicator and log the error
+            statusIndicator.innerHTML = errorSvg;
+            statusIndicator.title = error.message; // Show error message on hover
+            console.error('Error:', error);
         } finally {
-            submitButton.disabled = false;
+            button.disabled = false; // Re-enable the button
         }
     });
+
+    return container; // Return the container for appending wherever needed
 }
