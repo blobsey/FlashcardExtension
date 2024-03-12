@@ -10,7 +10,6 @@
     async function fetchNextFlashcard() {
         const response = await browser.runtime.sendMessage({action: "fetchNextFlashcard"});
         if (response.result === "error" || response.message) {
-            console.error(response.message);
             throw new Error(response.message || "An unspecified error occurred");
         }
         return response.flashcard;
@@ -41,7 +40,7 @@
     function setTimer(minutes) {
         browser.runtime.sendMessage({
             action: "resetTimer",
-            count: minutes
+            count: Math.max(1, minutes)
         }); // Send the current count with the message
     }
 
@@ -81,6 +80,7 @@
         console.error("Error accessing storage in content script:", error);
     });
 
+    // Tries to show a flashcard, if there are none then sets a timer 1min from now to check again
     function showFlashcard() {
         fetchNextFlashcard().then(fetchedCard => {
             pauseMediaPlayback();
@@ -88,8 +88,9 @@
             screens["flashcard"].activate();
         })
         .catch(error => {
+            if (error.message !== "No cards to review right now.")
+                console.error(error.message);
             setTimer(1);
-            throw error;
         });
     }
     
@@ -288,7 +289,7 @@
         }
 
         // Add confirm button if at least one flashcard has been answered
-        if (count > 0) {
+        if (count > 0 || !nextFlashcard) {
             const confirmButton = document.createElement('button');
             confirmButton.textContent = 'Confirm';
             confirmButton.onclick = () => {
