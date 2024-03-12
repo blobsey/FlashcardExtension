@@ -7,45 +7,35 @@
     /////////////////////////////////
 
     // Fetches a flashcard by sending a message to background.js
-    function nextFlashcard() {
-        // Send a message to background.js to fetch a flashcard
-        return browser.runtime.sendMessage({
-                action: "nextFlashcard"
-            })
-            .then(response => {
-                if (response.result === "error") {
-                    console.error("Error fetching next flashcard:", response.message);
-                    throw new Error(response.message);
-                }
-
-                // If no explicit errors, check for response.message and if it exists throw that as an error
-                if (response.message) {
-                    throw new Error(response.message);
-                } else {
-                    return response.flashcard;                   
-                }
-            });
+    async function fetchNextFlashcard() {
+        const response = await browser.runtime.sendMessage({action: "fetchNextFlashcard"});
+        if (response.result === "error" || response.message) {
+            console.error(response.message);
+            throw new Error(response.message || "An unspecified error occurred");
+        }
+        return response.flashcard;
     }
-
-    // Edits a flashcard given a card_id
-    function submitFlashcardEdit(card_id, frontText, backText) {
-        return browser.runtime.sendMessage({
+    
+    
+    // Edits a flashcard
+    async function submitFlashcardEdit(card_id, frontText, backText) {
+        const response = await browser.runtime.sendMessage({
             action: "editFlashcard",
             card_id: card_id,
             card_front: frontText,
             card_back: backText
-        }).then(response => {
-            // Handle the response from the background script
-            if (response.result === "success") {
-                console.log("Flashcard updated successfully");
-                return response.flashcard; // Return response for further processing
-            } else {
-                // Handle failure
-                console.error("Failed to update flashcard:", response.message);
-                throw new Error(response.message); // Throw an error for the caller to handle
-            }
         });
+    
+        if (response.result === "success") {
+            console.log("Flashcard updated successfully");
+            return response.flashcard; // Return the updated flashcard for further processing
+        } else {
+            // Handle failure
+            console.error("Failed to update flashcard:", response.message);
+            throw new Error(response.message); // Propagate the error to be handled by the caller
+        }
     }
+    
 
     // Sets alarm for "minutes" minutes to show next overlay
     function setTimer(minutes) {
@@ -68,106 +58,147 @@
 
     // Listen for messages from the background script to show the overlay
     browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "showOverlay") {
-            showOverlay();
+        if (request.action === "showFlashcard") {
+            showFlashcard();
         }
     });
 
     // On page load, check if we should show the overlay
-    browser.storage.local.get("nextOverlayTime").then(data => {
+    browser.storage.local.get("fetchNextFlashcardTime").then(data => {
         const currentTime = Date.now();
 
-        // Check if 'nextOverlayTime' exists
-        if (data.hasOwnProperty('nextOverlayTime')) {
-            // 'nextOverlayTime' exists, check if the current time is past this timestamp
-            if (currentTime >= data.nextOverlayTime) {
-                // Time has passed, show the overlay
-                showOverlay();
+        // Check if 'fetchNextFlashcardTime' exists
+        if (data.hasOwnProperty('fetchNextFlashcardTime')) {
+            // 'fetchNextFlashcardTime' exists, check if the current time is past this timestamp
+            if (currentTime >= data.fetchNextFlashcardTime) {
+                showFlashcard(); // Time has passed, show the overlay
             } // If time has not passed, do nothing and wait for the next alarm
         } else {
-            // 'nextOverlayTime' probably got deleted, show anyways
-            showOverlay();
+            showFlashcard(); // 'fetchNextFlashcardTime' probably got deleted, show anyways
         }
-    }).catch(error => {
+    })
+    .catch(error => {
         console.error("Error accessing storage in content script:", error);
     });
 
-
-    // Function to kick off the UI creation 
-    function showOverlay() {
-        // If overlay is already active, don't fire
-        if (isOverlayActive) { return; }
-        isOverlayActive = true;
-
-        nextFlashcard().then(fetchedCard => {
-            // If a flashcard is successfully fetched, create and show the overlay
-            originalOverflowState = document.documentElement.style.overflow; // Store the original overflow state
-            document.documentElement.style.overflow  = 'hidden'; // Disable scrolling
+    function showFlashcard() {
+        fetchNextFlashcard().then(fetchedCard => {
             pauseMediaPlayback();
             flashcard = fetchedCard;
-            createOverlay();
-
-        }).catch(error => {
+            screens["flashcard"].activate();
+        })
+        .catch(error => {
             setTimer(1);
             throw error;
         });
     }
-
-
     
-    ///////////////////////////
-    // Functions to build UI //
-    ///////////////////////////
 
-    // Global State variables
-    let isOverlayActive = false;
-    let originalOverflowState = '';
-    let flashcard = null;
-    let userAnswer = '';
+    ///////////////
+    // UI System //
+    ///////////////
+
+    // Global state variables
     let overlayDiv = null;
-    let uiBox = null;
+    let screenDiv = null;
+    let currentScreen = null;
+    let originalOverflowState = '';
     let count = 0;
+    let grade = null;
+    let userAnswer = null;
+    let flashcard = null;
+    let nextFlashcard = null;
+
+    class Screen {
+        constructor(render) {
+            this.active = false;
+            this.render = render;
+        }
     
+        activate() {
+            this.active = true;
+            update();
+        }
+    
+        deactivate() {
+            this.active = false;
+            update()
+        }
+    }
 
+    // Screens that are higher have more "priority", ex. if both edit and list are active, edit will be drawn
+    const screens = {
+        "edit": new Screen(createEditScreen),
+        "list": new Screen(createListScreen),
+        "confirm": new Screen(createConfirmScreen),
+        "flashcard": new Screen(createFlashcardScreen)
+    };
 
-    // Create overlayDiv which will hold entire overlay, also darken the screen
-    function createOverlay() {
+    function update() {
+        // Draw the highest priority screen
+        for (const label in screens) {
+            if (screens[label].active) {
+                if (currentScreen === label) {
+                    return;
+                }
+                else {
+                    currentScreen = label;
+                    createOverlayIfNotExists();
+                    screens[label].render();
+                    return;
+                }
+            }
+        }
+
+        // If no screens active, remove overlay
+        if (overlayDiv) {
+            overlayDiv.addEventListener('transitionend', function handler(e) {
+                // Specifically check for the opacity transition to ensure correct removal
+                if (e.propertyName === 'opacity') {
+                    overlayDiv.remove();
+                    overlayDiv.removeEventListener('transitionend', handler); // Clean up
+                }
+            }, false);
+        
+            // Trigger the fade-out by setting opacity to 0
+            overlayDiv.style.opacity = '0';
+            overlayDiv.style.backdropFilter = 'blur(0px)'
+        }
+        
+        
+        // Restore the original overflow state (scrolling behavior)
+        document.documentElement.style.overflow = originalOverflowState;
+    }
+
+    // Create overlay which darkens/blurs screen, prepare screenDiv for rendering
+    function createOverlayIfNotExists() {
         // Get the root div of the overlay and wipe it out
         overlayDiv = document.getElementById('blobsey-flashcard-overlay');
         if (!overlayDiv) {
             overlayDiv = document.createElement('div');
             overlayDiv.id = 'blobsey-flashcard-overlay';
             document.body.appendChild(overlayDiv)
+            
+            // setTimeout workaround so blur will show up
+            setTimeout(() => {
+                // Blur the background
+                overlayDiv.style.backdropFilter = 'blur(10px)';
+                overlayDiv.style.opacity = '1';
+            }, 10); 
+        
+            // Create container for current Screen
+            screenDiv = document.createElement('div');
+            screenDiv.id = 'blobsey-flashcard-ui';
+            overlayDiv.appendChild(screenDiv);
         }
-        overlayDiv.innerHTML = '';
-
-        // setTimeout workaround so blur will show up
-        setTimeout(() => {
-            // Blur the background
-            overlayDiv.style.backdropFilter = 'blur(10px)';
-            overlayDiv.style.opacity = '1';
-        }, 10); 
-    
-        // Create container for UI
-        uiBox = document.createElement('div');
-        uiBox.id = 'blobsey-flashcard-ui';
-        overlayDiv.appendChild(uiBox);
-
-        createFlashcardScreen();
-
     }
-
-
+    
+    // Shows a flashcard and an input box for answering
     function createFlashcardScreen() {
-        // Clear out uiDiv
-        uiBox.innerHTML = '';
-
-        // Content div holds everything and styles it
-        const contentDiv = document.createElement('div');
-        uiBox.appendChild(contentDiv);
+        screenDiv.innerHTML = '';
 
         const form = document.createElement('form');
-        contentDiv.appendChild(form);
+        screenDiv.appendChild(form);
 
         const frontDiv = document.createElement('div');
         frontDiv.innerHTML = flashcard.card_front;
@@ -180,102 +211,112 @@
         form.onsubmit = (event) => {
             event.preventDefault();
             userAnswer = userInput.value;
-            createConfirmScreen();
+
+            const isCorrect = userAnswer.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
+            if (isCorrect) { ++count; }
+            grade = isCorrect ? 3 : 1;
+
+            screens["confirm"].activate();
         };
 
         userInput.focus();
     }
 
-
-    function createConfirmScreen() {
+    // Shows review screen, really should be async because of strict ordering of review -> fetch -> display
+    async function createConfirmScreen() {
         // Start by clearing the current content of overlayDiv
-        uiBox.innerHTML = '';
-
-        const contentDiv = document.createElement('div');
-        uiBox.appendChild(contentDiv);
+        screenDiv.innerHTML = '';
 
         // Show question
         const frontDiv = document.createElement('div');
         frontDiv.innerHTML = flashcard.card_front;
-        contentDiv.appendChild(frontDiv);
+        screenDiv.appendChild(frontDiv);
 
         // Make diff div
         const diffMessage = `Your answer: ${userAnswer}<br>Correct answer: ${flashcard.card_back}`;
         const diffDiv = document.createElement('div');
         diffDiv.innerHTML = diffMessage;
-        contentDiv.appendChild(diffDiv);
+        screenDiv.appendChild(diffDiv);
 
         // Buttons container
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = "blobsey-flashcard-buttons-div";
-        contentDiv.appendChild(buttonsDiv);
-        
+        screenDiv.appendChild(buttonsDiv);
 
-        // Grade flashcard
-        const isCorrect = userAnswer.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
-        if (isCorrect) {
-            ++count;
+        if (grade) {
+            try {
+                await browser.runtime.sendMessage({
+                    action: "reviewFlashcard",
+                    card_id: flashcard.card_id,
+                    grade: grade
+                });    
+            }
+            catch (error) {
+                console.error(error);
+            }
+            grade = null;
         }
 
-        // Send grading information
-        const grade = isCorrect ? 3 : 1;
+        // Fetch next flashcard if haven't already
+        if (!nextFlashcard) {
+            try {
+                nextFlashcard = await fetchNextFlashcard();
+            }
+            catch (error) {
+                const messageDiv = document.createElement('div');
+                screenDiv.appendChild(messageDiv);
 
-        // Does the following with strict ordering: Review -> Fetch next -> Show buttons
-        browser.runtime.sendMessage({
-            action: "reviewFlashcard",
-            card_id: flashcard.card_id,
-            grade: grade
-        })
-        .then(() => {
-            // Attempt to fetch the next flashcard, if fetch is successful then we will add "Another" button
-            return nextFlashcard()
-        })
-        .then(fetchedCard => {
-            // Another button
+                if (error.message === "No cards to review right now.") {
+                    messageDiv.innerHTML = "No more cards to review for today! :)";
+                }
+                else {
+                    messageDiv.innerHTML = error.message;
+                    console.error(error);
+                }
+            }
+        }
+
+        if (nextFlashcard) {
             const anotherButton = document.createElement('button');
             anotherButton.textContent = 'Another';
             anotherButton.onclick = () => {
-                flashcard = fetchedCard;
-                createFlashcardScreen();
+                flashcard = nextFlashcard;
+                nextFlashcard = null;
+                screens["confirm"].deactivate();
             };
             buttonsDiv.appendChild(anotherButton);
-        })
-        .catch(error => {
-            // Handle the case where no more flashcards are available
-            const messageDiv = document.createElement('div');
-            messageDiv.innerHTML = (error.message === "No cards to review right now.") ? "No more cards to review for today! :)" : error.message;
-            contentDiv.appendChild(messageDiv);
-        })
-        .finally(() => {
-              // Confirm button 
-            if (count > 0) {
-                const confirmButton = document.createElement('button');
-                confirmButton.textContent = 'Confirm';
-                confirmButton.onclick = () => {
-                    setTimer(count);
-                    count = 0;
-                    removeOverlay();
-                };
-                buttonsDiv.appendChild(confirmButton);
-            }
+        }
 
-            // Edit button
-            const editButton = document.createElement('button');
-            editButton.textContent = 'Edit';
-            editButton.onclick = () => {
-                createEditScreen();
+        // Add confirm button if at least one flashcard has been answered
+        if (count > 0) {
+            const confirmButton = document.createElement('button');
+            confirmButton.textContent = 'Confirm';
+            confirmButton.onclick = () => {
+                setTimer(count);
+                count = 0;
+                screens["flashcard"].deactivate();
+                screens["confirm"].deactivate();
             };
-            buttonsDiv.appendChild(editButton);
+            buttonsDiv.appendChild(confirmButton);
+        }
 
-            // Note for flashcard count
-            const countNote = document.createElement('div');
-            countNote.innerHTML = `Correct Answers: ${count}`;
-            contentDiv.appendChild(countNote);
+        // Edit button
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit';
+        editButton.onclick = () => {
+            screens["edit"].activate();
+        };
+        buttonsDiv.appendChild(editButton);
 
-            setTimer(count); // Also set timer just in case page refresh
-        });
+        // Note for flashcard count
+        const countNote = document.createElement('div');
+        countNote.innerHTML = `Correct Answers: ${count}`;
+        screenDiv.appendChild(countNote);
+
+        setTimer(count); // Also set timer just in case page refresh
     }
 
+    
     // Helper function to make textarea grow vertically
     function adjustHeight(textarea) {
         const maxHeightVh = (window.innerHeight * 40) / 100; // 40vh == min height
@@ -284,7 +325,7 @@
     }
     
     function createEditScreen() {
-        uiBox.innerHTML = ''; // Clear current content
+        screenDiv.innerHTML = ''; // Clear current content
 
         // Front textarea input
         const form = document.createElement('form');
@@ -297,7 +338,7 @@
         frontInput.addEventListener('input', function() { adjustHeight(this) });
 
         form.appendChild(frontInput);
-        uiBox.appendChild(form);
+        screenDiv.appendChild(form);
         
         adjustHeight(frontInput); // Initially fit textarea to content
 
@@ -316,7 +357,7 @@
         cancelButton.textContent = 'Cancel';
         cancelButton.type = 'button';
         cancelButton.addEventListener('click', function() {
-            createConfirmScreen();
+            screens["edit"].deactivate();
         });
         buttonsDiv.appendChild(cancelButton);
 
@@ -329,38 +370,18 @@
             event.preventDefault();
             submitFlashcardEdit(flashcard.card_id, frontInput.value, backInput.value).then(response => {
                 flashcard = response;
-                createConfirmScreen();
-            }).catch(error => {
+            })
+            .catch(error => {
                 console.error(error.message);
-                removeOverlay();
-                setTimer(1);
+            })
+            .finally(() => {
+                screens["edit"].deactivate();
             });
         };
     }
 
-
-    function removeOverlay() {
-        // Fade out
-        if (overlayDiv) {
-            overlayDiv.addEventListener('transitionend', function handler(e) {
-                // Specifically check for the opacity transition to ensure correct removal
-                if (e.propertyName === 'opacity') {
-                    overlayDiv.remove();
-                    overlayDiv.removeEventListener('transitionend', handler); // Clean up
-                }
-            }, false);
-        
-            // Trigger the fade-out by setting opacity to 0
-            overlayDiv.style.opacity = '0';
-            overlayDiv.style.backdropFilter = 'blur(0px)'
-        }
-        
-        
-        // Restore the original overflow state (scrolling behavior)
-        document.documentElement.style.overflow = originalOverflowState;
-
-        // Reset the isOverlayActive flag
-        isOverlayActive = false;
+    function createListScreen() {
+        return; // TODO
     }
 
 })();

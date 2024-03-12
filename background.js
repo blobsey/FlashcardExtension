@@ -6,12 +6,12 @@ browser.tabs.insertCSS({file: 'styles.css'}); // Inject CSS
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
-  if (alarm.name === "showOverlayAlarm") {
+  if (alarm.name === "showFlashcardAlarm") {
       // Notify all relevant tabs to show the overlay
       browser.tabs.query({url: ["*://*.reddit.com/*", "*://*.youtube.com/*", "*://crouton.net/*"]})
           .then(tabs => {
               tabs.forEach(tab => {
-                  browser.tabs.sendMessage(tab.id, {action: "showOverlay"}).catch(err => console.error(err));
+                  browser.tabs.sendMessage(tab.id, {action: "showFlashcard"}).catch(err => console.error(err));
               });
           }); 
   }
@@ -80,16 +80,16 @@ const requestHandlers = {
         return {config: request.config};
     },
     "resetTimer": async (request) => {
-        await browser.alarms.clear("showOverlayAlarm");
-        const nextOverlayTime = Date.now() + (60000 * request.count); // Current time + interval * 1 minute
+        await browser.alarms.clear("showFlashcardAlarm");
+        const nextFlashcardTime = Date.now() + (60000 * request.count); // Current time + interval * 1 minute
 
-        console.log(`Next overlay time (datetime):\t${new Date(nextOverlayTime).toLocaleString()}`);
+        console.log(`Next overlay time (datetime):\t${new Date(nextFlashcardTime).toLocaleString()}`);
     
-        await browser.storage.local.set({ nextOverlayTime }); // set in local storage as a fallback
-        browser.alarms.create("showOverlayAlarm", { delayInMinutes: request.count });
+        await browser.storage.local.set({ nextFlashcardTime }); // set in local storage as a fallback
+        browser.alarms.create("showFlashcardAlarm", { delayInMinutes: request.count });
         return "Timer reset successfully.";
     },
-    "nextFlashcard": async () => {
+    "fetchNextFlashcard": async () => {
         const data = await handleApiRequest("/next");
         return data;
     },
@@ -178,4 +178,4 @@ async function handleApiRequest(path, options = {}) {
 
 
 // When extension is started, schedule a flashcard to initialize
-browser.storage.local.set({ nextOverlayTime: Date.now() });
+browser.storage.local.set({ nextFlashcardTime: Date.now() });
