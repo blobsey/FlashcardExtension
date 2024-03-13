@@ -17,6 +17,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         navbar.appendChild(button);
     });
 
+    const expandButton = document.createElement('button');
+    expandButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="24" height="24" fill="#fff" stroke="#fff" viewBox="-55.69 -55.69 353.51 353.51">
+    <path d="M227.133 83.033c8.283 0 15-6.716 15-15V15c0-8.284-6.717-15-15-15H174.1c-8.284 0-15 6.716-15 15s6.716 15 15 15h16.82l-69.854 69.854L51.213 30h16.82c8.284 0 15-6.716 15-15s-6.716-15-15-15H15C6.717 0 0 6.716 0 15v53.033c0 8.284 6.717 15 15 15 8.285 0 15-6.716 15-15v-16.82l69.854 69.854L30 190.92V174.1c0-8.284-6.715-15-15-15-8.283 0-15 6.716-15 15v53.033c0 8.284 6.717 15 15 15h53.033c8.284 0 15-6.716 15-15 0-8.284-6.716-15-15-15h-16.82l69.854-69.854 69.854 69.854H174.1c-8.284 0-15 6.716-15 15 0 8.284 6.716 15 15 15h53.033c8.283 0 15-6.716 15-15V174.1c0-8.284-6.717-15-15-15-8.285 0-15 6.716-15 15v16.82l-69.854-69.854 69.854-69.854v16.82c0 8.285 6.715 15.001 15 15.001z"/>
+    </svg>`
+    expandButton.addEventListener('click', function() {
+        browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            browser.tabs.sendMessage(tabs[0].id, {action: "showExpandedPopupScreen"});
+        });
+    }, false);
+    navbar.appendChild(expandButton);
+    
+
     // Determine which tab to open based on the last open tab stored in localStorage
     const lastOpenTab = localStorage.getItem('lastOpenTab') || 'config'; // Default to 'config'
     if (menus[lastOpenTab] && typeof menus[lastOpenTab].func === 'function') {

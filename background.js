@@ -116,6 +116,10 @@ const requestHandlers = {
             body: JSON.stringify(body) // No need to include user_id here
         });
         return data;
+    },
+    "listFlashcards": async (request) => {
+        const data = await handleApiRequest("/list");
+        return data;
     }
 };
 

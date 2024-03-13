@@ -57,8 +57,13 @@
 
     // Listen for messages from the background script to show the overlay
     browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "showFlashcard") {
-            showFlashcard();
+        switch (request.action) {
+            case "showFlashcard":
+                showFlashcard();
+                break;
+            case "showExpandedPopupScreen":
+                showExpandedPopupScreen();
+                break;
         }
     });
 
@@ -92,6 +97,10 @@
                 console.error(error.message);
             setTimer(1);
         });
+    }
+
+    function showExpandedPopupScreen() {
+        screens["list"].activate();
     }
     
 
@@ -381,8 +390,68 @@
         };
     }
 
-    function createListScreen() {
-        return; // TODO
+    async function createListScreen() {
+        screenDiv.innerHTML = ''; // Clear current content
+
+        // Create a close button
+        const closeButton = document.createElement('button');
+        closeButton.id = 'blobsey-flashcard-close-button';
+        closeButton.addEventListener('click', function() {
+            screens["list"].deactivate();
+        });
+        screenDiv.appendChild(closeButton);
+    
+        // Create a container for the table
+        const container = document.createElement('div');
+        container.id = 'blobsey-flashcard-list-container';
+        screenDiv.appendChild(container);
+   
+        
+        // Create a container for the table with a fixed height and overflow
+        const tableContainer = document.createElement('div');
+        tableContainer.id = 'blobsey-flashcard-list-table-container';
+        container.appendChild(tableContainer);
+    
+        // Create a table element
+        const table = document.createElement('table');
+        table.id = 'blobsey-flashcard-list-table';
+        tableContainer.appendChild(table);
+    
+
+        // Create table body
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+    
+        // Fetch flashcards from background.js
+        try {
+            const response = await browser.runtime.sendMessage({ action: "listFlashcards" });
+            if (response.result === "success") {
+                const flashcards = response.flashcards;
+    
+                // Iterate over the flashcards and create table rows
+                flashcards.forEach(card => {
+                    const row = document.createElement('tr');
+                    const frontCell = document.createElement('td');
+                    frontCell.textContent = truncateText(card.card_front, 75);
+                    const backCell = document.createElement('td');
+                    backCell.textContent = truncateText(card.card_back, 75);
+                    row.appendChild(frontCell);
+                    row.appendChild(backCell);
+                    tbody.appendChild(row);
+                });
+            } else {
+                console.error("Failed to fetch flashcards:", response.message);
+            }
+        } catch (error) {
+            console.error("Error fetching flashcards:", error);
+        }
+    }
+    
+    function truncateText(text, maxLength) {
+        if (text.length > maxLength) {
+            return text.slice(0, maxLength) + '...';
+        }
+        return text;
     }
 
 })();
