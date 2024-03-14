@@ -1,6 +1,8 @@
 // content.js
 // Handles UI/UX, application logic
 (async function() {
+
+    // Create Shadow DOM and load CSS from file
     const root = document.createElement('div');
     document.body.appendChild(root);
     const shadowRoot = root.attachShadow({ mode: 'open' });
@@ -120,15 +122,18 @@
     ///////////////
 
     // Global state variables
-    let overlayDiv = null;
-    let screenDiv = null;
-    let currentScreen = null;
-    let originalOverflowState = '';
-    let count = 0;
+    let overlayDiv = null; // Holds entire overlay
+    let screenDiv = null; // Holds container for drawing screens
+    let currentScreen = null; // Keeps track of currently displayed screen to avoid unnecessary re-draws
+    let originalOverflowState = ''; // Original page scrolling behavior
+
+    // For passing information between screens
+    let count = 0; 
     let grade = null;
     let userAnswer = null;
     let flashcard = null;
     let nextFlashcard = null;
+    let editFlashcard = null;
 
     class Screen {
         constructor(render) {
@@ -143,7 +148,7 @@
     
         deactivate() {
             this.active = false;
-            update()
+            update();
         }
     }
 
@@ -186,6 +191,8 @@
             overlayDiv.style.backdropFilter = 'blur(0px)'
         }
         
+        // Reset currentScreen 
+        currentScreen = null;
         
         // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
@@ -327,6 +334,7 @@
         const editButton = document.createElement('button');
         editButton.textContent = 'Edit';
         editButton.onclick = () => {
+            editFlashcard = flashcard;
             screens["edit"].activate();
         };
         buttonsDiv.appendChild(editButton);
@@ -344,7 +352,7 @@
     function adjustHeight(textarea) {
         const maxHeightVh = (window.innerHeight * 40) / 100; // 40vh == min height
         textarea.style.height = 'auto';
-        textarea.style.height = `${Math.max(maxHeightVh, textarea.scrollHeight)}px`;
+        textarea.style.height = `${Math.max(maxHeightVh, textarea.scrollHeight) + 10}px`;
     }
     
     function createEditScreen() {
@@ -353,7 +361,7 @@
         // Front textarea input
         const form = document.createElement('form');
         const frontInput = document.createElement('textarea');
-        frontInput.value = flashcard.card_front;
+        frontInput.value = editFlashcard.card_front;
         frontInput.placeholder = 'Front';
         frontInput.id = 'edit-screen-textarea-front'; 
 
@@ -367,7 +375,7 @@
 
         const backInput = document.createElement('input');
         backInput.type = 'text';
-        backInput.value = flashcard.card_back;
+        backInput.value = editFlashcard.card_back;
         backInput.placeholder = 'Back';
         backInput.id = 'edit-screen-input-back'; 
         form.appendChild(backInput);
@@ -391,7 +399,7 @@
 
         form.onsubmit = (event) => {
             event.preventDefault();
-            submitFlashcardEdit(flashcard.card_id, frontInput.value, backInput.value).then(response => {
+            submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value).then(response => {
                 flashcard = response;
             })
             .catch(error => {
@@ -403,28 +411,13 @@
         };
     }
 
-    const loadingSvg = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <circle id="blobsey-spinner-circle-1" cx="12" cy="12" r="1.5" fill="white" stroke="white"
-            style="transform: translate(-8px, 0); animation: blobsey-spinner-animation 0.75s linear infinite;" />
-    <circle id="blobsey-spinner-circle-2" cx="12" cy="12" r="3" fill="white" stroke="white"
-            style="animation: blobsey-spinner-animation 0.75s linear infinite; animation-delay: -0.375s;" />
-    <circle id="blobsey-spinner-circle-3" cx="12" cy="12" r="1.5" fill="white" stroke="white"
-            style="transform: translate(8px, 0); animation: blobsey-spinner-animation 0.75s linear infinite;" />
-  
-    <style>
-      @keyframes blobsey-spinner-animation {
-        0%, 100% {
-          r: 1.5px;
-        }
-        50% {
-          r: 3px;
-        }
-      }
-    </style>
-  </svg>`;
+    const loadingSvg = `<svg fill="white" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_9y7u{animation:spinner_fUkk 2.4s linear infinite;animation-delay:-2.4s}.spinner_DF2s{animation-delay:-1.6s}.spinner_q27e{animation-delay:-.8s}@keyframes spinner_fUkk{8.33%{x:13px;y:1px}25%{x:13px;y:1px}33.3%{x:13px;y:13px}50%{x:13px;y:13px}58.33%{x:1px;y:13px}75%{x:1px;y:13px}83.33%{x:1px;y:1px}}</style><rect class="spinner_9y7u" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_DF2s" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_q27e" x="1" y="1" rx="1" width="10" height="10"/></svg>`;
 
     async function createListScreen() {
         screenDiv.innerHTML = ''; // Clear current content
+        const fullscreenDiv = document.createElement('div');
+        fullscreenDiv.id = 'blobsey-flashcard-fullscreen-div';
+        screenDiv.appendChild(fullscreenDiv);
 
         // Create a close button
         const closeButton = document.createElement('button');
@@ -432,12 +425,12 @@
         closeButton.addEventListener('click', function() {
             screens["list"].deactivate();
         });
-        screenDiv.appendChild(closeButton);
+        fullscreenDiv.appendChild(closeButton);
     
         // Create a container for the table
         const container = document.createElement('div');
         container.id = 'blobsey-flashcard-list-container';
-        screenDiv.appendChild(container);
+        fullscreenDiv.appendChild(container);
    
         container.innerHTML =  loadingSvg;
 
@@ -446,46 +439,77 @@
         try {
             const response = await browser.runtime.sendMessage({ action: "listFlashcards" });
             if (response.result === "success") {
-                const flashcards = response.flashcards;
+                let flashcards = response.flashcards;
 
                 container.innerHTML = '';
 
-                // Create a container for the table with a fixed height and overflow
+                // Create a search bar
+                const searchBar = document.createElement('input');
+                searchBar.id = 'blobsey-flashcard-search-bar';
+                searchBar.setAttribute('type', 'text');
+                searchBar.setAttribute('placeholder', 'Search flashcards...');
+                fullscreenDiv.insertBefore(searchBar, container); // Insert before the container
+
+                // tableContainer to hold table
                 const tableContainer = document.createElement('div');
                 tableContainer.id = 'blobsey-flashcard-list-table-container';
                 container.appendChild(tableContainer);
-            
-                // Create a table element
-                const table = document.createElement('table');
-                table.id = 'blobsey-flashcard-list-table';
-                tableContainer.appendChild(table);
-            
+                updateFlashcardList(tableContainer, flashcards);
 
-                // Create table body
-                const tbody = document.createElement('tbody');
-                table.appendChild(tbody);
-    
-                // Iterate over the flashcards and create table rows
-                flashcards.forEach(card => {
-                    const row = document.createElement('tr');
-                    const frontCell = document.createElement('td');
-                    frontCell.textContent = truncateText(card.card_front, 50);
-                    const backCell = document.createElement('td');
-                    backCell.textContent = truncateText(card.card_back, 50);
-                    row.appendChild(frontCell);
-                    row.appendChild(backCell);
-                    tbody.appendChild(row);
+                // Filter cards based on searchText
+                searchBar.addEventListener('input', () => {
+                    const searchText = searchBar.value.trim();
+                    if (searchText) {
+                        flashcards = response.flashcards.filter(card => 
+                            card.card_front.toLowerCase().includes(searchText.toLowerCase()) || 
+                            card.card_back.toLowerCase().includes(searchText.toLowerCase()));
+                    } else {
+                        // If the search bar is cleared, show all flashcards again
+                        flashcards = response.flashcards;
+                    }
+                    updateFlashcardList(tableContainer, flashcards);
                 });
+
             } else {
-                console.error("Failed to fetch flashcards:", response.message);
+                throw new Error(response.message);
             }
         } catch (error) {
+            container.innerHTML = error.message;
             console.error("Error fetching flashcards:", error);
         }
+    }
 
-        
+    // Helper function to update list of flashcards (used with searchbar)
+    function updateFlashcardList(tableContainer, flashcards) {
+        tableContainer.innerHTML = ''; // Clear existing content
+        tableContainer.id = 'blobsey-flashcard-list-table-container';
+    
+        const table = document.createElement('table');
+        table.id = 'blobsey-flashcard-list-table';
+        tableContainer.appendChild(table);
+    
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+    
+        flashcards.forEach(card => {
+            const row = document.createElement('tr');
+            const frontCell = document.createElement('td');
+            frontCell.textContent = truncateText(card.card_front, 50);
+            const backCell = document.createElement('td');
+            backCell.textContent = truncateText(card.card_back, 50);
+            row.appendChild(frontCell);
+            row.appendChild(backCell);
+            tbody.appendChild(row);
+
+            // Add click event listener to each row
+            row.addEventListener('click', function() {
+                editFlashcard = card; // Update the global variable with the selected flashcard
+                screens["edit"].activate(); // Switch to the edit screen
+            });
+        });
     }
     
+
     // Helper function to cut off flashcard text that is too long
     function truncateText(text, maxLength) {
         const ellipsis = '...';
@@ -497,8 +521,4 @@
         return text;
     }
     
-  })();
-  
-
-(function() {
 })();

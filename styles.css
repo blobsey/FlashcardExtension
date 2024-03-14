@@ -27,7 +27,9 @@
     width: 100%;
     height: auto;
     margin: 0;
-    display: flex; flex-direction: column; align-items: center;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
     overflow-y: auto; z-index: 10000;
 }
 
@@ -53,6 +55,8 @@
     padding: .5em;
     max-width: 40em;
     margin-top: 1em;
+    font-family: inherit;
+    font-size: inherit;
     display: flex; flex-direction: column; align-items: center;
 }
 
@@ -109,6 +113,7 @@
     overflow-x: auto; 
     padding: .5em;
     margin: .25em auto .25em auto;
+    text-align: left;
 }
 
 .blobsey-flashcard-ui #edit-screen-textarea-front {
@@ -125,6 +130,8 @@
     height: max-content;
     max-height: 75vh;
     white-space: pre-wrap;
+    resize: none;
+    background-color: inherit;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-close-button {
@@ -169,45 +176,62 @@
     opacity: 1;
 }
 
+.blobsey-flashcard-ui #blobsey-flashcard-fullscreen-div {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    align-items: center;
+}
+
 .blobsey-flashcard-ui #blobsey-flashcard-list-container {
     max-width: 60em;
-    max-height: 100vh;
+    flex: 1;
     overflow-y: auto;
     display: block;
     box-sizing: border-box;
+    margin-top: 1em;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-table {
     display: table;
     width: 100%;
-    border-collapse: collapse;
     table-layout: fixed;
 }
 
-.blobsey-flashcard-ui #blobsey-flashcard-list-table tr:nth-child(odd) {
-    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 5%, rgba(0, 0, 0, .25) 25%, rgba(0, 0, 0, .25) 75%, rgba(0, 0, 0, 0) 95%, rgba(0, 0, 0, 0));
+/* lines between rows in table */
+.blobsey-flashcard-ui #blobsey-flashcard-list-table tr {
+    display: block;
+    border-bottom: 1px solid;
+    border-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5) 25%, rgba(255, 255, 255, 0.5) 75%, rgba(255, 255, 255, 0)) 2;
+    transition: background-color 0.3s ease;
 }
 
-.blobsey-flashcard-ui #blobsey-flashcard-list-table tr:nth-child(even) {
-    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 5%, rgba(0, 0, 0, .125) 25%, rgba(0, 0, 0, .125) 75%, rgba(0, 0, 0, 0) 95%, rgba(0, 0, 0, 0));
+.blobsey-flashcard-ui #blobsey-flashcard-list-table tr:last-child {
+    border-bottom: none;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-table th,
 .blobsey-flashcard-ui #blobsey-flashcard-list-table td {
     box-sizing: border-box;
     display: inline-block;
-    padding: .5em 0;
+    padding: 1em 0;
     font-family: monospace, sans-serif;
     font-size: .75em;
+    cursor: pointer;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-table th:first-child,
 .blobsey-flashcard-ui #blobsey-flashcard-list-table td:first-child {
-    width: 75%; 
+    width: 75%;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-table th:last-child,
 .blobsey-flashcard-ui #blobsey-flashcard-list-table td:last-child {
     text-align: right;
-    width: 25%; 
+    width: 25%;
+}
+
+/* Hover effect for table rows */
+.blobsey-flashcard-ui #blobsey-flashcard-list-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
