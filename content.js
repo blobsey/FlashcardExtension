@@ -1,7 +1,18 @@
 // content.js
 // Handles UI/UX, application logic
+(async function() {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const shadowRoot = root.attachShadow({ mode: 'open' });
+    const cssFileUrl = browser.runtime.getURL('styles.css'); 
+    const cssResponse = await fetch(cssFileUrl);
+    const cssText = await cssResponse.text();
+  
+    const styleEl = document.createElement('style');
+    styleEl.textContent = cssText;
+    shadowRoot.appendChild(styleEl);
 
-(function() {
+
     /////////////////////////////////
     // Application Logic Functions //
     /////////////////////////////////
@@ -46,7 +57,7 @@
 
     // Iterates through DOM and pauses any media
     function pauseMediaPlayback() {
-        const mediaElements = document.querySelectorAll("video, audio");
+        const mediaElements = shadowRoot.querySelectorAll("video, audio");
         mediaElements.forEach(media => {
             if (!media.paused) {
                 media.pause();
@@ -183,11 +194,13 @@
     // Create overlay which darkens/blurs screen, prepare screenDiv for rendering
     function createOverlayIfNotExists() {
         // Get the root div of the overlay and wipe it out
-        overlayDiv = document.getElementById('blobsey-flashcard-overlay');
+        overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay');
         if (!overlayDiv) {
+            originalOverflowState = document.documentElement.style.overflow;
+            document.documentElement.style.overflow = 'hidden';
             overlayDiv = document.createElement('div');
             overlayDiv.id = 'blobsey-flashcard-overlay';
-            document.body.appendChild(overlayDiv)
+            shadowRoot.appendChild(overlayDiv)
             
             // setTimeout workaround so blur will show up
             setTimeout(() => {
@@ -198,7 +211,7 @@
         
             // Create container for current Screen
             screenDiv = document.createElement('div');
-            screenDiv.id = 'blobsey-flashcard-ui';
+            screenDiv.classList.add('blobsey-flashcard-ui');
             overlayDiv.appendChild(screenDiv);
         }
     }
@@ -390,6 +403,26 @@
         };
     }
 
+    const loadingSvg = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <circle id="blobsey-spinner-circle-1" cx="12" cy="12" r="1.5" fill="white" stroke="white"
+            style="transform: translate(-8px, 0); animation: blobsey-spinner-animation 0.75s linear infinite;" />
+    <circle id="blobsey-spinner-circle-2" cx="12" cy="12" r="3" fill="white" stroke="white"
+            style="animation: blobsey-spinner-animation 0.75s linear infinite; animation-delay: -0.375s;" />
+    <circle id="blobsey-spinner-circle-3" cx="12" cy="12" r="1.5" fill="white" stroke="white"
+            style="transform: translate(8px, 0); animation: blobsey-spinner-animation 0.75s linear infinite;" />
+  
+    <style>
+      @keyframes blobsey-spinner-animation {
+        0%, 100% {
+          r: 1.5px;
+        }
+        50% {
+          r: 3px;
+        }
+      }
+    </style>
+  </svg>`;
+
     async function createListScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
@@ -406,35 +439,39 @@
         container.id = 'blobsey-flashcard-list-container';
         screenDiv.appendChild(container);
    
-        
-        // Create a container for the table with a fixed height and overflow
-        const tableContainer = document.createElement('div');
-        tableContainer.id = 'blobsey-flashcard-list-table-container';
-        container.appendChild(tableContainer);
-    
-        // Create a table element
-        const table = document.createElement('table');
-        table.id = 'blobsey-flashcard-list-table';
-        tableContainer.appendChild(table);
-    
+        container.innerHTML =  loadingSvg;
 
-        // Create table body
-        const tbody = document.createElement('tbody');
-        table.appendChild(tbody);
     
         // Fetch flashcards from background.js
         try {
             const response = await browser.runtime.sendMessage({ action: "listFlashcards" });
             if (response.result === "success") {
                 const flashcards = response.flashcards;
+
+                container.innerHTML = '';
+
+                // Create a container for the table with a fixed height and overflow
+                const tableContainer = document.createElement('div');
+                tableContainer.id = 'blobsey-flashcard-list-table-container';
+                container.appendChild(tableContainer);
+            
+                // Create a table element
+                const table = document.createElement('table');
+                table.id = 'blobsey-flashcard-list-table';
+                tableContainer.appendChild(table);
+            
+
+                // Create table body
+                const tbody = document.createElement('tbody');
+                table.appendChild(tbody);
     
                 // Iterate over the flashcards and create table rows
                 flashcards.forEach(card => {
                     const row = document.createElement('tr');
                     const frontCell = document.createElement('td');
-                    frontCell.textContent = truncateText(card.card_front, 75);
+                    frontCell.textContent = truncateText(card.card_front, 50);
                     const backCell = document.createElement('td');
-                    backCell.textContent = truncateText(card.card_back, 75);
+                    backCell.textContent = truncateText(card.card_back, 50);
                     row.appendChild(frontCell);
                     row.appendChild(backCell);
                     tbody.appendChild(row);
@@ -445,13 +482,23 @@
         } catch (error) {
             console.error("Error fetching flashcards:", error);
         }
+
+        
     }
     
+    // Helper function to cut off flashcard text that is too long
     function truncateText(text, maxLength) {
+        const ellipsis = '...';
+        const maxTextLength = maxLength - ellipsis.length; // Adjust for the ellipsis
+    
         if (text.length > maxLength) {
-            return text.slice(0, maxLength) + '...';
+            return text.slice(0, maxTextLength) + ellipsis;
         }
         return text;
     }
+    
+  })();
+  
 
+(function() {
 })();

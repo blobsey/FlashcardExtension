@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
             browser.tabs.sendMessage(tabs[0].id, {action: "showExpandedPopupScreen"});
         });
+        window.close();
     }, false);
     navbar.appendChild(expandButton);
     

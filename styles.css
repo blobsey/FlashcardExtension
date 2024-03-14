@@ -8,9 +8,7 @@
     backdrop-filter: blur(0px); 
     opacity: 0; 
     transition: opacity .25s ease, backdrop-filter .25s ease;
-    
     z-index: 9998;
-
     display: flex;
     justify-content: center;
     align-items: center;
@@ -18,14 +16,13 @@
 }
 
 
-#blobsey-flashcard-ui, #blobsey-flashcard-ui * {
-    all: initial;
+.blobsey-flashcard-ui, .blobsey-flashcard-ui * {
     box-sizing: border-box;
     font-family: system-ui, sans-serif; 
     color: white; 
 }
 
-#blobsey-flashcard-ui {
+.blobsey-flashcard-ui {
     max-width: 120em;
     width: 100%;
     height: auto;
@@ -34,7 +31,7 @@
     overflow-y: auto; z-index: 10000;
 }
 
-#blobsey-flashcard-ui div {
+.blobsey-flashcard-ui div {
     display: block;
     text-align: center;
     padding: .5em;
@@ -42,7 +39,7 @@
     white-space: pre-wrap;
 }
 
-#blobsey-flashcard-ui form {
+.blobsey-flashcard-ui form {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -50,7 +47,7 @@
     width: 100%;
 }
 
-#blobsey-flashcard-ui input {
+.blobsey-flashcard-ui input {
     border: 2px solid rgba(255, 255, 255, 0.5); background: none;
     border-radius: 5px; outline: none;
     padding: .5em;
@@ -59,11 +56,11 @@
     display: flex; flex-direction: column; align-items: center;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-buttons-div {
+.blobsey-flashcard-ui #blobsey-flashcard-buttons-div {
     display: flex; justify-content: center;
 }
 
-#blobsey-flashcard-ui button {
+.blobsey-flashcard-ui button {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -81,18 +78,18 @@
     transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }    
 
-#blobsey-flashcard-ui button:focus {
+.blobsey-flashcard-ui button:focus {
     background-color: rgba(255, 255, 255, 0.2); 
     border-color: rgba(255, 255, 255, 0.75);
 }
 
-#blobsey-flashcard-ui button:active {
+.blobsey-flashcard-ui button:active {
     background-color: rgba(255, 255, 255, 0.3); 
     border-color: white; 
 }
 
 /* Shared for code and pre */
-#blobsey-flashcard-ui pre, #blobsey-flashcard-ui code {
+.blobsey-flashcard-ui pre, .blobsey-flashcard-ui code {
     font-size: 16px; 
     font-family: monospace; 
     color: #d1d5db; 
@@ -101,11 +98,11 @@
     border: 1px solid rgba(255, 255, 255, .1); 
 }       
 
-#blobsey-flashcard-ui code {
+.blobsey-flashcard-ui code {
     padding: .20em;
 }
 
-#blobsey-flashcard-ui pre {
+.blobsey-flashcard-ui pre {
     white-space: pre-wrap;
     display: block;
     width: max-content;
@@ -114,7 +111,7 @@
     margin: .25em auto .25em auto;
 }
 
-#blobsey-flashcard-ui #edit-screen-textarea-front {
+.blobsey-flashcard-ui #edit-screen-textarea-front {
     color: #d1d5db;
     font-family: monospace;
     border: 2px solid rgba(255, 255, 255, 0.1); 
@@ -130,7 +127,7 @@
     white-space: pre-wrap;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-close-button {
+.blobsey-flashcard-ui #blobsey-flashcard-close-button {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -148,31 +145,14 @@
     z-index: 1;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-close-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    border: none;
-    font-size: 18px;
-    padding: 5px 10px;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 40px;
-    height: 40px;
-    background-color: transparent;
-    z-index: 1;
-}
-
-#blobsey-flashcard-ui #blobsey-flashcard-close-button::before {
+.blobsey-flashcard-ui #blobsey-flashcard-close-button::before {
     content: "×";
     color: #fff;
     position: relative;
     top: -2px;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-close-button::after {
+.blobsey-flashcard-ui #blobsey-flashcard-close-button::after {
     content: "";
     position: absolute;
     top: 0;
@@ -185,58 +165,49 @@
     z-index: -1;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-close-button:hover::after {
+.blobsey-flashcard-ui #blobsey-flashcard-close-button:hover::after {
     opacity: 1;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-list-container {
-    max-width: 75em;
+.blobsey-flashcard-ui #blobsey-flashcard-list-container {
+    max-width: 60em;
     max-height: 100vh;
     overflow-y: auto;
     display: block;
-    align-items: center;
     box-sizing: border-box;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-list-table {
+.blobsey-flashcard-ui #blobsey-flashcard-list-table {
     display: table;
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-list-table tr {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-    padding: .5em 5% .5em 5%;
-    
-}
-
-#blobsey-flashcard-ui #blobsey-flashcard-list-table tr:nth-child(odd) {
+.blobsey-flashcard-ui #blobsey-flashcard-list-table tr:nth-child(odd) {
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 5%, rgba(0, 0, 0, .25) 25%, rgba(0, 0, 0, .25) 75%, rgba(0, 0, 0, 0) 95%, rgba(0, 0, 0, 0));
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-list-table tr:nth-child(even) {
+.blobsey-flashcard-ui #blobsey-flashcard-list-table tr:nth-child(even) {
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 5%, rgba(0, 0, 0, .125) 25%, rgba(0, 0, 0, .125) 75%, rgba(0, 0, 0, 0) 95%, rgba(0, 0, 0, 0));
 }
 
-
-
-#blobsey-flashcard-ui #blobsey-flashcard-list-table th,
-#blobsey-flashcard-ui #blobsey-flashcard-list-table td {
+.blobsey-flashcard-ui #blobsey-flashcard-list-table th,
+.blobsey-flashcard-ui #blobsey-flashcard-list-table td {
+    box-sizing: border-box;
     display: inline-block;
+    padding: .5em 0;
     font-family: monospace, sans-serif;
     font-size: .75em;
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-list-table th:first-child,
-#blobsey-flashcard-ui #blobsey-flashcard-list-table td:first-child {
-    width: 80%; /* Adjust the width as needed */
+.blobsey-flashcard-ui #blobsey-flashcard-list-table th:first-child,
+.blobsey-flashcard-ui #blobsey-flashcard-list-table td:first-child {
+    width: 75%; 
 }
 
-#blobsey-flashcard-ui #blobsey-flashcard-list-table th:last-child,
-#blobsey-flashcard-ui #blobsey-flashcard-list-table td:last-child {
+.blobsey-flashcard-ui #blobsey-flashcard-list-table th:last-child,
+.blobsey-flashcard-ui #blobsey-flashcard-list-table td:last-child {
     text-align: right;
-    width: 20%; /* Adjust the width as needed */
+    width: 25%; 
 }
