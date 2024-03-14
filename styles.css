@@ -1,3 +1,7 @@
+:host {
+    all: initial;
+}
+
 #blobsey-flashcard-overlay {
     position: fixed;
     top: 0;
@@ -185,11 +189,19 @@
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-container {
     max-width: 60em;
+    height: 100vh;
     flex: 1;
     overflow-y: auto;
     display: block;
     box-sizing: border-box;
     margin-top: 1em;
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-loading-div {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-table {
@@ -214,14 +226,16 @@
 .blobsey-flashcard-ui #blobsey-flashcard-list-table td {
     box-sizing: border-box;
     display: inline-block;
-    padding: 1em 0;
+    padding: 1em 1em;
     font-family: monospace, sans-serif;
     font-size: .75em;
     cursor: pointer;
+    white-space: nowrap;    
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-table th:first-child,
 .blobsey-flashcard-ui #blobsey-flashcard-list-table td:first-child {
+    text-align: left;
     width: 75%;
 }
 

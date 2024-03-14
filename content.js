@@ -358,6 +358,14 @@
     function createEditScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
+        // Create a close button
+        const closeButton = document.createElement('button');
+        closeButton.id = 'blobsey-flashcard-close-button';
+        closeButton.addEventListener('click', function() {
+            screens["edit"].deactivate();
+        });
+        screenDiv.appendChild(closeButton);
+
         // Front textarea input
         const form = document.createElement('form');
         const frontInput = document.createElement('textarea');
@@ -432,8 +440,10 @@
         container.id = 'blobsey-flashcard-list-container';
         fullscreenDiv.appendChild(container);
    
-        container.innerHTML =  loadingSvg;
-
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'blobsey-flashcard-loading-div';
+        loadingDiv.innerHTML =  loadingSvg;
+        container.appendChild(loadingDiv);
     
         // Fetch flashcards from background.js
         try {
