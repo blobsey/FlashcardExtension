@@ -1,3 +1,7 @@
+:host {
+    all: initial;
+}
+
 #blobsey-flashcard-overlay {
     position: fixed;
     top: 0;
@@ -50,13 +54,16 @@
 }
 
 .blobsey-flashcard-ui input {
-    border: 2px solid rgba(255, 255, 255, 0.5); background: none;
-    border-radius: 5px; outline: none;
-    padding: .5em;
+    background: none;
+    border-top: none;
+    border-bottom: 1px solid;
+    border-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5) 25%, rgba(255, 255, 255, 0.5) 75%, rgba(255, 255, 255, 0)) 2;
+    outline: none;
     max-width: 40em;
     margin-top: 1em;
     font-family: inherit;
     font-size: inherit;
+    text-align: center;
     display: flex; flex-direction: column; align-items: center;
 }
 
@@ -70,26 +77,68 @@
     align-items: center;
     text-align: center; 
     width: 6em;
-    padding: 10px 20px; 
-    margin-top: 20px;
+    padding: .25em; 
     font-size: 16px;
     cursor: pointer;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.5); 
     background: none;
     margin: 0 10px;
-    border-radius: 15px;
+    border-radius: 5px;
     outline: none;
-    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    transition: background-color 0.1s, border-color 0.3s, color 0.3s;
 }    
 
-.blobsey-flashcard-ui button:focus {
-    background-color: rgba(255, 255, 255, 0.2); 
-    border-color: rgba(255, 255, 255, 0.75);
+.blobsey-flashcard-ui button:hover {
+    color: rgba(255, 255, 255, 1);
+    background-color: rgba(255, 255, 255, 0.1); 
+    border-color: rgba(255, 255, 255, .75);
 }
 
-.blobsey-flashcard-ui button:active {
-    background-color: rgba(255, 255, 255, 0.3); 
-    border-color: white; 
+
+.blobsey-flashcard-ui button:focus {
+    color: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
+}
+
+
+@keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-50%) translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+  
+  @keyframes fadeOut {
+    0% {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(-50%)  }
+}
+
+.blobsey-flashcard-ui .toast {
+    width: fit-content;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, .25);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in-out forwards, fadeOut 0.3s ease-in-out 5s forwards;
 }
 
 /* Shared for code and pre */
@@ -99,11 +148,11 @@
     color: #d1d5db; 
     background-color: rgba(0, 0, 0, .25); 
     border-radius: 4px; 
-    border: 1px solid rgba(255, 255, 255, .1); 
+    border: 1px solid rgba(255, 255, 255, .2); 
 }       
 
 .blobsey-flashcard-ui code {
-    padding: .20em;
+    padding: .1em;
 }
 
 .blobsey-flashcard-ui pre {
@@ -119,7 +168,7 @@
 .blobsey-flashcard-ui #edit-screen-textarea-front {
     color: #d1d5db;
     font-family: monospace;
-    border: 2px solid rgba(255, 255, 255, 0.1); 
+    border: 2px solid rgba(255, 255, 255, 0.2); 
     border-radius: 5px;
     outline: none;
     width: 90%;

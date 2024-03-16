@@ -47,6 +47,41 @@
             throw new Error(response.message); // Propagate the error to be handled by the caller
         }
     }
+
+    // Deletes a flashcard
+    async function submitFlashcardDelete(card_id) {
+        try {
+          const response = await browser.runtime.sendMessage({ action: "deleteFlashcard", card_id: card_id });
+          if (response.result === "success") {
+            return response;
+          } else {
+            throw new Error(response.message);
+          }
+        } catch (error) {
+          console.error("Error deleting flashcard:", error);
+          throw error;
+        }
+      }
+
+    // Adds a flashcard
+    async function submitFlashcardAdd(cardFront, cardBack) {
+        try {
+          const response = await browser.runtime.sendMessage({
+            action: "addFlashcard",
+            card_front: cardFront,
+            card_back: cardBack
+          });
+      
+          if (response.result === "success") {
+            return response;
+          } else {
+            throw new Error(response.message);
+          }
+        } catch (error) {
+          console.error("Error adding flashcard:", error);
+          throw error;
+        }
+    }
     
 
     // Sets alarm for "minutes" minutes to show next overlay
@@ -85,7 +120,8 @@
         'www.reddit.com',
         'www.youtube.com',
         'twitter.com',
-        'www.tiktok.com'
+        'www.tiktok.com',
+        'finnzink.com'
     ];
 
     // Function to check if the current site is allowed
@@ -253,6 +289,7 @@
 
         const userInput = document.createElement('input');
         userInput.type = 'text';
+        userInput.placeholder = 'Type answer here'
         form.appendChild(userInput);
 
         form.onsubmit = (event) => {
@@ -409,6 +446,7 @@
         buttonsDiv.id = 'blobsey-flashcard-buttons-div'
         form.appendChild(buttonsDiv);
 
+        // Cancel button
         const cancelButton = document.createElement('button');
         cancelButton.textContent = 'Cancel';
         cancelButton.type = 'button';
@@ -417,6 +455,27 @@
         });
         buttonsDiv.appendChild(cancelButton);
 
+        // Delete button
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.type = 'button';
+        deleteButton.addEventListener('click', function() {
+          if (confirm("Are you sure you want to delete this flashcard?")) {
+            const deletedFlashcard = { ...editFlashcard };
+            submitFlashcardDelete(editFlashcard.card_id)
+              .then(() => {
+                flashcard = null;
+                screens["edit"].deactivate();
+                showToast('Flashcard deleted. ', 10000); // TODO: add undo function (client side ??)
+              })
+              .catch(error => {
+                console.error(error.message);
+              });
+          }
+        });
+        buttonsDiv.appendChild(deleteButton);
+
+        // Save button
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save';
         saveButton.type = 'submit';
@@ -435,6 +494,34 @@
             });
         };
     }
+
+    function showToast(message, duration, undoFunction) {
+        const toast = document.createElement('div');
+        toast.classList.add('toast');
+      
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        toast.appendChild(messageSpan);
+      
+        if (undoFunction) {
+          const undoLink = document.createElement('a');
+          undoLink.textContent = 'Undo';
+          undoLink.href = '#';
+          undoLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            undoFunction();
+            toast.remove();
+          });
+          toast.appendChild(undoLink);
+        }
+      
+        screenDiv.appendChild(toast);
+      
+        setTimeout(() => {
+          toast.remove();
+        }, duration);
+    }
+
 
     const loadingSvg = `<svg fill="white" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_9y7u{animation:spinner_fUkk 2.4s linear infinite;animation-delay:-2.4s}.spinner_DF2s{animation-delay:-1.6s}.spinner_q27e{animation-delay:-.8s}@keyframes spinner_fUkk{8.33%{x:13px;y:1px}25%{x:13px;y:1px}33.3%{x:13px;y:13px}50%{x:13px;y:13px}58.33%{x:1px;y:13px}75%{x:1px;y:13px}83.33%{x:1px;y:1px}}</style><rect class="spinner_9y7u" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_DF2s" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_q27e" x="1" y="1" rx="1" width="10" height="10"/></svg>`;
 

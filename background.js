@@ -120,6 +120,12 @@ const requestHandlers = {
     "listFlashcards": async (request) => {
         const data = await handleApiRequest("/list");
         return data;
+    },
+    "deleteFlashcard": async (request) => {
+        const data = await handleApiRequest(`/delete/${request.card_id}`, {
+          method: 'DELETE'
+        });
+        return data;
     }
 };
 
