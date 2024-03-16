@@ -80,19 +80,19 @@
     padding: .25em; 
     font-size: 16px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.5); 
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.75); 
     background: none;
     margin: 0 10px;
     border-radius: 5px;
     outline: none;
-    transition: background-color 0.1s, border-color 0.3s, color 0.3s;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
 }    
 
 .blobsey-flashcard-ui button:hover {
-    color: rgba(255, 255, 255, 1);
+    color: rgba(255, 255, 255, .85);
     background-color: rgba(255, 255, 255, 0.1); 
-    border-color: rgba(255, 255, 255, .75);
+    border-color: rgba(255, 255, 255, .85);
 }
 
 

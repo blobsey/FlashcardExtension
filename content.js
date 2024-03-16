@@ -313,11 +313,11 @@
 
         // Show question
         const frontDiv = document.createElement('div');
-        frontDiv.innerHTML = flashcard.card_front;
+        frontDiv.innerHTML = flashcard ? flashcard.card_front : "<code>&ltdeleted&gt</code>";
         screenDiv.appendChild(frontDiv);
 
         // Make diff div
-        const diffMessage = `Your answer: ${userAnswer}<br>Correct answer: ${flashcard.card_back}`;
+        const diffMessage = `Your answer: ${userAnswer}<br>Correct answer: ${flashcard ? flashcard.card_back : ""}`;
         const diffDiv = document.createElement('div');
         diffDiv.innerHTML = diffMessage;
         screenDiv.appendChild(diffDiv);
@@ -385,13 +385,15 @@
         }
 
         // Edit button
-        const editButton = document.createElement('button');
-        editButton.textContent = 'Edit';
-        editButton.onclick = () => {
-            editFlashcard = flashcard;
-            screens["edit"].activate();
-        };
-        buttonsDiv.appendChild(editButton);
+        if (flashcard) {
+            const editButton = document.createElement('button');
+            editButton.textContent = 'Edit';
+            editButton.onclick = () => {
+                editFlashcard = flashcard;
+                screens["edit"].activate();
+            };
+            buttonsDiv.appendChild(editButton);
+        }
 
         // Note for flashcard count
         const countNote = document.createElement('div');
