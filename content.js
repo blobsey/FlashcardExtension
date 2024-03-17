@@ -186,6 +186,7 @@
     let flashcard = null;
     let nextFlashcard = null;
     let editFlashcard = null;
+    let kbShortcuts = {};
 
     class Screen {
         constructor(render) {
@@ -220,6 +221,7 @@
                 return;
             else {
                 currentScreen = screen;
+                kbShortcuts = {'Tab': trapFocus};
                 createOverlayIfNotExists();
                 screen.render();
                 return;
@@ -240,9 +242,15 @@
             overlayDiv.style.opacity = '0';
             overlayDiv.style.backdropFilter = 'blur(0px)'
         }
+
+        // Remove listener for keyboard shortcuts
+        document.removeEventListener('keydown', handleKbInput);
         
         // Reset currentScreen 
         currentScreen = null;
+
+        // Remove tabindex from root to prevent it from being focusable while overlay closed
+        root.removeAttribute('tabindex');
         
         // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
@@ -252,12 +260,39 @@
     function getCurrentScreen() {
         for (const key in screens) {
             if (screens[key].active) {
-                return screens[key]
+                return screens[key];
             }
         }
-
         return null; // If no active screens, return null
     }
+
+    function trapFocus() {
+        const focusableElements = root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const firstFocusableElement = focusableElements[0];
+        const lastFocusableElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey && document.activeElement === firstFocusableElement) {
+            event.preventDefault();
+            lastFocusableElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
+            event.preventDefault();
+            firstFocusableElement.focus();
+        }
+    }
+
+    // Boilerplate, intended to be used with keydown listener to provide way to easily add keyboard shortcuts
+    function handleKbInput(event) {
+        const { key, ctrlKey, shiftKey } = event;
+    
+        // Check if the overlay or its child elements have focus
+        if (root && (root === document.activeElement || root.contains(document.activeElement))) {
+            if (kbShortcuts.hasOwnProperty(key)) {
+                event.preventDefault();
+                kbShortcuts[key]();
+            }
+        }
+    }
+
 
     // Create overlay which darkens/blurs screen, prepare screenDiv for rendering
     function createOverlayIfNotExists() {
@@ -268,7 +303,9 @@
             document.documentElement.style.overflow = 'hidden';
             overlayDiv = document.createElement('div');
             overlayDiv.id = 'blobsey-flashcard-overlay';
-            shadowRoot.appendChild(overlayDiv)
+            shadowRoot.appendChild(overlayDiv);
+            root.setAttribute('tabindex', '-1');
+            root.focus();
             
             // setTimeout workaround so blur will show up
             setTimeout(() => {
@@ -281,6 +318,9 @@
             screenDiv = document.createElement('div');
             screenDiv.classList.add('blobsey-flashcard-ui');
             overlayDiv.appendChild(screenDiv);
+
+            // Set up main keyboard shortcut event listener
+            document.addEventListener('keydown', handleKbInput);
         }
     }
 
@@ -291,6 +331,9 @@
         closeButton.id = 'blobsey-flashcard-close-button';
         closeButton.addEventListener('click', func);
         screenDiv.appendChild(closeButton);
+        
+        // If close button is added, esc should also function as a close button
+        kbShortcuts["Escape"] = func;
     }
 
     function closeAllScreens() {
@@ -599,6 +642,7 @@
                 searchBar.setAttribute('type', 'text');
                 searchBar.setAttribute('placeholder', 'Search flashcards...');
                 fullscreenDiv.insertBefore(searchBar, container); // Insert before the container
+                searchBar.focus();
 
                 // tableContainer to hold table
                 const tableContainer = document.createElement('div');
