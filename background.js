@@ -154,35 +154,36 @@ async function handleApiRequest(path, options = {}) {
         options.body = JSON.stringify(options.body);
     }
 
+
     const response = await fetch(url, options);
+    const contentType = response.headers.get('Content-Type');
 
-    // Check if the response is OK (status in the range 200-299)
-    if (!response.ok) {
-        let errorMessage = response.statusText; // Default error message
-        const error = new Error(); // Initialize error object here
+    if (!response.ok) { // If response not in 200-299
+        let error;
 
-        try { // Try to parse response as JSON for more detailed info
+        // If type is 'application/json' try to parse and rethrow error
+        if (contentType && contentType.includes('application/json')) {
             const errorDetails = await response.json();
-            errorMessage = errorDetails.detail || errorMessage; // Use detailed message if available
-
-            // Attach response details to the error object
-            error.message = `API Request not ok: ${errorMessage}`;
-            error.status = response.status;
-            error.statusText = response.statusText;
-            error.responseBody = errorDetails; // Attach the parsed details
-
-            
-        } catch (e) {
-            // If parsing fails, use a generic error message but still include response status
-            error.message = `API Request not ok (response body malformed): ${errorMessage}`;
+            error = new Error(`API Request not ok: ${errorDetails.detail || response.statusText}`);
+            error.details = errorDetails;
+        } else { // If not 'application/json' then parse as plaintext
+            const errorText = await response.text();
+            error = new Error(`API Request not ok: ${errorText || response.statusText}`);
+            error.responseText = errorText;
         }
 
-        console.error(error.message);
+        error.status = response.status;
+        error.statusText = response.statusText;
+        console.error(error);
         throw error;
     }
 
-    // Parse the response body as JSON
-    return await response.json();
+    // Return the response according to content type
+    if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+    } else {
+        return await response.text();
+    }
 }
 
 
