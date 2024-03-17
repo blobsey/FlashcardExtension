@@ -120,8 +120,7 @@
         'www.reddit.com',
         'www.youtube.com',
         'twitter.com',
-        'www.tiktok.com',
-        'finnzink.com'
+        'www.tiktok.com'
     ];
 
     // Function to check if the current site is allowed
