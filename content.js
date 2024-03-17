@@ -285,11 +285,23 @@
         }
     }
 
-    function createCloseButton(func = () => {getCurrentScreen()?.deactivate();}) {
+    /* Close Button takes in an onClick function, or 
+    uses the default which closes all screens but "flashcard" */
+    function createCloseButton(func = closeAllScreens) {
         const closeButton = document.createElement('button');
         closeButton.id = 'blobsey-flashcard-close-button';
         closeButton.addEventListener('click', func);
         screenDiv.appendChild(closeButton);
+    }
+
+    function closeAllScreens() {
+        const screenKeys = Object.keys(screens);
+        for (let i = screenKeys.length - 1; i >= 0; i--) {
+            const screen = screenKeys[i];
+            if (screen !== 'flashcard' && screen !== 'confirm') {
+                screens[screen].deactivate();
+            }
+        }
     }
     
     // Shows a flashcard and an input box for answering
@@ -338,10 +350,13 @@
         screenDiv.appendChild(frontDiv);
 
         // Make diff div
-        const diffMessage = `Your answer: ${userAnswer}<br>Correct answer: ${flashcard ? flashcard.card_back : ""}`;
-        const diffDiv = document.createElement('div');
-        diffDiv.innerHTML = diffMessage;
-        screenDiv.appendChild(diffDiv);
+        if (flashcard) {
+            const diffMessage = `Your answer: ${userAnswer}<br>Correct answer: ${flashcard.card_back}`;
+            const diffDiv = document.createElement('div');
+            diffDiv.innerHTML = diffMessage;
+            screenDiv.appendChild(diffDiv);
+        }
+
 
         // Buttons container
         const buttonsDiv = document.createElement('div');
@@ -398,12 +413,12 @@
             confirmButton.textContent = 'Confirm';
 
             // Override closing function for close button to apply the timer
-            function onClose() {
+            const onClose = () => {
                 setTimer(count);
                 count = 0;
                 screens["flashcard"].deactivate();
                 screens["confirm"].deactivate();
-            }
+            };
             createCloseButton(onClose);
             confirmButton.onclick = onClose;
 
@@ -487,6 +502,8 @@
             const deletedFlashcard = { ...editFlashcard };
             submitFlashcardDelete(editFlashcard.card_id)
               .then(() => {
+                if (nextFlashcard.card_id === editFlashcard.card_id)
+                    nextFlashcard = null;
                 if (flashcard.card_id === editFlashcard.card_id)
                     flashcard = null;
                 editFlashcard = null;
