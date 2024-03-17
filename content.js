@@ -215,17 +215,15 @@
 
     function update() {
         // Draw the highest priority screen
-        for (const label in screens) {
-            if (screens[label].active) {
-                if (currentScreen === label) {
-                    return;
-                }
-                else {
-                    currentScreen = label;
-                    createOverlayIfNotExists();
-                    screens[label].render();
-                    return;
-                }
+        const screen = getCurrentScreen();
+        if (screen) {
+            if (screen === currentScreen)
+                return;
+            else {
+                currentScreen = screen;
+                createOverlayIfNotExists();
+                screen.render();
+                return;
             }
         }
 
@@ -249,6 +247,17 @@
         
         // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
+    }
+
+    // Iterates through "screens" to get the topmost active one (highest priority)
+    function getCurrentScreen() {
+        for (const key in screens) {
+            if (screens[key].active) {
+                return screens[key]
+            }
+        }
+
+        return null; // If no active screens, return null
     }
 
     // Create overlay which darkens/blurs screen, prepare screenDiv for rendering
@@ -275,9 +284,21 @@
             overlayDiv.appendChild(screenDiv);
         }
     }
+
+    function createCloseButton(func = () => {getCurrentScreen()?.deactivate();}) {
+        const closeButton = document.createElement('button');
+        closeButton.id = 'blobsey-flashcard-close-button';
+        closeButton.addEventListener('click', func);
+        screenDiv.appendChild(closeButton);
+    }
     
     // Shows a flashcard and an input box for answering
     function createFlashcardScreen() {
+        if (!flashcard) {
+            screens["confirm"].activate();
+            return;
+        }
+
         screenDiv.innerHTML = '';
 
         const form = document.createElement('form');
@@ -375,13 +396,19 @@
         if (count > 0 || !nextFlashcard) {
             const confirmButton = document.createElement('button');
             confirmButton.textContent = 'Confirm';
-            confirmButton.onclick = () => {
+
+            // Override closing function for close button to apply the timer
+            function onClose() {
                 setTimer(count);
                 count = 0;
                 screens["flashcard"].deactivate();
                 screens["confirm"].deactivate();
-            };
+            }
+            createCloseButton(onClose);
+            confirmButton.onclick = onClose;
+
             buttonsDiv.appendChild(confirmButton);
+
         }
 
         // Edit button
@@ -414,13 +441,7 @@
     function createEditScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
-        // Create a close button
-        const closeButton = document.createElement('button');
-        closeButton.id = 'blobsey-flashcard-close-button';
-        closeButton.addEventListener('click', function() {
-            screens["edit"].deactivate();
-        });
-        screenDiv.appendChild(closeButton);
+        createCloseButton();
 
         // Front textarea input
         const form = document.createElement('form');
@@ -466,7 +487,9 @@
             const deletedFlashcard = { ...editFlashcard };
             submitFlashcardDelete(editFlashcard.card_id)
               .then(() => {
-                flashcard = null;
+                if (flashcard.card_id === editFlashcard.card_id)
+                    flashcard = null;
+                editFlashcard = null;
                 screens["edit"].deactivate();
                 showToast('Flashcard deleted. ', 10000); // TODO: add undo function (client side ??)
               })
@@ -534,12 +557,7 @@
         screenDiv.appendChild(fullscreenDiv);
 
         // Create a close button
-        const closeButton = document.createElement('button');
-        closeButton.id = 'blobsey-flashcard-close-button';
-        closeButton.addEventListener('click', function() {
-            screens["list"].deactivate();
-        });
-        fullscreenDiv.appendChild(closeButton);
+        createCloseButton();
     
         // Create a container for the table
         const container = document.createElement('div');
