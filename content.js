@@ -120,7 +120,8 @@
         'www.reddit.com',
         'www.youtube.com',
         'twitter.com',
-        'www.tiktok.com'
+        'www.tiktok.com',
+        'crouton.net'
     ];
 
     // Function to check if the current site is allowed
@@ -130,19 +131,19 @@
     }
 
     // On page load, check if we should show the overlay
-    browser.storage.local.get("fetchNextFlashcardTime").then(data => {
+    browser.storage.local.get("nextFlashcardTime").then(data => {
         const currentTime = Date.now();
 
-        // Check if the current site is allowed
+        // Check if the current site is in sitelist
         if (inSiteList(window.location.href)) {
-            // Check if 'fetchNextFlashcardTime' exists
-            if (data.hasOwnProperty('fetchNextFlashcardTime')) {
-                // 'fetchNextFlashcardTime' exists, check if the current time is past this timestamp
-                if (currentTime >= data.fetchNextFlashcardTime) {
+            // Check if 'nextFlashcardTime' exists
+            if (data.hasOwnProperty('nextFlashcardTime')) {
+                // 'nextFlashcardTime' exists, check if the current time is past this timestamp
+                if (currentTime >= data.nextFlashcardTime) {
                     showFlashcard(); // Time has passed, show the overlay
                 } // If time has not passed, do nothing and wait for the next alarm
             } else {
-                showFlashcard(); // 'fetchNextFlashcardTime' probably got deleted, show anyways
+                showFlashcard(); // 'nextFlashcardTime' probably got deleted, show anyways
             }
         }
     })
