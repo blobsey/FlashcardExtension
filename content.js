@@ -221,7 +221,7 @@
                 return;
             else {
                 currentScreen = screen;
-                kbShortcuts = {'Tab': trapFocus};
+                kbShortcuts = {"Tab": trapFocus};
                 createOverlayIfNotExists();
                 screen.render();
                 return;
@@ -248,9 +248,6 @@
         
         // Reset currentScreen 
         currentScreen = null;
-
-        // Remove tabindex from root to prevent it from being focusable while overlay closed
-        root.removeAttribute('tabindex');
         
         // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
@@ -266,19 +263,6 @@
         return null; // If no active screens, return null
     }
 
-    function trapFocus() {
-        const focusableElements = root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        const firstFocusableElement = focusableElements[0];
-        const lastFocusableElement = focusableElements[focusableElements.length - 1];
-
-        if (event.shiftKey && document.activeElement === firstFocusableElement) {
-            event.preventDefault();
-            lastFocusableElement.focus();
-        } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
-            event.preventDefault();
-            firstFocusableElement.focus();
-        }
-    }
 
     // Boilerplate, intended to be used with keydown listener to provide way to easily add keyboard shortcuts
     function handleKbInput(event) {
@@ -288,11 +272,28 @@
         if (root && (root === document.activeElement || root.contains(document.activeElement))) {
             if (kbShortcuts.hasOwnProperty(key)) {
                 event.preventDefault();
-                kbShortcuts[key]();
+                kbShortcuts[key](event);
             }
         }
     }
 
+    // Mimick default tab behavior, but only include overlay elements
+    function trapFocus(event) {
+        const focusableElements = Array.from(overlayDiv.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+        const focusedIndex = focusableElements.indexOf(shadowRoot.activeElement);
+
+        // If current element is from overlay, find the next and focus it
+        if (focusedIndex !== -1) {
+            const nextIndex = event.shiftKey ? focusedIndex - 1 : focusedIndex + 1;
+            focusableElements[(nextIndex % focusableElements.length)].focus();
+        }
+        else if (focusableElements.length > 0) {
+            focusableElements[0].focus();
+        }
+        else {
+            overlayDiv.focus();
+        }
+    }
 
     // Create overlay which darkens/blurs screen, prepare screenDiv for rendering
     function createOverlayIfNotExists() {
@@ -303,9 +304,9 @@
             document.documentElement.style.overflow = 'hidden';
             overlayDiv = document.createElement('div');
             overlayDiv.id = 'blobsey-flashcard-overlay';
+            overlayDiv.setAttribute('tabindex', '-1');
             shadowRoot.appendChild(overlayDiv);
-            root.setAttribute('tabindex', '-1');
-            root.focus();
+
             
             // setTimeout workaround so blur will show up
             setTimeout(() => {
@@ -336,7 +337,11 @@
         kbShortcuts["Escape"] = func;
     }
 
-    function closeAllScreens() {
+    function closeAllScreens(prompt) {
+        // If prompt exists and is a string, confirm before closing
+        if (prompt && typeof prompt === "string" && !confirm(prompt))
+            return;
+
         const screenKeys = Object.keys(screens);
         for (let i = screenKeys.length - 1; i >= 0; i--) {
             const screen = screenKeys[i];
@@ -498,7 +503,9 @@
     function createEditScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
-        createCloseButton();
+        createCloseButton(() => { 
+            closeAllScreens("Close edit screen? (Unsaved edits will be lost)"); 
+        });
 
         // Front textarea input
         const form = document.createElement('form');
@@ -512,6 +519,7 @@
 
         form.appendChild(frontInput);
         screenDiv.appendChild(form);
+        frontInput.focus();
         
         adjustHeight(frontInput); // Initially fit textarea to content
 

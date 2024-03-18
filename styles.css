@@ -225,6 +225,10 @@
     opacity: 1;
 }
 
+.blobsey-flashcard-ui #blobsey-flashcard-close-button:focus {
+    outline: 1px solid rgba(255, 255, 255, 0.5);
+}
+
 .blobsey-flashcard-ui #blobsey-flashcard-fullscreen-div {
     display: flex;
     flex-direction: column;
