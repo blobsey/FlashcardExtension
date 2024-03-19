@@ -22,7 +22,8 @@ div {
 #content input, #content button, #content textarea{
     border: 2px solid rgba(255, 255, 255, 0.2); 
     background: none;
-    border-radius: 5px; outline: none;
+    border-radius: 3px; 
+    outline: none;
     padding: .5em;
     color: inherit;
     font-size: inherit;
@@ -39,7 +40,7 @@ span { /* span is used to auto-widen textarea */
 
 #content textarea {
     color: #d1d5db;
-    border-radius: 5px;
+    border-radius: 3px;
     padding: 10px;
     overflow-y: scroll;
     overflow-x: scroll;

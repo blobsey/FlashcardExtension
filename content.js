@@ -158,7 +158,7 @@
                 flashcard = await fetchNextFlashcard();
             }
             catch (error) {
-                // if (error.message !== "No cards to review right now.")
+                if (error.message !== "No cards to review right now.")
                     console.error(error.message);
                 setTimer(1);
                 return;
@@ -507,62 +507,69 @@
         textarea.style.height = 'auto';
         textarea.style.height = `${Math.max(maxHeightVh, textarea.scrollHeight) + 10}px`;
     }
-    
+
     function createEditScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
-        createCloseButton(() => { 
-            closeAllScreens("Close edit screen? (Unsaved edits will be lost)"); 
-        });
-
+        screenDiv.style.opacity = '0'; // Fade in
+        screenDiv.style.top = '25px'; // Slightly slide up
+        screenDiv.style.position = 'relative'; // Set position to relative for the top property to take effect
+    
         // Front textarea input
         const form = document.createElement('form');
         const frontInput = document.createElement('textarea');
         frontInput.value = editFlashcard.card_front;
         frontInput.placeholder = 'Front';
         frontInput.id = 'edit-screen-textarea-front'; 
-
+    
         // Make textarea expand when typing more
         frontInput.addEventListener('input', function() { adjustHeight(this) });
-
+    
         form.appendChild(frontInput);
         screenDiv.appendChild(form);
         frontInput.focus();
         
         adjustHeight(frontInput); // Initially fit textarea to content
-
+    
         const backInput = document.createElement('input');
         backInput.type = 'text';
         backInput.value = editFlashcard.card_back;
         backInput.placeholder = 'Back';
         backInput.id = 'edit-screen-input-back'; 
         form.appendChild(backInput);
-
+    
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = 'blobsey-flashcard-buttons-div'
         form.appendChild(buttonsDiv);
+    
+        // Function to close edit screen to pass in to x button and cancel button
+        const onClose = (() => {
+            if (confirm("Really close? (Unsaved edits will be lost)"))
+                screenDiv.style.transition = ''; // Clean up animations on close
+                screens["edit"].deactivate();
+        })
+
+        // Close button
+        createCloseButton(onClose);
 
         // Cancel button
         const cancelButton = document.createElement('button');
         cancelButton.textContent = 'Cancel';
         cancelButton.type = 'button';
-        cancelButton.addEventListener('click', function() {
-            screens["edit"].deactivate();
-        });
+        cancelButton.addEventListener('click', onClose);
         buttonsDiv.appendChild(cancelButton);
-
+    
         // Delete button
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Delete';
         deleteButton.type = 'button';
         deleteButton.addEventListener('click', function() {
           if (confirm("Are you sure you want to delete this flashcard?")) {
-            const deletedFlashcard = { ...editFlashcard };
             submitFlashcardDelete(editFlashcard.card_id)
               .then(() => {
-                if (nextFlashcard.card_id === editFlashcard.card_id)
+                if (nextFlashcard && nextFlashcard.card_id === editFlashcard.card_id)
                     nextFlashcard = null;
-                if (flashcard.card_id === editFlashcard.card_id)
+                if (flashcard && flashcard.card_id === editFlashcard.card_id)
                     flashcard = null;
                 editFlashcard = null;
                 screens["edit"].deactivate();
@@ -574,13 +581,13 @@
           }
         });
         buttonsDiv.appendChild(deleteButton);
-
+    
         // Save button
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save';
         saveButton.type = 'submit';
         buttonsDiv.appendChild(saveButton);
-
+    
         form.onsubmit = (event) => {
             event.preventDefault();
             submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value).then(response => {
@@ -593,6 +600,14 @@
                 screens["edit"].deactivate();
             });
         };
+    
+        // Trigger the transition animation
+        setTimeout(() => {
+            screenDiv.style.opacity = '1'; // Fade in
+            screenDiv.style.top = '0px'; // Slightly slide up
+            screenDiv.style.position = 'relative'; // Set position to relative for the top property to take effect
+            screenDiv.style.transition = 'opacity 0.05s ease, top 0.1s ease'; // Timings
+        }, 50);
     }
 
     function showToast(message, duration, undoFunction) {
