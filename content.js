@@ -153,7 +153,6 @@
 
     // Tries to show a flashcard, if there are none then sets a timer 1min from now to check again
     async function showFlashcard() {
-        console.log("showFlashcard() called");
         if (!flashcard) {
             try {
                 flashcard = await fetchNextFlashcard();
@@ -471,6 +470,7 @@
             const onClose = () => {
                 setTimer(count);
                 count = 0;
+                flashcard = null;
                 screens["flashcard"].deactivate();
                 screens["confirm"].deactivate();
             };
