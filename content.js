@@ -28,7 +28,6 @@
         return response.flashcard;
     }
     
-    
     // Edits a flashcard
     async function submitFlashcardEdit(card_id, frontText, backText) {
         const response = await browser.runtime.sendMessage({
@@ -39,7 +38,6 @@
         });
     
         if (response.result === "success") {
-            console.log("Flashcard updated successfully");
             return response.flashcard; // Return the updated flashcard for further processing
         } else {
             // Handle failure
@@ -167,8 +165,6 @@
 
         pauseMediaPlayback();
         screens["flashcard"].activate();
-    
-        
     }
 
     function showExpandedPopupScreen() {
@@ -221,11 +217,18 @@
     };
 
     function update() {
-        // Draw the highest priority screen
+        // Draw highest priority screen
         const screen = getCurrentScreen();
         if (screen) {
-            if (screen === currentScreen)
+            if (screen === currentScreen) {
+                /* Hack to workaround race condition where
+                overlay can be closed but some screens still active */
+                overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay'); 
+                if (!overlayDiv)
+                    for (const key in screens)
+                        screens[key].active = false;
                 return;
+            }
             else {
                 currentScreen = screen;
                 kbShortcuts = {"Tab": trapFocus};
@@ -262,6 +265,7 @@
 
     // Iterates through "screens" to get the topmost active one (highest priority)
     function getCurrentScreen() {
+
         for (const key in screens) {
             if (screens[key].active) {
                 return screens[key];
@@ -353,9 +357,10 @@
         for (let i = screenKeys.length - 1; i >= 0; i--) {
             const screen = screenKeys[i];
             if (screen !== 'flashcard' && screen !== 'confirm') {
-                screens[screen].deactivate();
+                screens[screen].active = false;
             }
         }
+        update();
     }
     
     // Shows a flashcard and an input box for answering
@@ -410,7 +415,6 @@
             diffDiv.innerHTML = diffMessage;
             screenDiv.appendChild(diffDiv);
         }
-
 
         // Buttons container
         const buttonsDiv = document.createElement('div');
@@ -650,9 +654,6 @@
         const fullscreenDiv = document.createElement('div');
         fullscreenDiv.id = 'blobsey-flashcard-fullscreen-div';
         screenDiv.appendChild(fullscreenDiv);
-
-        // Create a close button
-        createCloseButton();
     
         // Create a container for the table
         const container = document.createElement('div');
@@ -671,6 +672,9 @@
                 let flashcards = response.flashcards;
 
                 container.innerHTML = '';
+
+                // Create a close button
+                createCloseButton();
 
                 // Create a search bar
                 const searchBar = document.createElement('input');
