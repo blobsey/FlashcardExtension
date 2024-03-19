@@ -1,5 +1,5 @@
 body {
-    background-color: rgb(18, 18, 18);
+    background-color: rgb(0, 0, 0);
     overflow: hidden;
     max-width: 784px; /* 800 - 16 */
     max-height: 584px; /* 600 - 16 */
@@ -20,7 +20,8 @@ div {
 }
 
 #content input, #content button, #content textarea{
-    border: 1px solid rgba(255, 255, 255, 0.5); background: none;
+    border: 2px solid rgba(255, 255, 255, 0.2); 
+    background: none;
     border-radius: 5px; outline: none;
     padding: .5em;
     color: inherit;
@@ -37,7 +38,7 @@ span { /* span is used to auto-widen textarea */
 }
 
 #content textarea {
-    color: rgba(255, 255, 255, 0.75);
+    color: #d1d5db;
     border-radius: 5px;
     padding: 10px;
     overflow-y: scroll;
@@ -51,10 +52,18 @@ span { /* span is used to auto-widen textarea */
 
 #content input {
     width: 100%;
+    text-align: center;
+    border-top: none;
+    border-bottom: 1px solid;
+    border-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5) 25%, rgba(255, 255, 255, 0.5) 75%, rgba(255, 255, 255, 0)) 2;
+    outline: none;
 }
 
 #content button {
     cursor: pointer;
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.75); 
+    background: none;
     transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }  
 
@@ -64,10 +73,15 @@ span { /* span is used to auto-widen textarea */
     cursor: initial; /* Change cursor to indicate the action is not allowed */
 }
 
+#content button:hover {
+    color: rgba(255, 255, 255, .85);
+    background-color: rgba(255, 255, 255, 0.1); 
+    border-color: rgba(255, 255, 255, .85);
+}
 
 #content button:focus {
-    background-color: rgba(255, 255, 255, 0.2); 
-    border-color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
 }
 
 #navbar {
@@ -75,7 +89,6 @@ span { /* span is used to auto-widen textarea */
     width: 100%;
     display: flex;
     justify-content: flex-end;
-    background: rgb(18, 18, 18);
     color: white;
     margin: 0 auto;
 }
