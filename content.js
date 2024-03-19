@@ -512,7 +512,7 @@
         screenDiv.innerHTML = ''; // Clear current content
 
         screenDiv.style.opacity = '0'; // Fade in
-        screenDiv.style.top = '25px'; // Slightly slide up
+        screenDiv.style.top = '10px'; // Slightly slide up
         screenDiv.style.position = 'relative'; // Set position to relative for the top property to take effect
     
         // Front textarea input
@@ -541,13 +541,18 @@
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = 'blobsey-flashcard-buttons-div'
         form.appendChild(buttonsDiv);
+
+        // Save initial values so we can detect when editor is "dirty"
+        const initialFrontValue = frontInput.value;
+        const initialBackValue = backInput.value;
     
         // Function to close edit screen to pass in to x button and cancel button
         const onClose = (() => {
-            if (confirm("Really close? (Unsaved edits will be lost)"))
+            if ((frontInput.value === initialFrontValue && backInput.value === initialBackValue) || confirm("Really close? (Unsaved edits will be lost)")) {
                 screenDiv.style.transition = ''; // Clean up animations on close
                 screens["edit"].deactivate();
-        })
+            }
+        });
 
         // Close button
         createCloseButton(onClose);
@@ -606,7 +611,7 @@
             screenDiv.style.opacity = '1'; // Fade in
             screenDiv.style.top = '0px'; // Slightly slide up
             screenDiv.style.position = 'relative'; // Set position to relative for the top property to take effect
-            screenDiv.style.transition = 'opacity 0.05s ease, top 0.1s ease'; // Timings
+            screenDiv.style.transition = 'opacity 0.1s ease, top 0.1s ease'; // Timings
         }, 50);
     }
 
