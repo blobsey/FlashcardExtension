@@ -152,17 +152,24 @@
     });
 
     // Tries to show a flashcard, if there are none then sets a timer 1min from now to check again
-    function showFlashcard() {
-        fetchNextFlashcard().then(fetchedCard => {
-            pauseMediaPlayback();
-            flashcard = fetchedCard;
-            screens["flashcard"].activate();
-        })
-        .catch(error => {
-            if (error.message !== "No cards to review right now.")
-                console.error(error.message);
-            setTimer(1);
-        });
+    async function showFlashcard() {
+        console.log("showFlashcard() called");
+        if (!flashcard) {
+            try {
+                flashcard = await fetchNextFlashcard();
+            }
+            catch (error) {
+                // if (error.message !== "No cards to review right now.")
+                    console.error(error.message);
+                setTimer(1);
+                return;
+            }
+        }
+
+        pauseMediaPlayback();
+        screens["flashcard"].activate();
+    
+        
     }
 
     function showExpandedPopupScreen() {
