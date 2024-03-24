@@ -172,10 +172,18 @@
 
     // Iterates through DOM and pauses any media
     function pauseMediaPlayback() {
-        const mediaElements = document.querySelectorAll("video, audio");
-        mediaElements.forEach(media => {
-            if (!media.paused) {
-                media.pause();
+        const videoElements = Array.from(document.querySelectorAll('video'));
+  
+        const shadowRoots = Array.from(document.querySelectorAll('*')).map(el => el.shadowRoot).filter(Boolean);
+        
+        shadowRoots.forEach(shadowRoot => {
+            const shadowVideoElements = Array.from(shadowRoot.querySelectorAll('video'));
+            videoElements.push(...shadowVideoElements);
+        });
+        
+        videoElements.forEach(videoElement => {
+            if (!videoElement.paused) {
+              videoElement.pause();
             }
         });
     }
