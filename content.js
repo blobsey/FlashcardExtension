@@ -7,8 +7,7 @@
     // Catches all keydown events and traps them if overlay is active
     function handleKbInput(event) {
         const { key, ctrlKey, shiftKey } = event;
-
-        if (getCurrentScreen && getCurrentScreen()) {
+        if (overlayDiv) {
             event.stopPropagation();
             event.stopImmediatePropagation();
 
@@ -292,6 +291,7 @@
                 if (e.propertyName === 'opacity') {
                     overlayDiv.remove();
                     overlayDiv.removeEventListener('transitionend', handler); // Clean up
+                    overlayDiv = null;
                 }
             }, false);
         
@@ -317,8 +317,6 @@
         }
         return null; // If no active screens, return null
     }
-
-
 
 
     // Mimick default tab behavior, but only include overlay elements
