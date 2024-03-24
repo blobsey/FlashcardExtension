@@ -1,3 +1,4 @@
 .web-extension-id
 web-ext-artifacts/
 web-ext_run.bat
+firefox.lnk

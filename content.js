@@ -1,18 +1,99 @@
 // content.js
 // Handles UI/UX, application logic
 (async function() {
+    // Set up main keyboard shortcut event listener
+    document.addEventListener('keydown', handleKbInput);
 
-    // Create Shadow DOM and load CSS from file
-    const root = document.createElement('div');
-    document.body.appendChild(root);
-    const shadowRoot = root.attachShadow({ mode: 'open' });
-    const cssFileUrl = browser.runtime.getURL('styles.css'); 
-    const cssResponse = await fetch(cssFileUrl);
-    const cssText = await cssResponse.text();
-  
-    const styleEl = document.createElement('style');
-    styleEl.textContent = cssText;
-    shadowRoot.appendChild(styleEl);
+    // Catches all keydown events and traps them if overlay is active
+    function handleKbInput(event) {
+        const { key, ctrlKey, shiftKey } = event;
+
+        if (getCurrentScreen && getCurrentScreen()) {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            if (kbShortcuts.hasOwnProperty(key)) {
+                event.preventDefault();
+                kbShortcuts[key](event);
+            }
+        }
+    }
+
+    // Global variables for the root div and root of shadow DOM
+    let root, shadowRoot;
+
+    
+    // Prevents webpage from stealing focus when overlay is active
+    function handleFocusIn(event) {
+        // A bit hacky: if the webpage tries to steal focus, instead focus the first focusable overlay element
+        // NOTE: event.preventDefault() doesnt work with focusin events
+        if (overlayDiv && !overlayDiv.contains(event.target)) {
+            // Find the first focusable element within the overlay
+            const focusableElement = overlayDiv.querySelector(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            
+            if (focusableElement) {
+                focusableElement.focus();
+            } else {
+                overlayDiv.focus();
+            }
+        }
+    }
+
+    // Initialize overlay when DOM is loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Create Shadow DOM and load CSS from file
+        root = document.createElement('div');
+        document.body.appendChild(root);
+        shadowRoot = root.attachShadow({ mode: 'open' });
+        const cssFileUrl = browser.runtime.getURL('styles.css'); 
+        const cssResponse = await fetch(cssFileUrl);
+        const cssText = await cssResponse.text();
+    
+        const styleEl = document.createElement('style');
+        styleEl.textContent = cssText;
+        shadowRoot.appendChild(styleEl);
+
+        
+        // Listen for messages from the background script to show the overlay
+        browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            switch (request.action) {
+                case "showFlashcard":
+                    showFlashcard();
+                    break;
+                case "showExpandedPopupScreen":
+                    showExpandedPopupScreen();
+                    break;
+            }
+        });
+
+        
+        // On page load, check if we should show the overlay
+        browser.storage.local.get("nextFlashcardTime").then(data => {
+            const currentTime = Date.now();
+
+            // Check if the current site is in sitelist
+            if (inSiteList(window.location.href)) {
+                // Check if 'nextFlashcardTime' exists
+                if (data.hasOwnProperty('nextFlashcardTime')) {
+                    // 'nextFlashcardTime' exists, check if the current time is past this timestamp
+                    if (currentTime >= data.nextFlashcardTime) {
+                        showFlashcard(); // Time has passed, show the overlay
+                    } // If time has not passed, do nothing and wait for the next alarm
+                } else {
+                    showFlashcard(); // 'nextFlashcardTime' probably got deleted, show anyways
+                }
+            }
+        })
+        .catch(error => {
+            console.error("Error accessing storage in content script:", error);
+        });
+
+        // Add focusin listener once overlay is bootstrapped
+        document.addEventListener('focusin', handleFocusIn);
+    });
+
 
 
     /////////////////////////////////
@@ -92,26 +173,13 @@
 
     // Iterates through DOM and pauses any media
     function pauseMediaPlayback() {
-        const mediaElements = shadowRoot.querySelectorAll("video, audio");
+        const mediaElements = document.querySelectorAll("video, audio");
         mediaElements.forEach(media => {
             if (!media.paused) {
                 media.pause();
             }
         });
     }
-
-
-    // Listen for messages from the background script to show the overlay
-    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        switch (request.action) {
-            case "showFlashcard":
-                showFlashcard();
-                break;
-            case "showExpandedPopupScreen":
-                showExpandedPopupScreen();
-                break;
-        }
-    });
 
     // Define the list of allowed sites
     const sites = [
@@ -127,27 +195,6 @@
         const hostname = new URL(url).hostname;
         return sites.some(site => hostname === site || hostname.endsWith('.' + site));
     }
-
-    // On page load, check if we should show the overlay
-    browser.storage.local.get("nextFlashcardTime").then(data => {
-        const currentTime = Date.now();
-
-        // Check if the current site is in sitelist
-        if (inSiteList(window.location.href)) {
-            // Check if 'nextFlashcardTime' exists
-            if (data.hasOwnProperty('nextFlashcardTime')) {
-                // 'nextFlashcardTime' exists, check if the current time is past this timestamp
-                if (currentTime >= data.nextFlashcardTime) {
-                    showFlashcard(); // Time has passed, show the overlay
-                } // If time has not passed, do nothing and wait for the next alarm
-            } else {
-                showFlashcard(); // 'nextFlashcardTime' probably got deleted, show anyways
-            }
-        }
-    })
-    .catch(error => {
-        console.error("Error accessing storage in content script:", error);
-    });
 
     // Tries to show a flashcard, if there are none then sets a timer 1min from now to check again
     async function showFlashcard() {
@@ -252,9 +299,6 @@
             overlayDiv.style.opacity = '0';
             overlayDiv.style.backdropFilter = 'blur(0px)'
         }
-
-        // Remove listener for keyboard shortcuts
-        document.removeEventListener('keydown', handleKbInput);
         
         // Reset currentScreen 
         currentScreen = null;
@@ -275,18 +319,7 @@
     }
 
 
-    // Boilerplate, intended to be used with keydown listener to provide way to easily add keyboard shortcuts
-    function handleKbInput(event) {
-        const { key, ctrlKey, shiftKey } = event;
-    
-        // Check if the overlay or its child elements have focus
-        if (root && (root === document.activeElement || root.contains(document.activeElement))) {
-            if (kbShortcuts.hasOwnProperty(key)) {
-                event.preventDefault();
-                kbShortcuts[key](event);
-            }
-        }
-    }
+
 
     // Mimick default tab behavior, but only include overlay elements
     function trapFocus(event) {
@@ -330,9 +363,6 @@
             screenDiv = document.createElement('div');
             screenDiv.classList.add('blobsey-flashcard-ui');
             overlayDiv.appendChild(screenDiv);
-
-            // Set up main keyboard shortcut event listener
-            document.addEventListener('keydown', handleKbInput);
         }
     }
 
@@ -673,9 +703,6 @@
 
                 container.innerHTML = '';
 
-                // Create a close button
-                createCloseButton();
-
                 // Create a search bar
                 const searchBar = document.createElement('input');
                 searchBar.id = 'blobsey-flashcard-search-bar';
@@ -707,9 +734,13 @@
             } else {
                 throw new Error(response.message);
             }
-        } catch (error) {
+        } 
+        catch (error) {
             container.innerHTML = error.message;
             console.error("Error fetching flashcards:", error);
+        }
+        finally {
+            createCloseButton();
         }
     }
 
