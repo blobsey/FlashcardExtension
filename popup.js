@@ -18,9 +18,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const expandButton = document.createElement('button');
-    expandButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-    <path fill="#fff" fill-rule="evenodd" d="M19.5 8.25h-15v-1.5h15v1.5Zm0 4.5h-15v-1.5h15v1.5Zm0 4.5h-15v-1.5h15v1.5Z" clip-rule="evenodd"/>
-    </svg>`
+    expandButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="icon" viewBox="-150 -150 1324 1324"><g fill="#fff"><path d="M128 469.333h85.333v85.334H128zm0-170.666h85.333V384H128zM128 640h85.333v85.333H128zm0-512h85.333v85.333H128zm0 682.667h85.333V896H128zM298.667 469.333H896v85.334H298.667zm0-170.666H896V384H298.667zm0 341.333H896v85.333H298.667zm0-512H896v85.333H298.667zm0 682.667H896V896H298.667z"/></g>
+    </svg>`;
     
     expandButton.addEventListener('click', function() {
         browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -43,16 +42,13 @@ const menus = {
     "config": {
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" stroke="#fff" viewBox="-500 -500 2820 2820">
         <path fill-rule="evenodd" d="M1703.534 960c0-41.788-3.84-84.48-11.633-127.172l210.184-182.174-199.454-340.856-265.186 88.433c-66.974-55.567-143.323-99.389-223.85-128.415L1158.932 0h-397.78L706.49 269.704c-81.43 29.138-156.423 72.282-223.962 128.414l-265.073-88.32L18 650.654l210.184 182.174C220.39 875.52 216.55 918.212 216.55 960s3.84 84.48 11.633 127.172L18 1269.346l199.454 340.856 265.186-88.433c66.974 55.567 143.322 99.389 223.85 128.415L761.152 1920h397.779l54.663-269.704c81.318-29.138 156.424-72.282 223.963-128.414l265.073 88.433 199.454-340.856-210.184-182.174c7.793-42.805 11.633-85.497 11.633-127.285m-743.492 395.294c-217.976 0-395.294-177.318-395.294-395.294 0-217.976 177.318-395.294 395.294-395.294 217.977 0 395.294 177.318 395.294 395.294 0 217.976-177.317 395.294-395.294 395.294"/>
-      </svg>
-      `,
+        </svg>`,
         func: createConfigScreen
     },
     "add": {
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
         <path fill="#fff" fill-rule="evenodd" d="M11.25 12.75V18h1.5v-5.25H18v-1.5h-5.25V6h-1.5v5.25H6v1.5h5.25Z" clip-rule="evenodd"/>
-        <script/>
         </svg>`,
-      
         func: createAddScreen
     }
 }
