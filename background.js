@@ -1,8 +1,7 @@
 // background.js 
 // Does a lot of the heavy lifting for handling configs, API Requests
 
-browser.tabs.insertCSS({file: 'styles.css'}); // Inject CSS
-
+let openLoginWindows = new Map();
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
@@ -39,7 +38,6 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 const defaultConfig = {
     apiBaseUrl: 'https://flashcard-api.blobsey.com',
-    apiKey: '',
 };
 
 // Function to get config with defaults
@@ -88,6 +86,75 @@ const requestHandlers = {
         await browser.storage.local.set({ nextFlashcardTime }); // set in local storage as a fallback
         browser.alarms.create("showFlashcardAlarm", { delayInMinutes: request.count });
         return "Timer reset successfully.";
+    },
+    "login": async () => {
+        try {
+            const config = await getConfig();
+            const loginWindow = await browser.windows.create({
+                url: `${config['apiBaseUrl']}/login`,
+                type: 'popup',
+                width: 500,
+                height: 600
+            });
+    
+            // Add the window to the Map
+            openLoginWindows.set(loginWindow.id, loginWindow);
+    
+            // Start polling
+            const pollInterval = setInterval(async () => {
+                // Check if the login window has been closed
+                const isWindowOpen = await browser.windows.get(loginWindow.id).then(
+                    () => true, // The window is still open
+                    () => false // The window has been closed or an error occurred (e.g., the window doesn't exist)
+                );
+
+                // If the window is closed, stop polling and clean up
+                if (!isWindowOpen) {
+                    clearInterval(pollInterval);
+                    openLoginWindows.delete(loginWindow.id);
+                    return;
+                }
+
+                const data = await handleApiRequest("/validate-authentication");
+                if (data.message && data.message === "Authentication valid") {
+                    clearInterval(pollInterval);
+                    // Attempt to close all open login windows
+                    openLoginWindows.forEach(async (value, key) => {
+                        try {
+                            await browser.windows.remove(key);
+                            openLoginWindows.delete(key); // Remove the window from the Map after closing it
+                        } catch (error) {
+                            console.error(`Failed to close login window ${key}:`, error);
+                        }
+                    });
+                }
+            }, 5000); // Adjust polling interval as necessary
+    
+        } catch (error) {
+            console.error('Failed to initiate login:', error);
+            // Attempt to close any potentially open login windows in case of error
+            openLoginWindows.forEach(async (value, key) => {
+                try {
+                    await browser.windows.remove(key);
+                } catch (ignore) {
+                    // Error handling for window closing, if necessary
+                }
+            });
+            openLoginWindows.clear(); // Clear the Map after handling errors
+        }
+    },
+    "logout": async () => {
+        const data = await handleApiRequest("/logout");
+        return data;
+    },
+    "validateAuthentication": async () => {
+        try {
+            const data = await handleApiRequest("/validate-authentication");
+            return data;
+        }
+        catch (error) { 
+            return {message: "Authentication invalid"};
+        }
     },
     "fetchNextFlashcard": async () => {
         const data = await handleApiRequest("/next");
@@ -143,9 +210,6 @@ async function handleApiRequest(path, options = {}) {
         options.headers = {};
     }
 
-    // Add the API Key to the request headers
-    options.headers['X-API-Key'] = config.apiKey; // Ensure to access 'config' property correctly
-
     // Set default header for JSON content if not already set
     options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
 
@@ -154,6 +218,8 @@ async function handleApiRequest(path, options = {}) {
         options.body = JSON.stringify(options.body);
     }
 
+    // Include credentials (cookies) in the request
+    options.credentials = 'include';
 
     const response = await fetch(url, options);
     const contentType = response.headers.get('Content-Type');

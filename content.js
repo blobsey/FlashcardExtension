@@ -64,6 +64,9 @@
                 case "showExpandedPopupScreen":
                     showExpandedPopupScreen();
                     break;
+                case "closeAllScreens":
+                    closeAllScreens();
+                    break;
             }
         });
 
