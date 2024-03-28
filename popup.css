@@ -1,6 +1,7 @@
 body {
     background-color: rgb(0, 0, 0);
     overflow: hidden;
+    min-height: 100px;
     max-width: 784px; /* 800 - 16 */
     max-height: 584px; /* 600 - 16 */
 }
@@ -17,6 +18,13 @@ div {
     text-align: left;
     padding: 0em 0em 0em .5em;
     margin: .25em 0em 0em 0em;
+}
+
+#content #loading-div {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 #content input, #content button, #content textarea{

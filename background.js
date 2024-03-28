@@ -37,7 +37,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 const defaultConfig = {
-    apiBaseUrl: 'https://flashcard-api.blobsey.com',
+    "apiBaseUrl": 'https://flashcard-api.blobsey.com',
+    "New cards per day": 30 // TODO: implement this
 };
 
 // Function to get config with defaults

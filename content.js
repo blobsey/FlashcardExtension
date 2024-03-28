@@ -64,8 +64,11 @@
                 case "showExpandedPopupScreen":
                     showExpandedPopupScreen();
                     break;
-                case "closeAllScreens":
-                    closeAllScreens();
+                case "forceClose":
+                    for (const screen in screens) {
+                        screens[screen].active = false;
+                    }
+                    update();
                     break;
             }
         });
@@ -708,7 +711,7 @@
         try {
             const response = await browser.runtime.sendMessage({ action: "listFlashcards" });
             if (response.result === "success") {
-                let flashcards = response.flashcards;
+                let flashcards = response.flashcards || [];
 
                 container.innerHTML = '';
 
