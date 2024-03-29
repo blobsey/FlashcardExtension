@@ -124,3 +124,8 @@ span { /* span is used to auto-widen textarea */
     min-width: 24px;
     display: inline-block;
 }
+
+#content #profile div {
+    padding: 1em .5em;
+    text-align: center;
+}

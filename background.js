@@ -1,7 +1,9 @@
 // background.js 
 // Does a lot of the heavy lifting for handling configs, API Requests
 
+// Global variables
 let openLoginWindows = new Map();
+let userInfo = null;
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
@@ -101,35 +103,31 @@ const requestHandlers = {
             // Add the window to the Map
             openLoginWindows.set(loginWindow.id, loginWindow);
     
-            // Start polling
-            const pollInterval = setInterval(async () => {
-                // Check if the login window has been closed
-                const isWindowOpen = await browser.windows.get(loginWindow.id).then(
-                    () => true, // The window is still open
-                    () => false // The window has been closed or an error occurred (e.g., the window doesn't exist)
-                );
-
-                // If the window is closed, stop polling and clean up
-                if (!isWindowOpen) {
-                    clearInterval(pollInterval);
-                    openLoginWindows.delete(loginWindow.id);
-                    return;
-                }
-
-                const data = await handleApiRequest("/validate-authentication");
-                if (data.message && data.message === "Authentication valid") {
-                    clearInterval(pollInterval);
-                    // Attempt to close all open login windows
-                    openLoginWindows.forEach(async (value, key) => {
+            // Get the tab ID of the login window
+            const tabId = loginWindow.tabs[0].id;
+    
+            // Listen for updates to the login tab
+            browser.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, tab) => {
+                if (updatedTabId === tabId && changeInfo.status === 'complete' && tab.url.startsWith(`${config['apiBaseUrl']}/auth`)) {
+                    // Authentication completed, close the login window after 3 seconds
+                    setTimeout(async () => {
                         try {
-                            await browser.windows.remove(key);
-                            openLoginWindows.delete(key); // Remove the window from the Map after closing it
+                            await browser.windows.remove(loginWindow.id);
+                            openLoginWindows.delete(loginWindow.id);
                         } catch (error) {
-                            console.error(`Failed to close login window ${key}:`, error);
+                            console.error(`Failed to close login window ${loginWindow.id}:`, error);
                         }
-                    });
+                    }, 3000);
+    
+                    // Validate authentication
+                    const data = await handleApiRequest("/validate-authentication");
+                    if (data.message && data.message === "Authentication valid") {
+                        console.log("Authentication successful");
+                    } else {
+                        console.error("Authentication failed");
+                    }
                 }
-            }, 5000); // Adjust polling interval as necessary
+            });
     
         } catch (error) {
             console.error('Failed to initiate login:', error);
@@ -145,6 +143,7 @@ const requestHandlers = {
         }
     },
     "logout": async () => {
+        userInfo = null;
         const data = await handleApiRequest("/logout");
         return data;
     },
@@ -194,6 +193,12 @@ const requestHandlers = {
           method: 'DELETE'
         });
         return data;
+    },
+    "userInfo": async (request) => {
+        if (!userInfo) {
+            userInfo = await handleApiRequest("/user-info");
+        }
+        return userInfo;
     }
 };
 

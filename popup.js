@@ -41,11 +41,46 @@ const navbarButtons = {
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="icon" viewBox="-150 -150 1324 1324"><g fill="#fff"><path d="M128 469.333h85.333v85.334H128zm0-170.666h85.333V384H128zM128 640h85.333v85.333H128zm0-512h85.333v85.333H128zm0 682.667h85.333V896H128zM298.667 469.333H896v85.334H298.667zm0-170.666H896V384H298.667zm0 341.333H896v85.333H298.667zm0-512H896v85.333H298.667zm0 682.667H896V896H298.667z"/></g>
         </svg>`,
         func: async function() {
-            browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
-                browser.tabs.sendMessage(tabs[0].id, {action: "showExpandedPopupScreen"});
-            });
-            window.close();
-        },
+            let tabs = await browser.tabs.query({active: true, currentWindow: true});
+            try {
+                // Try to open the overlay, show an error if not able to
+                await browser.tabs.sendMessage(tabs[0].id, {action: "showExpandedPopupScreen"});
+                window.close()
+            } 
+            catch (error) {
+                // If we get an error when sending the message, then prompt user to open in new tab
+                const contentDiv = document.getElementById('content');
+                contentDiv.innerHTML = ''; // Clear existing content
+                
+                errorDiv = document.createElement('div');
+                const truncatedUrl = tabs[0].url.length > 40 ? tabs[0].url.slice(0, 37) + '...' : tabs[0].url;
+                errorDiv.innerHTML = `Failed to open overlay on<br><code>${truncatedUrl}</code>`;
+                contentDiv.appendChild(errorDiv);
+
+                const openNewTabButton = document.createElement('button');
+                openNewTabButton.textContent = 'Open Overlay in New Tab';
+                openNewTabButton.addEventListener('click', async () => {
+                    const createdTab = await browser.tabs.create({url: browser.runtime.getURL('blank.html')});
+                    // Listen for when the new tab is updated to a complete state
+                    function onTabUpdated(tabId, changeInfo) {
+                        if (tabId === createdTab.id && changeInfo.status === 'complete') {
+                            // When the tab is fully loaded, send the message
+                            setTimeout(async () => {
+                                try {
+                                    await browser.tabs.sendMessage(createdTab.id, {action: "showExpandedPopupScreen"}).catch(console.error);
+                                    browser.tabs.onUpdated.removeListener(onTabUpdated); // Cleanup the listener
+                                    window.close(); // Close the popup
+                                } catch (error) {
+                                    console.error(`Failed to send message: `, error);
+                                }
+                            }, 1);
+                        }
+                    }
+                    browser.tabs.onUpdated.addListener(onTabUpdated);
+                });
+                contentDiv.appendChild(openNewTabButton);
+            }
+        },        
         isPersistent: false
     },
     "add": {
@@ -76,6 +111,7 @@ async function createNavbar() {
     Object.keys(navbarButtons).forEach(key => {
         const menu = navbarButtons[key];
         const button = document.createElement('button');
+        button.id = `navbar-${key}`;
         button.innerHTML = menu.icon; // Sets the inner HTML to the SVG icon
 
         // Adjusted: Adding click event listener that switches tab and stores the choice
@@ -96,10 +132,19 @@ async function createProfileScreen() {
 
     try {
         const { config } = await browser.runtime.sendMessage({ action: "getConfig" });
+        const userInfo = await browser.runtime.sendMessage({ action: "userInfo" });
 
-        const apiBaseUrlElement = document.createElement('p');
-        apiBaseUrlElement.innerHTML = `Currently connected to:<br><code>${config.apiBaseUrl}</code>`;
-        contentDiv.appendChild(apiBaseUrlElement);
+        const profileContainer = document.createElement('div');
+        profileContainer.id = "profile";
+        contentDiv.appendChild(profileContainer);
+
+        const apiBaseUrlDiv = document.createElement('div');
+        apiBaseUrlDiv.innerHTML = `Connected to:<br><code>${config.apiBaseUrl}</code>`;
+        profileContainer.appendChild(apiBaseUrlDiv);
+
+        const infoDiv = document.createElement('div');
+        infoDiv.innerHTML = `Logged in as <code>${userInfo["email"]}</code>`;
+        profileContainer.appendChild(infoDiv);
 
         const logoutButton = document.createElement('button');
         logoutButton.textContent = 'Logout';
