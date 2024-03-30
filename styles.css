@@ -22,7 +22,7 @@
 
 .blobsey-flashcard-ui, .blobsey-flashcard-ui * {
     box-sizing: border-box;
-    font-family: system-ui, sans-serif; 
+    font: 14px system-ui, sans-serif;
     color: white; 
 }
 
@@ -62,8 +62,7 @@
     outline: none;
     max-width: 40em;
     margin-top: 1em;
-    font-family: inherit;
-    font-size: 16px;
+    font: 14px system-ui, sans-serif;
     text-align: center;
     display: flex; flex-direction: column; align-items: center;
 }
@@ -79,7 +78,7 @@
     text-align: center; 
     width: 6em;
     padding: .25em; 
-    font-size: 16px;
+    font: 14px system-ui, sans-serif;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.75);
     border: 1px solid rgba(255, 255, 255, 0.75); 
@@ -134,7 +133,7 @@
     color: #fff;
     padding: 8px 12px;
     border-radius: 3px;
-    font-size: 16px;
+    font: 14px system-ui, sans-serif;
     z-index: 9999;
     display: flex;
     align-items: center;
@@ -144,8 +143,7 @@
 
 /* Shared for code and pre */
 .blobsey-flashcard-ui pre, .blobsey-flashcard-ui code {
-    font-size: 16px; 
-    font-family: monospace; 
+    font: 14px monospace, system-ui, sans-serif; 
     color: #d1d5db; 
     background-color: rgba(0, 0, 0, .25); 
     border-radius: 3px; 
@@ -168,7 +166,7 @@
 
 .blobsey-flashcard-ui #edit-screen-textarea-front {
     color: #d1d5db;
-    font-family: monospace;
+    font: 14px monospace, sans-serif;
     border: 2px solid rgba(255, 255, 255, 0.2); 
     border-radius: 3px;
     outline: none;
@@ -276,9 +274,8 @@
 .blobsey-flashcard-ui #blobsey-flashcard-list-table td {
     box-sizing: border-box;
     display: inline-block;
-    padding: 1em 1em;
-    font-family: monospace, sans-serif;
-    font-size: 14px;
+    padding: 1.05em 1.05em;
+    font: .9em monospace, sans-serif;
     cursor: pointer;
     white-space: nowrap;    
 }
