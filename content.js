@@ -95,6 +95,31 @@
             console.error("Error accessing storage in content script:", error);
         });
 
+        // On page load, if we are in blank.html then open screen specified by query parameter
+        if (window.location.href.includes('blank.html')) {
+            const { result, blankHtmlData } = await browser.runtime.sendMessage({ action: "getBlankHtmlData" });
+            if (blankHtmlData.screenshotUri) {
+                document.body.style.backgroundImage = `url(${blankHtmlData.screenshotUri})`;
+                document.body.style.backgroundSize = 'cover';
+            }
+
+            if (blankHtmlData.tabTitle) 
+                document.title = blankHtmlData.tabTitle;
+
+            if (blankHtmlData.tabFaviconUrl) {
+                const link = document.createElement('link');
+                link.type = 'image/x-icon';
+                link.rel = 'shortcut icon';
+                link.href = blankHtmlData.tabFaviconUrl;
+                document.getElementsByTagName('head')[0].appendChild(link);
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            screenToLoad = urlParams.get('screenToLoad') || 'list';
+            screens[screenToLoad].activate();
+        }
+
+
         // Add focusin listener once overlay is bootstrapped
         document.addEventListener('focusin', handleFocusIn);
     });
@@ -306,6 +331,13 @@
                     overlayDiv.remove();
                     overlayDiv.removeEventListener('transitionend', handler); // Clean up
                     overlayDiv = null;
+
+                    /*  If current page is blank.html then it means that we failed to 
+                        open the overlay on the previous page and then opened blank.html instead
+                        so when closing the overlay, it should return to the previous page */
+                    if (window.location.href.includes('blank.html')) {
+                        window.history.back();
+                    }
                 }
             }, false);
         

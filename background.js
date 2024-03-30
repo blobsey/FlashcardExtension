@@ -27,7 +27,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const data = await requestHandlers[request.action](request);
                 sendResponse({ result: "success", ...data });
             } else {
-                throw new Error("Unknown action");
+                throw new Error(`Message malformed: ${request}`);
             }
         } catch (error) {
             console.error(`Error handling action ${request.action}:`, error);
@@ -69,9 +69,15 @@ async function getConfig() {
 }
 
 
-
 // Handlers for requests
 const requestHandlers = {
+    "setBlankHtmlData": async (request) => {
+        await browser.storage.local.set({ blankHtmlData: request.data });
+        return "Set blank.html data successfully";
+    },
+    "getBlankHtmlData": async (request) => {
+        return await browser.storage.local.get("blankHtmlData");
+    },
     "getConfig": async () => {
         const config = await getConfig();
         return {config};

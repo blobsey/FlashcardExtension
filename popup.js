@@ -24,6 +24,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+async function updateNavbar() {
+    const navbar = document.getElementById('navbar');
+    navbar.innerHTML = ''; // Clear existing navbar buttons if any
+
+    const history = JSON.parse(localStorage.getItem('history')) || ['main'];
+
+    // If not on main menu, draw a back button
+    if (history.length > 1) {
+        const backButton = document.createElement('button');
+        backButton.id = "backButton";
+        backButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" fill="#fff" stroke="#fff" stroke-width="34.816" class="icon" viewBox="0 0 1024 1024">
+        <path d="M669.6 849.6c8.8 8 22.4 7.2 30.4-1.6s7.2-22.4-1.6-30.4l-309.6-280c-8-7.2-8-17.6 0-24.8l309.6-270.4c8.8-8 9.6-21.6 2.4-30.4-8-8.8-21.6-9.6-30.4-2.4L360.8 480.8c-27.2 24-28 64-.8 88.8l309.6 280z"/>
+        </svg>`;
+        backButton.addEventListener('click', () => {
+            history.pop();
+            menuOptions[history[history.length - 1]].func();
+            localStorage.setItem('history', JSON.stringify(history));
+            updateNavbar();
+        });
+        navbar.appendChild(backButton);
+    }
+}
+
 const menuOptions = {
     main: {
         label: "",
@@ -91,26 +114,6 @@ const errorSvg = `<svg width="24" height="24" viewBox="-4 -4 24.00 24.00" fill="
 <path d="M7.493 0.015 C 7.442 0.021,7.268 0.039,7.107 0.055 C 5.234 0.242,3.347 1.208,2.071 2.634 C 0.660 4.211,-0.057 6.168,0.009 8.253 C 0.124 11.854,2.599 14.903,6.110 15.771 C 8.169 16.280,10.433 15.917,12.227 14.791 C 14.017 13.666,15.270 11.933,15.771 9.887 C 15.943 9.186,15.983 8.829,15.983 8.000 C 15.983 7.171,15.943 6.814,15.771 6.113 C 14.979 2.878,12.315 0.498,9.000 0.064 C 8.716 0.027,7.683 -0.006,7.493 0.015 M8.853 1.563 C 9.967 1.707,11.010 2.136,11.944 2.834 C 12.273 3.080,12.920 3.727,13.166 4.056 C 13.727 4.807,14.142 5.690,14.330 6.535 C 14.544 7.500,14.544 8.500,14.330 9.465 C 13.916 11.326,12.605 12.978,10.867 13.828 C 10.239 14.135,9.591 14.336,8.880 14.444 C 8.456 14.509,7.544 14.509,7.120 14.444 C 5.172 14.148,3.528 13.085,2.493 11.451 C 2.279 11.114,1.999 10.526,1.859 10.119 C 1.618 9.422,1.514 8.781,1.514 8.000 C 1.514 6.961,1.715 6.075,2.160 5.160 C 2.500 4.462,2.846 3.980,3.413 3.413 C 3.980 2.846,4.462 2.500,5.160 2.160 C 6.313 1.599,7.567 1.397,8.853 1.563 M7.706 4.290 C 7.482 4.363,7.355 4.491,7.293 4.705 C 7.257 4.827,7.253 5.106,7.259 6.816 C 7.267 8.786,7.267 8.787,7.325 8.896 C 7.398 9.033,7.538 9.157,7.671 9.204 C 7.803 9.250,8.197 9.250,8.329 9.204 C 8.462 9.157,8.602 9.033,8.675 8.896 C 8.733 8.787,8.733 8.786,8.741 6.816 C 8.749 4.664,8.749 4.662,8.596 4.481 C 8.472 4.333,8.339 4.284,8.040 4.276 C 7.893 4.272,7.743 4.278,7.706 4.290 M7.786 10.530 C 7.597 10.592,7.410 10.753,7.319 10.932 C 7.249 11.072,7.237 11.325,7.294 11.495 C 7.388 11.780,7.697 12.000,8.000 12.000 C 8.303 12.000,8.612 11.780,8.706 11.495 C 8.763 11.325,8.751 11.072,8.681 10.932 C 8.616 10.804,8.460 10.646,8.333 10.580 C 8.217 10.520,7.904 10.491,7.786 10.530 " stroke="none" fill-rule="evenodd" fill="#ffffff"/>
 </svg>`;
 
-async function updateNavbar() {
-    const navbar = document.getElementById('navbar');
-    navbar.innerHTML = ''; // Clear existing navbar buttons if any
-    const history = JSON.parse(localStorage.getItem('history')) || ['main', 'dummy'];
-
-    if (Array.isArray(history) && history.length !== 1) {
-        const backButton = document.createElement('button');
-        backButton.id = "backButton";
-        backButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" fill="#fff" stroke="#fff" stroke-width="34.816" class="icon" viewBox="0 0 1024 1024">
-        <path d="M669.6 849.6c8.8 8 22.4 7.2 30.4-1.6s7.2-22.4-1.6-30.4l-309.6-280c-8-7.2-8-17.6 0-24.8l309.6-270.4c8.8-8 9.6-21.6 2.4-30.4-8-8.8-21.6-9.6-30.4-2.4L360.8 480.8c-27.2 24-28 64-.8 88.8l309.6 280z"/>
-        </svg>`;
-        backButton.addEventListener('click', () => {
-            history.pop();
-            menuOptions[history[history.length - 1]].func();
-            localStorage.setItem('history', JSON.stringify(history));
-            updateNavbar();
-        });
-        navbar.appendChild(backButton);
-    }
-}
 
 async function createMainScreen() {
     const contentDiv = document.getElementById('content');
@@ -163,27 +166,50 @@ async function createMainScreen() {
 async function expand() {
     let tabs = await browser.tabs.query({active: true, currentWindow: true});
 
+    // Try to open overlay, if not possible then open in new tab
     try {
-        // Try to open the overlay, show an error if not able to
         await browser.tabs.sendMessage(tabs[0].id, {action: "showExpandedPopupScreen"});
         window.close();
     }
     catch (error) {
-        // If we get an error when sending the message, redirect the current tab to blank.html
-        await browser.tabs.update(tabs[0].id, {url: browser.runtime.getURL('blank.html')});
+        try {
+            // Copy background, title, favicon of current tab
+            const screenshotUri = await browser.tabs.captureVisibleTab();
+            const tabTitle = tabs[0].title;
+            const tabFaviconUrl = tabs[0].favIconUrl;
 
-        // Listen for when the tab is updated to a complete state
-        browser.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-            if (tabId === tabs[0].id && changeInfo.status === 'complete') {
-                try {
-                    // When the tab is fully loaded, send the message to show the overlay
-                    await browser.tabs.sendMessage(tabId, {action: "showExpandedPopupScreen"});
-                    window.close(); // Close the popup
-                } catch (error) {
-                    console.error('Failed to send message: ', error);
-                }
-            }
-        });
+            // If we get an error when sending the message, redirect the current tab to blank.html
+            await browser.runtime.sendMessage({ 
+                action: "setBlankHtmlData", 
+                data: {
+                    screenshotUri: screenshotUri,
+                    tabTitle: tabTitle,
+                    tabFaviconUrl, tabFaviconUrl
+                } 
+            });
+            await browser.tabs.update(tabs[0].id, {url: browser.runtime.getURL('blank.html?screenToLoad=list')});
+        }
+        catch (error) {
+            console.error("Fatal error when trying to open fallback overlay: ", error);
+        }
+
+        // // Listen for when the tab is updated to a complete state
+        // browser.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+        //     if (tabId === tabs[0].id && changeInfo.status === 'complete') {
+        //         try {
+        //             // When the tab is fully loaded, send the message to show the overlay
+        //             await browser.tabs.sendMessage(tabId, {
+        //                 action: "showExpandedPopupScreen", 
+        //                 screenshotUri: screenshotUri,
+        //                 tabTitle: tabTitle,
+        //                 tabFaviconUrl: tabFaviconUrl
+        //             });
+        //             window.close(); // Close the popup
+        //         } catch (error) {
+        //             console.error('Failed to send message: ', error);
+        //         }
+        //     }
+        // });
     }
 }
 
