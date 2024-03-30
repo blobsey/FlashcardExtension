@@ -198,7 +198,7 @@
     width: 40px;
     height: 40px;
     background-color: transparent;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.1s ease;
     z-index: 1;
 }
 
@@ -218,7 +218,7 @@
     height: 100%;
     background-color: rgba(255, 255, 255, 0.2);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.1s ease;
     z-index: -1;
 }
 

@@ -55,7 +55,7 @@ const menuOptions = {
         isPersistent: true
     },
     add: {
-        label: "Add Flashcard",
+        label: "Add Flashcards",
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
         <path fill="#fff" fill-rule="evenodd" d="M11.25 12.75V18h1.5v-5.25H18v-1.5h-5.25V6h-1.5v5.25H6v1.5h5.25Z" clip-rule="evenodd"/>
         </svg>`,

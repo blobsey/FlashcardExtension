@@ -73,7 +73,7 @@ span { /* span is used to auto-widen textarea */
     color: rgba(255, 255, 255, 0.75);
     border: 1px solid rgba(255, 255, 255, 0.75); 
     background: none;
-    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
 }  
 
 #content button:disabled {
@@ -82,15 +82,17 @@ span { /* span is used to auto-widen textarea */
     cursor: initial; /* Change cursor to indicate the action is not allowed */
 }
 
+#content button:focus {
+    color: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
+    background-color: rgba(255, 255, 255, 0.05); 
+    outline: none;
+}
+
 #content button:hover {
     color: rgba(255, 255, 255, .85);
     background-color: rgba(255, 255, 255, 0.1); 
     border-color: rgba(255, 255, 255, .85);
-}
-
-#content button:focus {
-    color: rgba(255, 255, 255, 1);
-    border-color: rgba(255, 255, 255, 1);
 }
 
 #navbar {
@@ -104,7 +106,26 @@ span { /* span is used to auto-widen textarea */
 }
 
 #navbar #backButton {
+    width: 2em;
+    height: 2em;
+}
 
+#navbar #backButton svg{
+    opacity: 30%;
+    position:relative;  
+    top: 50%;
+    left: 45%;
+    transform: translate(-50%, -50%);
+}
+
+#navbar #backButton:hover {
+    background-color: rgba(255, 255, 255, 0.1); 
+}
+
+#navbar #backButton:focus {
+    border-color: rgba(255, 255, 255, 1);
+    outline: 1px solid white;
+    border-radius: 2px;
 }
 
 #navbar button {
@@ -148,6 +169,10 @@ span { /* span is used to auto-widen textarea */
     border-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5) 25%, rgba(255, 255, 255, 0.5) 75%, rgba(255, 255, 255, 0)) 1;
     margin: 0;
     text-align: left;
+}
+
+#content #menu button:focus {
+    outline: 1px solid;
 }
 
 #content #menu button:last-child {
