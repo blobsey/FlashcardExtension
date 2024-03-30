@@ -194,7 +194,7 @@
         });
     }
 
-    // Define the list of allowed sites
+    // Hardcoded list of sites (TODO: don't hardcode this lol)
     const sites = [
         'www.reddit.com',
         'www.youtube.com',
