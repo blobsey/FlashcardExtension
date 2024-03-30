@@ -172,6 +172,7 @@ async function expand() {
         window.close();
     }
     catch (error) {
+        // Opening overlay not possible on current tab, try to open overlay on blank.html as fallback
         try {
             // Copy background, title, favicon of current tab
             const screenshotUri = await browser.tabs.captureVisibleTab();
@@ -188,28 +189,11 @@ async function expand() {
                 } 
             });
             await browser.tabs.update(tabs[0].id, {url: browser.runtime.getURL('blank.html?screenToLoad=list')});
+            window.close()
         }
         catch (error) {
             console.error("Fatal error when trying to open fallback overlay: ", error);
         }
-
-        // // Listen for when the tab is updated to a complete state
-        // browser.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-        //     if (tabId === tabs[0].id && changeInfo.status === 'complete') {
-        //         try {
-        //             // When the tab is fully loaded, send the message to show the overlay
-        //             await browser.tabs.sendMessage(tabId, {
-        //                 action: "showExpandedPopupScreen", 
-        //                 screenshotUri: screenshotUri,
-        //                 tabTitle: tabTitle,
-        //                 tabFaviconUrl: tabFaviconUrl
-        //             });
-        //             window.close(); // Close the popup
-        //         } catch (error) {
-        //             console.error('Failed to send message: ', error);
-        //         }
-        //     }
-        // });
     }
 }
 
