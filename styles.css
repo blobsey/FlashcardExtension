@@ -95,10 +95,16 @@
     border-color: rgba(255, 255, 255, .85);
 }
 
-
 .blobsey-flashcard-ui button:focus {
     color: rgba(255, 255, 255, 1);
     border-color: rgba(255, 255, 255, 1);
+}
+
+.blobsey-flashcard-ui button:disabled {
+    color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.5);
+    cursor: default;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 
@@ -233,6 +239,65 @@
     flex-direction: column;
     height: 100vh;
     align-items: center;
+}
+.blobsey-flashcard-ui #blobsey-flashcard-deck-select {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 30vw;
+    max-width: 20em;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 5px 25px 5px 5px;
+    transition: background-color 0.3s ease;
+}
+
+
+.blobsey-flashcard-ui #blobsey-flashcard-deck-select option {
+    color: black;
+}
+
+
+.blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button {
+    position: absolute;
+    top: 20px;
+    left: calc(100% - 100px);
+    width: max-content;
+    box-sizing: border-box;
+    height: 2em;
+    transform: translateX(-100%);
+    font-size: 16px;
+    padding: 5px 10px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    background: none;
+    border-radius: 3px;
+    outline: none;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button:hover {
+    color: rgba(255, 255, 255, .85);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, .85);
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button:focus {
+    color: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button:disabled {
+    color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.5);
+    cursor: default;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-list-container {

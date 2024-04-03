@@ -41,6 +41,18 @@ div {
     box-sizing: border-box; /* account for margin, outline, etc. */
 }
 
+/* Chrome, Safari, Edge, Opera */
+#content input::-webkit-outer-spin-button,
+#content input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#content /* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 span { /* span is used to auto-widen textarea */
     font: inherit;
     letter-spacing: normal;
@@ -177,4 +189,13 @@ span { /* span is used to auto-widen textarea */
 
 #content #menu button:last-child {
     border-bottom: none;
+}
+
+#content select {
+    background-color: black;
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid grey;
+    cursor: pointer;
 }

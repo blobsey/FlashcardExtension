@@ -720,78 +720,220 @@
         }, duration);
     }
 
+    const loadingSvg = `<svg width="24" height="24" viewBox="0 0 24 24" stroke="white" fill="white" xmlns="http://www.w3.org/2000/svg"><style>.spinner_I8Q1{animation:spinner_qhi1 .75s linear infinite}.spinner_vrS7{animation-delay:-.375s}@keyframes spinner_qhi1{0%,100%{r:1.5px}50%{r:3px}}</style><circle class="spinner_I8Q1" cx="4" cy="12" r="1.5"/><circle class="spinner_I8Q1 spinner_vrS7" cx="12" cy="12" r="3"/><circle class="spinner_I8Q1" cx="20" cy="12" r="1.5"/><script xmlns="" id="bw-fido2-page-script"/>
+    </svg>`;
+    const blocksSvg = `<svg fill="white" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_9y7u{animation:spinner_fUkk 2.4s linear infinite;animation-delay:-2.4s}.spinner_DF2s{animation-delay:-1.6s}.spinner_q27e{animation-delay:-.8s}@keyframes spinner_fUkk{8.33%{x:13px;y:1px}25%{x:13px;y:1px}33.3%{x:13px;y:13px}50%{x:13px;y:13px}58.33%{x:1px;y:13px}75%{x:1px;y:13px}83.33%{x:1px;y:1px}}</style><rect class="spinner_9y7u" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_DF2s" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_q27e" x="1" y="1" rx="1" width="10" height="10"/></svg>`;
+    const catSvg = `
+    <div id = "blobsey-flashcard-cat">
+        <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="200" height="200" fill="#fff" viewBox="0 0 512 512">
+            <circle cx="93.001" cy="122.066" r="11.429"/>
+            <path d="M199.706 166.954c-2.863-5.06-9.291-6.825-14.339-3.95a6.753 6.753 0 0 1-4.78.736 6.854 6.854 0 0 1-5.095-4.569l-.012.012c-1.017-3.085-3.412-5.656-6.72-6.743-5.528-1.8-11.465 1.215-13.264 6.731a6.87 6.87 0 0 1-5.107 4.569c-2.092.444-3.751-.164-4.78-.736-5.049-2.875-11.464-1.11-14.339 3.95-2.863 5.049-1.099 11.465 3.95 14.339a27.86 27.86 0 0 0 19.493 3.039 27.788 27.788 0 0 0 10.763-4.838 27.931 27.931 0 0 0 10.798 4.838 27.843 27.843 0 0 0 19.481-3.039c5.05-2.874 6.826-9.29 3.951-14.339z"/>
+            <circle cx="237.985" cy="122.066" r="11.429"/>
+            <path d="M423.791 344.933a11.612 11.612 0 0 0-5.745-.039c-6.264 1.543-10.097 7.877-8.555 14.141 4.85 19.657 1.858 40.12-8.414 57.603-3.272 5.563-1.414 12.727 4.16 15.987a11.545 11.545 0 0 0 5.902 1.613c4.008 0 7.912-2.057 10.086-5.761a101.69 101.69 0 0 0 8.246-17.732 99.716 99.716 0 0 0 5.549-28.31 99.838 99.838 0 0 0-.355-14.506 100.736 100.736 0 0 0-1.917-12.076c-.177-.802-.365-1.603-.562-2.403a11.624 11.624 0 0 0-1.598-3.629 11.643 11.643 0 0 0-1.104-1.441 11.763 11.763 0 0 0-.799-.796 11.81 11.81 0 0 0-1.425-1.087 11.646 11.646 0 0 0-3.469-1.564z"/>
+            <path d="M490.036 373.97c.012-.222.035-.456.035-.69V145.848c0-11.862-4.616-23.011-12.995-31.367-8.391-8.368-19.517-12.984-31.355-12.984-24.46 0-44.351 19.891-44.351 44.351v88.432l-101.264-63.96c5.843-16.455 8.952-33.739 8.952-50.965V24.273C309.058 10.892 298.166 0 284.785 0a24.18 24.18 0 0 0-16.84 6.801L226.54 48.207c-18.605-10.436-39.512-15.917-61.051-15.917-21.538 0-42.457 5.481-61.051 15.917L63.032 6.802A24.176 24.176 0 0 0 46.192 0C32.811 0 21.919 10.892 21.919 24.273v95.082c0 38.133 15.204 76.617 41.698 105.588 10.506 11.488 22.251 21.001 34.861 28.398-.619 7.573-.83 15.263-.619 22.952.923 34.452 10.202 68.331 26.821 98.296v66.368h-.444c-19.587 0-35.527 15.929-35.527 35.515v13.077c0 12.376 10.074 22.45 22.438 22.45h60.49c15.228 0 28.223-9.77 33.05-23.373h12.224v.257c0 12.738 10.366 23.116 23.104 23.116h133.648c34.522 0 67.315-16.653 87.696-44.526.012 0 .012-.012.012-.012a105.034 105.034 0 0 0 6.159-9.396c.035-.047.058-.093.094-.14.07-.128.152-.257.234-.397 15.738-26.235 22.867-55.113 22.178-83.558zM80.854 209.166a136.366 136.366 0 0 1-6.918-8.227l8.449-.713c6.428-.549 11.207-6.206 10.658-12.633-.538-6.439-6.194-11.207-12.633-10.658l-20.603 1.741a136.292 136.292 0 0 1-5.668-12.762l25.734 3.412c.514.07 1.028.093 1.543.093 5.773 0 10.798-4.266 11.57-10.144.853-6.404-3.646-12.283-10.05-13.124l-35.656-4.733c-1.297-7.304-1.987-14.69-1.987-22.064V24.273c0-.491.409-.9.9-.9.082 0 .304 0 .538.175l47.693 47.705a11.698 11.698 0 0 0 14.76 1.449c16.688-11.149 36.158-17.039 56.306-17.039 20.136 0 39.617 5.89 56.306 17.039a11.698 11.698 0 0 0 14.76-1.449l47.693-47.705c.234-.175.456-.175.538-.175.491 0 .9.409.9.9v95.082c0 7.374-.678 14.76-1.987 22.064l-35.667 4.733c-6.393.841-10.892 6.72-10.05 13.124.783 5.878 5.797 10.144 11.57 10.144a13.9 13.9 0 0 0 1.554-.094l25.734-3.412a133.345 133.345 0 0 1-5.668 12.762l-20.615-1.741c-6.439-.549-12.084 4.219-12.633 10.658-.538 6.428 4.231 12.084 10.658 12.633l8.461.713a136.366 136.366 0 0 1-6.918 8.227c-23.174 25.325-53.232 39.267-84.634 39.267s-61.463-13.942-84.638-39.267zM447.871 445.41l-5.539 8.484c-16.022 21.749-41.674 34.732-68.67 34.732h-133.38V475c0-7.514 6.1-13.627 13.615-13.627h34.581c4.125 0 7.935-2.174 10.05-5.726a11.683 11.683 0 0 0 .21-11.558c-6.766-12.411-10.343-26.505-10.343-40.739 0-47.027 38.25-85.277 85.265-85.277 6.451 0 11.687-5.236 11.687-11.687 0-6.463-5.236-11.687-11.687-11.687-59.905 0-108.638 48.733-108.638 108.65 0 11.803 1.928 23.525 5.656 34.651h-16.782c-17.027 0-31.39 11.57-35.679 27.253h-11.523v-74.712c0-6.463-5.236-11.687-11.687-11.687a11.676 11.676 0 0 0-11.687 11.687v86.399c0 6.439-5.247 11.687-11.687 11.687h-59.555v-12.154c0-6.696 5.458-12.142 12.154-12.142h12.131c6.451 0 11.687-5.236 11.687-11.687v-77.949a11.663 11.663 0 0 0-1.274-8.461c-15.87-27.405-24.705-58.725-25.547-90.571-.105-3.88-.082-7.76.047-11.616 14.164 5.107 29.041 7.76 44.21 7.76 38.051 0 74.221-16.642 101.872-46.863a159.73 159.73 0 0 0 23.233-32.991l110.8 69.979c63.659 40.177 84.04 120.745 46.48 183.478zm18.827-149.997c-10.6-17.284-24.67-32.898-41.955-45.765v-103.8c0-11.57 9.408-20.977 20.977-20.977 5.598 0 10.868 2.185 14.842 6.147 3.95 3.95 6.135 9.221 6.135 14.83v149.565z"/>
+            <circle cx="93.001" cy="122.066" r="11.429"/>
+            <path d="M199.706 166.954c-2.863-5.06-9.291-6.825-14.339-3.95a6.753 6.753 0 0 1-4.78.736 6.856 6.856 0 0 1-5.095-4.569l-.012.012c-1.017-3.085-3.412-5.656-6.72-6.743-5.528-1.8-11.465 1.215-13.264 6.732a6.87 6.87 0 0 1-5.107 4.569c-2.092.444-3.751-.164-4.78-.736-5.049-2.875-11.464-1.11-14.339 3.95-2.863 5.049-1.099 11.465 3.95 14.339a27.86 27.86 0 0 0 19.493 3.039 27.788 27.788 0 0 0 10.763-4.838 27.931 27.931 0 0 0 10.798 4.838 27.843 27.843 0 0 0 19.481-3.039c5.05-2.875 6.826-9.291 3.951-14.34z"/>
+            <circle cx="237.985" cy="122.066" r="11.429"/>
+            <path d="M432.187 353.448c-1.543-6.264-7.877-10.097-14.141-8.555-6.264 1.543-10.097 7.877-8.555 14.141 4.85 19.657 1.858 40.12-8.414 57.603-3.272 5.563-1.414 12.727 4.16 15.987a11.545 11.545 0 0 0 5.902 1.613c4.008 0 7.912-2.057 10.086-5.761 13.381-22.777 17.273-49.422 10.962-75.028z"/>
+            <circle cx="93.001" cy="122.066" r="11.429"/>
+            <circle cx="237.985" cy="122.066" r="11.429"/>
+            <path d="M199.706 166.954c-2.863-5.06-9.291-6.825-14.339-3.95a6.753 6.753 0 0 1-4.78.736 6.856 6.856 0 0 1-5.095-4.569l-.012.012c-1.017-3.085-3.412-5.656-6.72-6.743-5.528-1.8-11.465 1.215-13.264 6.732a6.87 6.87 0 0 1-5.107 4.569c-2.092.444-3.751-.164-4.78-.736-5.049-2.875-11.464-1.11-14.339 3.95-2.863 5.049-1.099 11.465 3.95 14.339a27.86 27.86 0 0 0 19.493 3.039 27.788 27.788 0 0 0 10.763-4.838 27.931 27.931 0 0 0 10.798 4.838 27.843 27.843 0 0 0 19.481-3.039c5.05-2.875 6.826-9.291 3.951-14.34zM432.187 353.448c-1.543-6.264-7.877-10.097-14.141-8.555-6.264 1.543-10.097 7.877-8.555 14.141 4.85 19.657 1.858 40.12-8.414 57.603-3.272 5.563-1.414 12.727 4.16 15.987a11.545 11.545 0 0 0 5.902 1.613c4.008 0 7.912-2.057 10.086-5.761 13.381-22.777 17.273-49.422 10.962-75.028z"/>
+        </svg>
+        No flashcards found
+    </div>`;
 
-    const loadingSvg = `<svg fill="white" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_9y7u{animation:spinner_fUkk 2.4s linear infinite;animation-delay:-2.4s}.spinner_DF2s{animation-delay:-1.6s}.spinner_q27e{animation-delay:-.8s}@keyframes spinner_fUkk{8.33%{x:13px;y:1px}25%{x:13px;y:1px}33.3%{x:13px;y:13px}50%{x:13px;y:13px}58.33%{x:1px;y:13px}75%{x:1px;y:13px}83.33%{x:1px;y:1px}}</style><rect class="spinner_9y7u" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_DF2s" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_q27e" x="1" y="1" rx="1" width="10" height="10"/></svg>`;
+    /* List Screen
+    - searchText, tableContainer, deckSelect, userData, flashcards, setActiveDeckButton global vars
+    - createListScreen() should create searchBar, await updateDeckList(), then loadDeck(userData["deck"]).
+      Also create the setActiveDeckButton, set its status on deck load, and when pressed
+    - searchbar calls updateFlashcardList() on every input, but this does nothing if !flashcards
+    - updateFlashcardList() takes current searchtext and then updates table to reflect it
+    - updateDeckList() fetches decklist and populates the deckSelect, annotating current deck
+        * All normal drop-down options loadDeck(deck)
+        * "Create deck..." option creates a deck named "Untitled Deck 1" (or "Untitled 
+          deck 2", "Untitled Deck 3", etc.) switches drop-down to that deck, then loads it
+    - loadDeck(deck) loads the deck specified by deck by awaiting "listFlashcards" message, then
+      it calls updateFlashcardList() */
 
+    let searchText = '';
+    let tableContainer;
+    let deckSelect;
+    let userData;
+    let flashcards;
+    let setActiveDeckButton;
+    
     async function createListScreen() {
         screenDiv.innerHTML = ''; // Clear current content
         const fullscreenDiv = document.createElement('div');
         fullscreenDiv.id = 'blobsey-flashcard-fullscreen-div';
         screenDiv.appendChild(fullscreenDiv);
     
+        // Create a drop-down menu for deck selection
+        deckSelect = document.createElement('select');
+        deckSelect.id = 'blobsey-flashcard-deck-select';
+        fullscreenDiv.appendChild(deckSelect);
+
+        setActiveDeckButton = document.createElement('button');
+        setActiveDeckButton.id = 'blobsey-flashcard-set-active-deck-button';
+        setActiveDeckButton.disabled = true;
+        setActiveDeckButton.textContent = "Loading..."
+        setActiveDeckButton.addEventListener('click', async () => {
+            setActiveDeckButton.innerHTML = loadingSvg;
+            const selectedDeck = deckSelect.value;
+            try {
+                await browser.runtime.sendMessage({
+                    action: "setUserData",
+                    userData: { deck: selectedDeck }
+                });
+                userData.deck = selectedDeck;
+                await updateDeckList();
+                updateSetActiveDeckButtonState();
+            } catch (error) {
+                console.error("Error while setting active deck: ", error);
+            }
+        });
+        fullscreenDiv.appendChild(setActiveDeckButton);
+    
+        // Create a search bar
+        const searchBar = document.createElement('input');
+        searchBar.id = 'blobsey-flashcard-search-bar';
+        searchBar.setAttribute('type', 'text');
+        searchBar.setAttribute('placeholder', 'Search flashcards...');
+        searchBar.addEventListener('input', () => {
+            searchText = searchBar.value.trim();
+            updateFlashcardList();
+        });
+        fullscreenDiv.appendChild(searchBar);
+        searchBar.focus();
+    
+        createCloseButton();
+    
         // Create a container for the table
         const container = document.createElement('div');
         container.id = 'blobsey-flashcard-list-container';
         fullscreenDiv.appendChild(container);
-   
-        const loadingDiv = document.createElement('div');
-        loadingDiv.id = 'blobsey-flashcard-loading-div';
-        loadingDiv.innerHTML =  loadingSvg;
-        container.appendChild(loadingDiv);
     
-        // Fetch flashcards from background.js
-        try {
-            const response = await browser.runtime.sendMessage({ action: "listFlashcards" });
-            if (response.result === "success") {
-                let flashcards = response.flashcards || [];
-
-                container.innerHTML = '';
-
-                // Create a search bar
-                const searchBar = document.createElement('input');
-                searchBar.id = 'blobsey-flashcard-search-bar';
-                searchBar.setAttribute('type', 'text');
-                searchBar.setAttribute('placeholder', 'Search flashcards...');
-                fullscreenDiv.insertBefore(searchBar, container); // Insert before the container
-                searchBar.focus();
-
-                // tableContainer to hold table
-                const tableContainer = document.createElement('div');
-                tableContainer.id = 'blobsey-flashcard-list-table-container';
-                container.appendChild(tableContainer);
-                updateFlashcardList(tableContainer, flashcards);
-
-                // Filter cards based on searchText
-                searchBar.addEventListener('input', () => {
-                    const searchText = searchBar.value.trim();
-                    if (searchText) {
-                        flashcards = response.flashcards.filter(card => 
-                            card.card_front.toLowerCase().includes(searchText.toLowerCase()) || 
-                            card.card_back.toLowerCase().includes(searchText.toLowerCase()));
-                    } else {
-                        // If the search bar is cleared, show all flashcards again
-                        flashcards = response.flashcards;
-                    }
-                    updateFlashcardList(tableContainer, flashcards);
-                });
-
-            } else {
-                throw new Error(response.message);
-            }
-        } 
-        catch (error) {
-            container.innerHTML = error.message;
-            console.error("Error fetching flashcards:", error);
-        }
-        finally {
-            createCloseButton();
-        }
+        // tableContainer to hold table
+        tableContainer = document.createElement('div');
+        tableContainer.id = 'blobsey-flashcard-list-table-container';
+        loadingDiv = document.createElement('div'); // Loading screen
+        loadingDiv.id = "blobsey-flashcard-loading-div";
+        loadingDiv.innerHTML = blocksSvg;
+        tableContainer.appendChild(loadingDiv);
+        container.appendChild(tableContainer);
+    
+        await updateDeckList();
+        deckSelect.value = userData.deck;
+        await loadDeck(userData.deck);
     }
 
-    // Helper function to update list of flashcards (used with searchbar)
-    function updateFlashcardList(tableContainer, flashcards) {
+    function updateSetActiveDeckButtonState() {
+        const isActiveDeck = deckSelect.value === userData.deck;
+        setActiveDeckButton.disabled = isActiveDeck;
+        setActiveDeckButton.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
+    }
+    
+    async function updateDeckList() {
+        try {
+            const preservedOption = deckSelect.value || null; // Preserve previous selected value
+            deckSelect.innerHTML = ''; // Clear existing options
+
+            // Fetch deck list
+            const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
+            if (result !== "success") {
+                throw new Error("Error fetching user data: ", response.result);
+            }
+            userData = data;
+        
+            // Populate deckSelect
+            userData.decks.forEach(deck => {
+                const option = document.createElement('option');
+                option.value = deck;
+                option.textContent = deck;
+                if (userData.deck === deck) 
+                    option.textContent += " (Active)"
+                
+                deckSelect.appendChild(option);
+            });
+
+            deckSelect.value = preservedOption;
+        
+            // Add "Create Deck" option
+            const createDeckOption = document.createElement('option');
+            createDeckOption.value = 'create';
+            createDeckOption.textContent = 'Create Deck...';
+            deckSelect.appendChild(createDeckOption);
+        
+            deckSelect.addEventListener('change', async () => {
+                if (deckSelect.value === 'create') {
+                    // Find a unique deck name
+                    let counter = 1;
+                    let newDeckName;  
+                    do {
+                        newDeckName = `Untitled Deck ${counter}`;
+                        counter++;
+                    } while (userData.decks.includes(newDeckName));
+                
+                    // Create deck with new name
+                    try {
+                        const updatedDecks = [...userData.decks, newDeckName];
+                        await browser.runtime.sendMessage({
+                            action: "setUserData",
+                            userData: { decks: updatedDecks }
+                        });
+                        userData.decks = updatedDecks;
+                        await updateDeckList();
+                        deckSelect.value = newDeckName;
+                        loadDeck(newDeckName);
+                    } catch (error) {
+                        console.error("Error while creating a new deck: ", error);
+                    }
+                } else {
+                    await loadDeck(deckSelect.value);
+                }
+            });
+            
+        } catch (error) {
+            console.error("Error while fetching user data: ", error);
+        }
+    }
+    
+    async function loadDeck(deck) {
+        tableContainer.innerHTML = '';
+        flashcards = null; // Should be null just in case user enters something into search bar while loading
+
+        // Loading screen
+        loadingDiv = document.createElement('div');
+        loadingDiv.id = "blobsey-flashcard-loading-div";
+        loadingDiv.innerHTML = blocksSvg;
+        tableContainer.appendChild(loadingDiv); 
+
+        try {
+            const response = await browser.runtime.sendMessage({
+                action: "listFlashcards",
+                deck: deck
+            });
+            if (response.result === "success") {
+                flashcards = response.flashcards || [];
+            }
+        }
+        catch (error) {
+            flashcards = null;
+            tableContainer.innerHTML = error;
+            console.error("Error while loading deck: ", error);
+        }
+        finally {
+            updateFlashcardList();
+            updateSetActiveDeckButtonState();
+        }
+    }
+    
+    function updateFlashcardList() {
+        if (!flashcards) {
+            return;
+        }
+    
         tableContainer.innerHTML = ''; // Clear existing content
-        tableContainer.id = 'blobsey-flashcard-list-table-container';
     
         const table = document.createElement('table');
         table.id = 'blobsey-flashcard-list-table';
@@ -799,45 +941,33 @@
     
         const tbody = document.createElement('tbody');
         table.appendChild(tbody);
-
-        if (flashcards.length === 0) {
-            const cat = document.createElement('div');
-            cat.id = "blobsey-flashcard-cat";
-            cat.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="200" height="200" fill="#fff" viewBox="0 0 512 512">
-                <circle cx="93.001" cy="122.066" r="11.429"/>
-                <path d="M199.706 166.954c-2.863-5.06-9.291-6.825-14.339-3.95a6.753 6.753 0 0 1-4.78.736 6.854 6.854 0 0 1-5.095-4.569l-.012.012c-1.017-3.085-3.412-5.656-6.72-6.743-5.528-1.8-11.465 1.215-13.264 6.731a6.87 6.87 0 0 1-5.107 4.569c-2.092.444-3.751-.164-4.78-.736-5.049-2.875-11.464-1.11-14.339 3.95-2.863 5.049-1.099 11.465 3.95 14.339a27.86 27.86 0 0 0 19.493 3.039 27.788 27.788 0 0 0 10.763-4.838 27.931 27.931 0 0 0 10.798 4.838 27.843 27.843 0 0 0 19.481-3.039c5.05-2.874 6.826-9.29 3.951-14.339z"/>
-                <circle cx="237.985" cy="122.066" r="11.429"/>
-                <path d="M423.791 344.933a11.612 11.612 0 0 0-5.745-.039c-6.264 1.543-10.097 7.877-8.555 14.141 4.85 19.657 1.858 40.12-8.414 57.603-3.272 5.563-1.414 12.727 4.16 15.987a11.545 11.545 0 0 0 5.902 1.613c4.008 0 7.912-2.057 10.086-5.761a101.69 101.69 0 0 0 8.246-17.732 99.716 99.716 0 0 0 5.549-28.31 99.838 99.838 0 0 0-.355-14.506 100.736 100.736 0 0 0-1.917-12.076c-.177-.802-.365-1.603-.562-2.403a11.624 11.624 0 0 0-1.598-3.629 11.643 11.643 0 0 0-1.104-1.441 11.763 11.763 0 0 0-.799-.796 11.81 11.81 0 0 0-1.425-1.087 11.646 11.646 0 0 0-3.469-1.564z"/>
-                <path d="M490.036 373.97c.012-.222.035-.456.035-.69V145.848c0-11.862-4.616-23.011-12.995-31.367-8.391-8.368-19.517-12.984-31.355-12.984-24.46 0-44.351 19.891-44.351 44.351v88.432l-101.264-63.96c5.843-16.455 8.952-33.739 8.952-50.965V24.273C309.058 10.892 298.166 0 284.785 0a24.18 24.18 0 0 0-16.84 6.801L226.54 48.207c-18.605-10.436-39.512-15.917-61.051-15.917-21.538 0-42.457 5.481-61.051 15.917L63.032 6.802A24.176 24.176 0 0 0 46.192 0C32.811 0 21.919 10.892 21.919 24.273v95.082c0 38.133 15.204 76.617 41.698 105.588 10.506 11.488 22.251 21.001 34.861 28.398-.619 7.573-.83 15.263-.619 22.952.923 34.452 10.202 68.331 26.821 98.296v66.368h-.444c-19.587 0-35.527 15.929-35.527 35.515v13.077c0 12.376 10.074 22.45 22.438 22.45h60.49c15.228 0 28.223-9.77 33.05-23.373h12.224v.257c0 12.738 10.366 23.116 23.104 23.116h133.648c34.522 0 67.315-16.653 87.696-44.526.012 0 .012-.012.012-.012a105.034 105.034 0 0 0 6.159-9.396c.035-.047.058-.093.094-.14.07-.128.152-.257.234-.397 15.738-26.235 22.867-55.113 22.178-83.558zM80.854 209.166a136.366 136.366 0 0 1-6.918-8.227l8.449-.713c6.428-.549 11.207-6.206 10.658-12.633-.538-6.439-6.194-11.207-12.633-10.658l-20.603 1.741a136.292 136.292 0 0 1-5.668-12.762l25.734 3.412c.514.07 1.028.093 1.543.093 5.773 0 10.798-4.266 11.57-10.144.853-6.404-3.646-12.283-10.05-13.124l-35.656-4.733c-1.297-7.304-1.987-14.69-1.987-22.064V24.273c0-.491.409-.9.9-.9.082 0 .304 0 .538.175l47.693 47.705a11.698 11.698 0 0 0 14.76 1.449c16.688-11.149 36.158-17.039 56.306-17.039 20.136 0 39.617 5.89 56.306 17.039a11.698 11.698 0 0 0 14.76-1.449l47.693-47.705c.234-.175.456-.175.538-.175.491 0 .9.409.9.9v95.082c0 7.374-.678 14.76-1.987 22.064l-35.667 4.733c-6.393.841-10.892 6.72-10.05 13.124.783 5.878 5.797 10.144 11.57 10.144a13.9 13.9 0 0 0 1.554-.094l25.734-3.412a133.345 133.345 0 0 1-5.668 12.762l-20.615-1.741c-6.439-.549-12.084 4.219-12.633 10.658-.538 6.428 4.231 12.084 10.658 12.633l8.461.713a136.366 136.366 0 0 1-6.918 8.227c-23.174 25.325-53.232 39.267-84.634 39.267s-61.463-13.942-84.638-39.267zM447.871 445.41l-5.539 8.484c-16.022 21.749-41.674 34.732-68.67 34.732h-133.38V475c0-7.514 6.1-13.627 13.615-13.627h34.581c4.125 0 7.935-2.174 10.05-5.726a11.683 11.683 0 0 0 .21-11.558c-6.766-12.411-10.343-26.505-10.343-40.739 0-47.027 38.25-85.277 85.265-85.277 6.451 0 11.687-5.236 11.687-11.687 0-6.463-5.236-11.687-11.687-11.687-59.905 0-108.638 48.733-108.638 108.65 0 11.803 1.928 23.525 5.656 34.651h-16.782c-17.027 0-31.39 11.57-35.679 27.253h-11.523v-74.712c0-6.463-5.236-11.687-11.687-11.687a11.676 11.676 0 0 0-11.687 11.687v86.399c0 6.439-5.247 11.687-11.687 11.687h-59.555v-12.154c0-6.696 5.458-12.142 12.154-12.142h12.131c6.451 0 11.687-5.236 11.687-11.687v-77.949a11.663 11.663 0 0 0-1.274-8.461c-15.87-27.405-24.705-58.725-25.547-90.571-.105-3.88-.082-7.76.047-11.616 14.164 5.107 29.041 7.76 44.21 7.76 38.051 0 74.221-16.642 101.872-46.863a159.73 159.73 0 0 0 23.233-32.991l110.8 69.979c63.659 40.177 84.04 120.745 46.48 183.478zm18.827-149.997c-10.6-17.284-24.67-32.898-41.955-45.765v-103.8c0-11.57 9.408-20.977 20.977-20.977 5.598 0 10.868 2.185 14.842 6.147 3.95 3.95 6.135 9.221 6.135 14.83v149.565z"/>
-                <circle cx="93.001" cy="122.066" r="11.429"/>
-                <path d="M199.706 166.954c-2.863-5.06-9.291-6.825-14.339-3.95a6.753 6.753 0 0 1-4.78.736 6.856 6.856 0 0 1-5.095-4.569l-.012.012c-1.017-3.085-3.412-5.656-6.72-6.743-5.528-1.8-11.465 1.215-13.264 6.732a6.87 6.87 0 0 1-5.107 4.569c-2.092.444-3.751-.164-4.78-.736-5.049-2.875-11.464-1.11-14.339 3.95-2.863 5.049-1.099 11.465 3.95 14.339a27.86 27.86 0 0 0 19.493 3.039 27.788 27.788 0 0 0 10.763-4.838 27.931 27.931 0 0 0 10.798 4.838 27.843 27.843 0 0 0 19.481-3.039c5.05-2.875 6.826-9.291 3.951-14.34z"/>
-                <circle cx="237.985" cy="122.066" r="11.429"/>
-                <path d="M432.187 353.448c-1.543-6.264-7.877-10.097-14.141-8.555-6.264 1.543-10.097 7.877-8.555 14.141 4.85 19.657 1.858 40.12-8.414 57.603-3.272 5.563-1.414 12.727 4.16 15.987a11.545 11.545 0 0 0 5.902 1.613c4.008 0 7.912-2.057 10.086-5.761 13.381-22.777 17.273-49.422 10.962-75.028z"/>
-                <circle cx="93.001" cy="122.066" r="11.429"/>
-                <circle cx="237.985" cy="122.066" r="11.429"/>
-                <path d="M199.706 166.954c-2.863-5.06-9.291-6.825-14.339-3.95a6.753 6.753 0 0 1-4.78.736 6.856 6.856 0 0 1-5.095-4.569l-.012.012c-1.017-3.085-3.412-5.656-6.72-6.743-5.528-1.8-11.465 1.215-13.264 6.732a6.87 6.87 0 0 1-5.107 4.569c-2.092.444-3.751-.164-4.78-.736-5.049-2.875-11.464-1.11-14.339 3.95-2.863 5.049-1.099 11.465 3.95 14.339a27.86 27.86 0 0 0 19.493 3.039 27.788 27.788 0 0 0 10.763-4.838 27.931 27.931 0 0 0 10.798 4.838 27.843 27.843 0 0 0 19.481-3.039c5.05-2.875 6.826-9.291 3.951-14.34zM432.187 353.448c-1.543-6.264-7.877-10.097-14.141-8.555-6.264 1.543-10.097 7.877-8.555 14.141 4.85 19.657 1.858 40.12-8.414 57.603-3.272 5.563-1.414 12.727 4.16 15.987a11.545 11.545 0 0 0 5.902 1.613c4.008 0 7.912-2.057 10.086-5.761 13.381-22.777 17.273-49.422 10.962-75.028z"/>
-            </svg>
-            No flashcards found`;
-            tableContainer.appendChild(cat);
-        }
     
-        flashcards.forEach(card => {
-            const row = document.createElement('tr');
-            const frontCell = document.createElement('td');
-            frontCell.textContent = truncateText(card.card_front, 50);
-            const backCell = document.createElement('td');
-            backCell.textContent = truncateText(card.card_back, 50);
-            row.appendChild(frontCell);
-            row.appendChild(backCell);
-            tbody.appendChild(row);
+        const filteredFlashcards = flashcards.filter(card =>
+            card.card_front.toLowerCase().includes(searchText.toLowerCase()) ||
+            card.card_back.toLowerCase().includes(searchText.toLowerCase())
+        );
+    
+        if (filteredFlashcards.length === 0) {
+            tableContainer.innerHTML = catSvg;
+        } 
+        else {
+            filteredFlashcards.forEach(card => {
+                const row = document.createElement('tr');
+                const frontCell = document.createElement('td');
+                frontCell.textContent = truncateText(card.card_front, 50);
+                const backCell = document.createElement('td');
+                backCell.textContent = card.card_back;
+                row.appendChild(frontCell);
+                row.appendChild(backCell);
+                tbody.appendChild(row);
 
-            // Add click event listener to each row
-            row.addEventListener('click', function() {
-                editFlashcard = card; // Update the global variable with the selected flashcard
-                screens["edit"].activate(); // Switch to the edit screen
+                // Add click event listener to each row
+                row.addEventListener('click', function() {
+                    editFlashcard = card; // Update the global variable with the selected flashcard
+                    screens["edit"].activate(); // Switch to the edit screen
+                });
             });
-        });
+        }
     }
     
 

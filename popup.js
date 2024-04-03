@@ -120,19 +120,19 @@ async function createMainScreen() {
     contentDiv.innerHTML = ''; // Clear existing content
 
     try {
-        const { config } = await browser.runtime.sendMessage({ action: "getConfig" });
-        const userInfo = await browser.runtime.sendMessage({ action: "userInfo" });
+        const { result, apiBaseUrl } = await browser.runtime.sendMessage({ action: "getApiBaseUrl" });
+        const authInfo = await browser.runtime.sendMessage({ action: "authInfo" });
 
         const infoDiv = document.createElement('div');
         infoDiv.id = "info";
         contentDiv.appendChild(infoDiv);
 
         const apiBaseUrlDiv = document.createElement('div');
-        apiBaseUrlDiv.innerHTML = `Connected to:<br><code>${config.apiBaseUrl}</code>`;
+        apiBaseUrlDiv.innerHTML = `Connected to:<br><code>${apiBaseUrl}</code>`;
         infoDiv.appendChild(apiBaseUrlDiv);
 
         const idDiv = document.createElement('div');
-        idDiv.innerHTML = `Logged in as <code>${userInfo["email"]}</code>`;
+        idDiv.innerHTML = `Logged in as <code>${authInfo["email"]}</code>`;
         infoDiv.appendChild(idDiv);
 
         const menu = document.createElement('div');
@@ -140,7 +140,7 @@ async function createMainScreen() {
         contentDiv.appendChild(menu);
 
         Object.keys(menuOptions).forEach(key => {
-            if (key === "main") return; // Don't want a useless menu option
+            if (key === "main") return; // Avoid blank option
             const menuOption = menuOptions[key];
             const button = document.createElement('button');
             button.textContent = menuOption.label;
@@ -202,11 +202,10 @@ async function createLoginScreen() {
     contentDiv.innerHTML = '';
 
     const form = document.createElement('form');
-    form.id = 'configForm'; // Assign an ID to the form for easier reference
     contentDiv.appendChild(form);
 
     try {
-        const { config } = await browser.runtime.sendMessage({ action: "getConfig" });
+        const { result, apiBaseUrl } = await browser.runtime.sendMessage({ action: "getApiBaseUrl" });
 
         const label = document.createElement('label');
         label.textContent = "API Base URL";
@@ -215,7 +214,7 @@ async function createLoginScreen() {
 
         const input = document.createElement('input');
         input.id = "apiBaseUrl";
-        input.value = config["apiBaseUrl"] || '';
+        input.value = apiBaseUrl;
         input.name = "apiBaseUrl";
         form.appendChild(input);
 
@@ -227,21 +226,18 @@ async function createLoginScreen() {
         // Use the form submit event to capture form data and prevent default form submission
         form.addEventListener('submit', async (event) => {
             event.preventDefault(); // Prevent the form from submitting in the traditional way
-    
-            const formData = new FormData(form);
-            config["apiBaseUrl"] = formData.get('apiBaseUrl'); // Update the apiBaseUrl
-    
+        
             try {
-                // Set the new config
+                // Set the new apiBaseUrl
                 await browser.runtime.sendMessage({
-                    action: "setConfig",
-                    config: config
+                    action: "setApiBaseUrl",
+                    apiBaseUrl: new FormData(form).get('apiBaseUrl')
                 });
     
                 // Proceed to login, using the newly set apiBaseUrl
                 await browser.runtime.sendMessage({action: "login"});
             } catch (error) {
-                console.error("Error with initiating login or setting config:", error);
+                console.error("Error with initiating login or setting API Base URL:", error);
             }
         });
     }
@@ -257,56 +253,79 @@ async function createConfigScreen() {
 
     const form = document.createElement('form');
     contentDiv.appendChild(form);
-    
 
     try {
-        // Load the current configuration
-        const { result, config } = await browser.runtime.sendMessage({ action: "getConfig" });
+        // Load the current user data
+        const { result, data: userData } = await browser.runtime.sendMessage({ action: "getUserData" });
 
-        // Dynamically create form inputs and labels based on config
-        Object.keys(config).forEach(key => {
-            if (key === "apiBaseUrl") return; // Shouldn't be able to change API Base URL after auth
-            const label = document.createElement('label');
-            label.textContent = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
-            label.htmlFor = key;
-            form.appendChild(label);
-
-            const input = document.createElement('input');
-            input.id = key;
-            input.value = config[key] || '';
-            input.name = key;
-
-            form.appendChild(input);
-
-            // Adding a break for better readability
-            form.appendChild(document.createElement('br'));
-        });
-
-    } catch (error) {
-        console.error('Failed to load configuration:', error);
-    }
-
-    // Event listener for form submission to save configuration
-    const saveAction = async () => {
-        const formData = new FormData(form);
-        const newConfig = {};
-
-        for (const [key, value] of formData.entries()) {
-            newConfig[key] = value;
+        if (result !== "success") {
+            throw new Error(result);
         }
 
-        const response = await browser.runtime.sendMessage({
-            action: "setConfig",
-            config: newConfig
+        // Deck dropdown
+        const deckLabel = document.createElement('label');
+        deckLabel.textContent = 'Active Deck';
+        form.appendChild(deckLabel);
+
+        const deckSelect = document.createElement('select');
+        deckSelect.name = 'deck';
+
+        userData.decks.forEach(deck => {
+            const option = document.createElement('option');
+            option.value = deck;
+            option.textContent = deck;
+            if (deck === userData.deck) {
+                option.selected = true;
+            }
+            deckSelect.appendChild(option);
         });
 
-        if (response.result !== "success")
-            throw new Error(response.message);
-    };
+        form.appendChild(deckSelect);
+        
+        // max_new_cards input field
+        const maxNewCardsLabel = document.createElement('label');
+        maxNewCardsLabel.textContent = 'New Cards/Day';
+        form.appendChild(maxNewCardsLabel);
 
-    saveButton = await createButtonWithStatus("Save", saveAction);
+        const maxNewCardsInput = document.createElement('input');
+        maxNewCardsInput.type = 'number';
+        maxNewCardsInput.name = 'max_new_cards';
+        maxNewCardsInput.value = userData.max_new_cards || '';
+        maxNewCardsInput.step = '1'; // Set the step to 1 to allow only whole numbers
+        maxNewCardsInput.min = '0'; // Set the minimum value to 0
+        maxNewCardsInput.pattern = '\\d*'; // Set the pattern to allow only digits
+        maxNewCardsInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, ''); // Remove any non-digit characters
+        });
+        form.appendChild(maxNewCardsInput);
 
-    contentDiv.appendChild(saveButton);
+        // Create save button
+        const saveButton = createButtonWithStatus("Save", async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const updatedUserData = {
+                max_new_cards: parseInt(formData.get('max_new_cards')) || null,
+                deck: formData.get('deck')
+            };
+
+            try {
+                const { result } = await browser.runtime.sendMessage({
+                    action: "setUserData",
+                    userData: updatedUserData
+                });
+
+                if (result !== "success") 
+                    throw new Error(result);
+            } catch (error) {
+                console.error("Error updating user data:", error);
+            }
+        });
+
+        contentDiv.append(saveButton);
+    } catch (error) {
+        console.error('Failed to load user data:', error);
+    }
 }
 
 
@@ -411,14 +430,14 @@ async function createAddScreen() {
         }
     };
 
-    const buttonWithStatus = await createButtonWithStatus('Add Flashcard', submitAction);
+    const buttonWithStatus = createButtonWithStatus('Add Flashcard', submitAction);
 
     contentDiv.appendChild(textareaFront);
     contentDiv.appendChild(inputBack);
     contentDiv.appendChild(buttonWithStatus); 
 }
 
-async function createButtonWithStatus(buttonText, actionFunction) {
+function createButtonWithStatus(buttonText, actionFunction) {
     // Create the button
     const button = document.createElement('button');
     button.textContent = buttonText;
@@ -434,13 +453,13 @@ async function createButtonWithStatus(buttonText, actionFunction) {
     container.appendChild(statusIndicator);
 
     // Attach the click event listener to the button
-    button.addEventListener('click', async () => {
+    button.addEventListener('click', async (event) => {
         button.disabled = true; // Disable the button to prevent multiple clicks
         statusIndicator.innerHTML = loadingSvg; // Show loading indicator
 
         try {
             // Await the action function
-            await actionFunction();
+            await actionFunction(event);
             // On success, show the success indicator
             statusIndicator.innerHTML = successSvg;
             statusIndicator.title = ""; // Reset or set success title

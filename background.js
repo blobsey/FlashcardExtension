@@ -3,7 +3,7 @@
 
 // Global variables
 let openLoginWindows = new Map();
-let userInfo = null;
+let authInfo = null;
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
@@ -35,38 +35,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
     })();
 
-    return true; // This is crucial to indicate that sendResponse will be called asynchronously
+    return true; // Indicates sendResponse will be sent asynchronously
 });
-
-const defaultConfig = {
-    "apiBaseUrl": 'https://flashcard-api.blobsey.com',
-    "New cards per day": 30 // TODO: implement this
-};
-
-// Function to get config with defaults
-async function getConfig() {
-    try {
-        const { config } = await browser.storage.local.get("config");
-
-        // Check if config is an object
-        if (config && typeof config === 'object') {
-            // Fetch config, fill in any default values
-            const mergedConfig = {
-                ...defaultConfig, // Start with defaultConfig
-                ...config // Override with values from config where they exist
-            };
-
-            return mergedConfig;
-        } else {
-            // If config is not an object, return defaultConfig
-            return defaultConfig;
-        }
-    } catch (error) {
-        console.error("Error loading config:", error);
-        // Return defaultConfig in case of any error
-        return defaultConfig;
-    }
-}
 
 
 // Handlers for requests
@@ -78,13 +48,13 @@ const requestHandlers = {
     "getBlankHtmlData": async (request) => {
         return await browser.storage.local.get("blankHtmlData");
     },
-    "getConfig": async () => {
-        const config = await getConfig();
-        return {config};
+    "getApiBaseUrl": async () => {
+        const { apiBaseUrl } = await browser.storage.local.get("apiBaseUrl");
+        return apiBaseUrl ? { apiBaseUrl } : { apiBaseUrl: 'https://flashcard-api.blobsey.com' };
     },
-    "setConfig": async (request) => {
-        await browser.storage.local.set({ config: request.config });
-        return {config: request.config};
+    "setApiBaseUrl": async (request) => {
+        await browser.storage.local.set({ apiBaseUrl: request.apiBaseUrl });
+        return "Set API Base URL successfully.";
     },
     "resetTimer": async (request) => {
         await browser.alarms.clear("showFlashcardAlarm");
@@ -98,9 +68,9 @@ const requestHandlers = {
     },
     "login": async () => {
         try {
-            const config = await getConfig();
+            const { apiBaseUrl } = await requestHandlers["getApiBaseUrl"]();
             const loginWindow = await browser.windows.create({
-                url: `${config['apiBaseUrl']}/login`,
+                url: `${apiBaseUrl}/login`,
                 type: 'popup',
                 width: 500,
                 height: 600
@@ -114,7 +84,7 @@ const requestHandlers = {
     
             // Listen for updates to the login tab
             browser.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, tab) => {
-                if (updatedTabId === tabId && changeInfo.status === 'complete' && tab.url.startsWith(`${config['apiBaseUrl']}/auth`)) {
+                if (updatedTabId === tabId && changeInfo.status === 'complete' && tab.url.startsWith(`${apiBaseUrl}/auth`)) {
                     // Authentication completed, close the login window after 3 seconds
                     setTimeout(async () => {
                         try {
@@ -149,7 +119,7 @@ const requestHandlers = {
         }
     },
     "logout": async () => {
-        userInfo = null;
+        authInfo = null;
         const data = await handleApiRequest("/logout");
         return data;
     },
@@ -191,31 +161,42 @@ const requestHandlers = {
         return data;
     },
     "listFlashcards": async (request) => {
-        const data = await handleApiRequest("/list");
+        const deck = request.deck; // Get the deck parameter from the request
+        const data = await handleApiRequest(`/list?deck=${encodeURIComponent(deck)}`);
         return data;
     },
     "deleteFlashcard": async (request) => {
         const data = await handleApiRequest(`/delete/${request.card_id}`, {
-          method: 'DELETE'
+            method: 'DELETE'
         });
         return data;
     },
-    "userInfo": async (request) => {
-        if (!userInfo) {
-            userInfo = await handleApiRequest("/user-info");
+    "authInfo": async (request) => {
+        if (!authInfo) {
+            authInfo = await handleApiRequest("/auth-info");
         }
-        return userInfo;
+        return authInfo;
+    },
+    "getUserData": async () => {
+        return await handleApiRequest("/user-data", {
+            method: 'GET'
+        });
+    },
+    "setUserData": async (request) => {
+        return await handleApiRequest("/user-data", {
+            method: 'PUT',
+            body: request.userData
+        });
     }
 };
 
 
 async function handleApiRequest(path, options = {}) {
-    // Fetch the configuration to get the API base URL and API key
-    const config = await getConfig();
+    // Fetch the API Base URL
+    const { apiBaseUrl } = await requestHandlers["getApiBaseUrl"]();
     
     // Construct the full URL
-    const baseUrl = config.apiBaseUrl || "https://flashcard-api.blobsey.com";
-    const url = `${config.apiBaseUrl}${path}`
+    const url = `${apiBaseUrl}${path}`
 
     // Ensure headers object exists in options to add Content-Type and API Key
     if (!options.headers) {
