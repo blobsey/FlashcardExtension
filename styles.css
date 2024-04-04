@@ -240,28 +240,42 @@
     height: 100vh;
     align-items: center;
 }
-.blobsey-flashcard-ui #blobsey-flashcard-deck-select {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 30vw;
-    max-width: 20em;
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-    background: rgba(0, 0, 0, 0.1);
-    border: none;
-    outline: none;
+
+.blobsey-flashcard-dropdown-container {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    width: 25vw;
+    max-width: 10em;
+    font: bold 16px system-ui;
+    background-color: rgba(0, 0, 0, 0.25);
     cursor: pointer;
-    padding: 5px 25px 5px 5px;
-    transition: background-color 0.3s ease;
+    padding: 10px;
+    z-index: 20000; /* Ensure it's above other content */
 }
 
-
-.blobsey-flashcard-ui #blobsey-flashcard-deck-select option {
-    color: black;
+.blobsey-flashcard-dropdown-option {
+    cursor: pointer;
+    padding: 10px;
+}
+  
+.blobsey-flashcard-dropdown-options {
+    position: absolute;
+    top: 100%; /* Position the options below the container */
+    left: 0;
+    width: 100%; /* Match the width of the container */
+    backdrop-filter: blur(3px); 
+    background-color: rgba(0, 0, 0, 0.25);
+    z-index: 20001; /* Ensure it's above other content */
 }
 
+.blobsey-flashcard-dropdown-options.hidden {
+    display: none;
+}
+
+.blobsey-flashcard-dropdown-option:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
 
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button {
     position: absolute;

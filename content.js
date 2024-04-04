@@ -755,6 +755,81 @@
     - loadDeck(deck) loads the deck specified by deck by awaiting "listFlashcards" message, then
       it calls updateFlashcardList() */
 
+
+    class CustomDropdown {
+        constructor() {
+            this.options = new Map(); // Stores value => { text, onSelect }
+            this.selectedValue = null;
+    
+            // Main container
+            this.container = document.createElement('div');
+            this.container.className = 'blobsey-flashcard-dropdown-container';
+            this.container.addEventListener('click', this.toggleOptionsDisplay.bind(this));
+    
+            // Selected option text element
+            this.selectedOptionText = document.createElement('span');
+            this.selectedOptionText.className = 'blobsey-flashcard-dropdown-selected-text';
+            this.container.appendChild(this.selectedOptionText);
+    
+            // Container for all options, hidden initially
+            this.optionsContainer = document.createElement('div');
+            this.optionsContainer.className = 'blobsey-flashcard-dropdown-options hidden';
+            this.container.appendChild(this.optionsContainer);
+
+            // Close when click off
+            shadowRoot.addEventListener('click', (event) => {
+                if (!this.container.contains(event.target))
+                    this.optionsContainer.classList.add('hidden');
+            });
+        }
+    
+        addOption(value, text, onSelect = null) {
+            const optionElement = document.createElement('div');
+            optionElement.className = 'blobsey-flashcard-dropdown-option';
+            optionElement.textContent = text;
+
+            optionElement.addEventListener('click', (event) => {
+                event.stopPropagation(); 
+                this.selectOption(value, true);
+                this.toggleOptionsDisplay(); 
+            });
+        
+            this.options.set(value, { text, onSelect });
+            this.optionsContainer.appendChild(optionElement);
+        }
+      
+        toggleOptionsDisplay() {
+            this.optionsContainer.classList.toggle('hidden');
+        }
+    
+        selectOption(value, triggerOnSelect) {
+            const option = this.options.get(value);
+            if (option) {
+                this.selectedValue = value;
+                this.selectedOptionText.textContent = option.text; // Update the selected option text
+                if (triggerOnSelect && option.onSelect) {
+                    option.onSelect(value);
+                }
+            }
+        }
+
+        setSelectedOption(value) {
+            this.selectOption(value, false); 
+        }
+      
+        getSelectedOption() {
+            return this.selectedValue;
+        }
+
+    
+        clearOptions() {
+            this.optionsContainer.innerHTML = '';
+            this.options.clear();
+            this.selectedValue = null;
+            this.selectedOptionText.textContent = ''; // Clear the selected option text
+        }
+    }
+
     let searchText = '';
     let tableContainer;
     let deckSelect;
@@ -769,9 +844,9 @@
         screenDiv.appendChild(fullscreenDiv);
     
         // Create a drop-down menu for deck selection
-        deckSelect = document.createElement('select');
-        deckSelect.id = 'blobsey-flashcard-deck-select';
-        fullscreenDiv.appendChild(deckSelect);
+        deckSelect = new CustomDropdown();
+        fullscreenDiv.appendChild(deckSelect.container);
+        console.log(deckSelect);
 
         setActiveDeckButton = document.createElement('button');
         setActiveDeckButton.id = 'blobsey-flashcard-set-active-deck-button';
@@ -779,7 +854,7 @@
         setActiveDeckButton.textContent = "Loading..."
         setActiveDeckButton.addEventListener('click', async () => {
             setActiveDeckButton.innerHTML = loadingSvg;
-            const selectedDeck = deckSelect.value;
+            const selectedDeck = deckSelect.getSelectedOption();
             try {
                 await browser.runtime.sendMessage({
                     action: "setUserData",
@@ -823,20 +898,20 @@
         container.appendChild(tableContainer);
     
         await updateDeckList();
-        deckSelect.value = userData.deck;
+        deckSelect.setSelectedOption(userData.deck);
         await loadDeck(userData.deck);
     }
 
     function updateSetActiveDeckButtonState() {
-        const isActiveDeck = deckSelect.value === userData.deck;
+        const isActiveDeck = deckSelect.getSelectedOption() === userData.deck;
         setActiveDeckButton.disabled = isActiveDeck;
         setActiveDeckButton.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
     }
     
     async function updateDeckList() {
         try {
-            const preservedOption = deckSelect.value || null; // Preserve previous selected value
-            deckSelect.innerHTML = ''; // Clear existing options
+            const preservedOption = deckSelect.getSelectedOption(); // Preserve previous selected value
+            deckSelect.clearOptions(); // Clear existing options
 
             // Fetch deck list
             const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
@@ -847,26 +922,21 @@
         
             // Populate deckSelect
             userData.decks.forEach(deck => {
-                const option = document.createElement('option');
-                option.value = deck;
-                option.textContent = deck;
-                if (userData.deck === deck) 
-                    option.textContent += " (Active)"
-                
-                deckSelect.appendChild(option);
+                deckSelect.addOption(
+                    deck, // value
+                    (deck === userData.deck) ? `${deck} (Active)` : deck, // text
+                    async (selectedDeck) => { await loadDeck(selectedDeck); } // onSelect
+                );
             });
 
-            deckSelect.value = preservedOption;
+            if (preservedOption)
+                deckSelect.setSelectedOption(preservedOption);
         
             // Add "Create Deck" option
-            const createDeckOption = document.createElement('option');
-            createDeckOption.value = 'create';
-            createDeckOption.textContent = 'Create Deck...';
-            deckSelect.appendChild(createDeckOption);
-        
-            deckSelect.addEventListener('change', async () => {
-                if (deckSelect.value === 'create') {
-                    // Find a unique deck name
+            deckSelect.addOption(
+                "create", // value
+                "Create new...", // text
+                async () => { // onSelect
                     let counter = 1;
                     let newDeckName;  
                     do {
@@ -883,17 +953,16 @@
                         });
                         userData.decks = updatedDecks;
                         await updateDeckList();
-                        deckSelect.value = newDeckName;
+                        deckSelect.setSelectedOption(newDeckName);
                         loadDeck(newDeckName);
                     } catch (error) {
                         console.error("Error while creating a new deck: ", error);
                     }
-                } else {
-                    await loadDeck(deckSelect.value);
                 }
-            });
+            );
             
-        } catch (error) {
+        } 
+        catch (error) {
             console.error("Error while fetching user data: ", error);
         }
     }
@@ -981,5 +1050,6 @@
         }
         return text;
     }
+
     
 })();
