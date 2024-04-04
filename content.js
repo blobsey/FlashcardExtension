@@ -813,7 +813,7 @@
         selectOption(value, triggerOnSelect) {
             this.options.forEach((option) => {
                 if (option.value === value) {
-                    option.optionElement.style.display = 'none';
+                    option.optionElement.classList.add('selected');
                     this.selectedValue = value;
                     this.selectedOptionText.textContent = option.text; // Update the selected option text
                     if (triggerOnSelect && option.onSelect) {
@@ -821,7 +821,7 @@
                     }
                 }
                 else {
-                    option.optionElement.style.display = 'block';
+                    option.optionElement.classList.remove('selected');
                 }
             });
         }
