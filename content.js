@@ -758,7 +758,7 @@
 
     class CustomDropdown {
         constructor() {
-            this.options = new Map(); // Stores value => { text, onSelect }
+            this.options = []; 
             this.selectedValue = null;
     
             // Main container
@@ -769,17 +769,24 @@
             // Selected option text element
             this.selectedOptionText = document.createElement('span');
             this.selectedOptionText.className = 'blobsey-flashcard-dropdown-selected-text';
+            this.selectedOptionText.style.maxWidth = 'calc(100% - 20px)'; // Adjust the width to accommodate the arrow
             this.container.appendChild(this.selectedOptionText);
     
             // Container for all options, hidden initially
             this.optionsContainer = document.createElement('div');
-            this.optionsContainer.className = 'blobsey-flashcard-dropdown-options hidden';
+            this.optionsContainer.className = 'blobsey-flashcard-dropdown-options';
             this.container.appendChild(this.optionsContainer);
 
             // Close when click off
             shadowRoot.addEventListener('click', (event) => {
-                if (!this.container.contains(event.target))
-                    this.optionsContainer.classList.add('hidden');
+                if (!this.container.contains(event.target)) {
+                    this.optionsContainer.classList.remove('open');
+                    this.container.classList.remove('open');
+                }
+            });
+            window.addEventListener('blur', () => {
+                this.optionsContainer.classList.remove('open');
+                this.container.classList.remove('open');
             });
         }
     
@@ -794,23 +801,29 @@
                 this.toggleOptionsDisplay(); 
             });
         
-            this.options.set(value, { text, onSelect });
+            this.options.push({ value, text, onSelect, optionElement });
             this.optionsContainer.appendChild(optionElement);
         }
       
         toggleOptionsDisplay() {
-            this.optionsContainer.classList.toggle('hidden');
+            this.optionsContainer.classList.toggle('open');
+            this.container.classList.toggle('open');
         }
     
         selectOption(value, triggerOnSelect) {
-            const option = this.options.get(value);
-            if (option) {
-                this.selectedValue = value;
-                this.selectedOptionText.textContent = option.text; // Update the selected option text
-                if (triggerOnSelect && option.onSelect) {
-                    option.onSelect(value);
+            this.options.forEach((option) => {
+                if (option.value === value) {
+                    option.optionElement.style.display = 'none';
+                    this.selectedValue = value;
+                    this.selectedOptionText.textContent = option.text; // Update the selected option text
+                    if (triggerOnSelect && option.onSelect) {
+                        option.onSelect(value);
+                    }
                 }
-            }
+                else {
+                    option.optionElement.style.display = 'block';
+                }
+            });
         }
 
         setSelectedOption(value) {
@@ -824,7 +837,7 @@
     
         clearOptions() {
             this.optionsContainer.innerHTML = '';
-            this.options.clear();
+            this.options = [];
             this.selectedValue = null;
             this.selectedOptionText.textContent = ''; // Clear the selected option text
         }
@@ -846,7 +859,6 @@
         // Create a drop-down menu for deck selection
         deckSelect = new CustomDropdown();
         fullscreenDiv.appendChild(deckSelect.container);
-        console.log(deckSelect);
 
         setActiveDeckButton = document.createElement('button');
         setActiveDeckButton.id = 'blobsey-flashcard-set-active-deck-button';

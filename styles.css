@@ -241,39 +241,77 @@
     align-items: center;
 }
 
-.blobsey-flashcard-dropdown-container {
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-container {
     position: fixed;
     top: 16px;
     left: 16px;
-    width: 25vw;
-    max-width: 10em;
-    font: bold 16px system-ui;
-    background-color: rgba(0, 0, 0, 0.25);
+    width: 35vw;
+    max-width: 15em;
     cursor: pointer;
     padding: 10px;
-    z-index: 20000; /* Ensure it's above other content */
+    z-index: 20000; 
+    text-align: left;
 }
 
-.blobsey-flashcard-dropdown-option {
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-container::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%) rotate(0deg);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #fff;
+    transition: transform 0.3s ease;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-container.open::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-selected-text {
+    font: bold 16px system-ui;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: calc(100% - 30px);
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-option {
+    font: bold 16px system-ui;
+    text-align: left;
     cursor: pointer;
     padding: 10px;
 }
   
-.blobsey-flashcard-dropdown-options {
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-options {
     position: absolute;
-    top: 100%; /* Position the options below the container */
+    top: 100%;
     left: 0;
-    width: 100%; /* Match the width of the container */
-    backdrop-filter: blur(3px); 
-    background-color: rgba(0, 0, 0, 0.25);
-    z-index: 20001; /* Ensure it's above other content */
+    width: 100%;
+    padding: 0;
+    backdrop-filter: blur(10px); 
+    max-height: 0;
+    z-index: 20001; 
+    overflow: hidden;
+    overflow-y: scroll;
+    transition: max-height 0.3s ease;
+    scrollbar-width: none; /* For Firefox */
+    -ms-overflow-style: none; /* For Internet Explorer and Edge */
 }
 
-.blobsey-flashcard-dropdown-options.hidden {
-    display: none;
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-options::-webkit-scrollbar {
+    display: none; /* For Chrome, Safari, and Opera */
 }
 
-.blobsey-flashcard-dropdown-option:hover {
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-options.open {
+    max-height: 80vh;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-option:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -285,7 +323,6 @@
     box-sizing: border-box;
     height: 2em;
     transform: translateX(-100%);
-    font-size: 16px;
     padding: 5px 10px;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.75);
