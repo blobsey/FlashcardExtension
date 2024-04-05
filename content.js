@@ -956,7 +956,6 @@
                     }
                 }
             );
-            
         } 
         catch (error) {
             console.error("Error while fetching user data: ", error);
