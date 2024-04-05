@@ -241,11 +241,11 @@
     align-items: center;
 }
 
-
 /* CustomDropdown */
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-container {
-    position: relative;
-    float: left;
+    position: absolute;
+    top: 0;
+    left: max(0px, calc(50% - 30em));
     margin: 1em;
     min-height: 1em;
     cursor: pointer;
@@ -330,7 +330,7 @@
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option:hover {
-    background-color: rgba(255, 255, 255, 0.025);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 
