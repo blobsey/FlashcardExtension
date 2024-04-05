@@ -241,16 +241,27 @@
     align-items: center;
 }
 
+
+/* CustomDropdown */
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-container {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    width: 35vw;
-    max-width: 15em;
+    position: relative;
+    float: left;
+    margin: 1em;
+    min-height: 1em;
     cursor: pointer;
     padding: 10px;
-    z-index: 20000; 
+    z-index: 20000;
     text-align: left;
+    transition: max-width 0.15s ease, backdrop-filter .5s ease, background-color .5s ease;
+    box-sizing: content-box;
+    display: flex; 
+    align-items: center; 
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-container.open {
+    max-width: min(calc(100vw - 4em), 30em) !important;
+    background-color: rgba(0, 0, 0, .25) !important;
+    backdrop-filter: blur(10px);
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-container::after {
@@ -272,18 +283,38 @@
     transform: translateY(-50%) rotate(180deg);
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-dropdown-selected-text {
-    font: bold 16px system-ui;
-    white-space: nowrap;
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    padding: 0;
+    max-height: 0;
+    z-index: 20001; 
     overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-y: scroll;
+    transition: max-height 0.3s ease, max-width 0.15s ease, backdrop-filter .5s ease, background-color .5s ease;
+    scrollbar-width: none; /* For Firefox */
+    -ms-overflow-style: none; /* For Internet Explorer and Edge */
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-options.open {
+    max-height: calc(100vh - 2em);
+    backdrop-filter: blur(10px); 
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-selected-text {
+    font-family: system-ui;
+    white-space: nowrap;
     display: inline-block;
-    max-width: calc(100% - 30px);
     user-select: none;
+    padding: 0;
+    line-height: 1; 
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option {
-    font: bold 16px system-ui;
+    font-family: system-ui;
     text-align: left;
     cursor: pointer;
     padding: 10px;
@@ -291,38 +322,19 @@
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option.selected {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-  
-.blobsey-flashcard-ui .blobsey-flashcard-dropdown-options {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    padding: 0;
-    backdrop-filter: blur(10px); 
-    background-color: rgba(0, 0, 0, 0.25);
-    max-height: 0;
-    z-index: 20001; 
-    overflow: hidden;
-    overflow-y: scroll;
-    transition: max-height 0.3s ease;
-    scrollbar-width: none; /* For Firefox */
-    -ms-overflow-style: none; /* For Internet Explorer and Edge */
+    background-color: rgba(255, 255, 255, 0.025);
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-options::-webkit-scrollbar {
     display: none; /* For Chrome, Safari, and Opera */
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-dropdown-options.open {
-    max-height: 80vh;
-}
-
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.025);
 }
 
+
+/* Set Active Deck Button */
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button {
     position: absolute;
     top: 20px;
@@ -338,6 +350,7 @@
     background: none;
     border-radius: 3px;
     outline: none;
+    background-color: rgba(255, 255, 255, 0.01);
     transition: background-color 0.1s, border-color 0.1s, color 0.1s;
 }
 
@@ -407,6 +420,8 @@
 .blobsey-flashcard-ui #blobsey-flashcard-list-table th:first-child,
 .blobsey-flashcard-ui #blobsey-flashcard-list-table td:first-child {
     text-align: left;
+    text-overflow: ellipsis;
+    overflow: hidden;
     width: 75%;
 }
 

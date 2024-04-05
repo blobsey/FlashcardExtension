@@ -187,7 +187,14 @@ const requestHandlers = {
             method: 'PUT',
             body: request.userData
         });
-    }
+    },
+    "deleteDeck": async (request) => {
+        const deck = request.deck;
+        const data = await handleApiRequest(`/delete-deck/${encodeURIComponent(deck)}`, {
+            method: 'DELETE'
+        });
+        return data;
+    },
 };
 
 
