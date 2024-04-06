@@ -195,6 +195,16 @@ const requestHandlers = {
         });
         return data;
     },
+    "renameDeck": async (request) => {
+        const data = await handleApiRequest("/rename-deck", {
+            method: 'PUT',
+            body: {
+                old_deck_name: request.oldDeckName,
+                new_deck_name: request.newDeckName
+            }
+        });
+        return data;
+    }
 };
 
 

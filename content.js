@@ -1018,9 +1018,29 @@
 
                 // Three dots menu
                 const threeDots = new ThreeDots();
-                threeDots.addOption('Rename', (event) => {
-                    console.log("Rename!");
+                threeDots.addOption('Rename', async (event) => {
+                    event.stopPropagation();
+                    const newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
+                    if (newName && newName !== deck) {
+                        try {
+                            await browser.runtime.sendMessage({
+                                action: "renameDeck",
+                                oldDeckName: deck,
+                                newDeckName: newName
+                            });
+                            await updateDeckList();
+                            if (deckSelect.getSelectedOption() === deck) {
+                                deckSelect.selectOption(newName, false);
+                                await loadDeck(newName);
+                            }
+                            deckSelect.openOptionsDisplay();
+                            showToast(`Deck "${deck}" renamed to "${newName}"`, 10000);
+                        } catch (error) {
+                            console.error("Error while renaming deck: ", error);
+                        }
+                    }
                 });
+                
                 threeDots.addOption('Delete', async (event) => {
                     event.stopPropagation();
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
