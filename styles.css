@@ -345,8 +345,8 @@
 
 .blobsey-flashcard-ui .blobsey-flashcard-three-dots-button {
     all: initial;
-    width: 2em;
-    height: 2em;
+    aspect-ratio: 1;
+    height: 100%;
     cursor: pointer;
     user-select: none;
     position: absolute;

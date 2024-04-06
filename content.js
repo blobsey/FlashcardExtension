@@ -911,9 +911,9 @@
         addOption(text, onClick) {
             const option = document.createElement('div');
             option.textContent = text;
-            option.addEventListener('click', (event) => {
+            option.addEventListener('click', async (event) => {
                 event.stopPropagation();
-                onClick(event);
+                await onClick(event);
             });
             this.menu.appendChild(option);
             this.toggleExpand();
@@ -982,6 +982,7 @@
         tableContainer = document.createElement('div');
         tableContainer.id = 'blobsey-flashcard-list-table-container';
         container.appendChild(tableContainer);
+        showLoadingScreen();
     
         await updateDeckList();
         deckSelect.selectOption(userData.deck, false);
@@ -1023,13 +1024,24 @@
                     const newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
                     if (newName && newName !== deck) {
                         try {
-                            await browser.runtime.sendMessage({
+                            const isRenamingSelectedDeck = deckSelect.getSelectedOption() === deck;
+                            if (isRenamingSelectedDeck) {
+                                showLoadingScreen();
+                                deckSelect.selectedOptionText.innerHTML = loadingSvg;
+                            }
+                            const response = await browser.runtime.sendMessage({
                                 action: "renameDeck",
                                 oldDeckName: deck,
                                 newDeckName: newName
                             });
+                            if (response.result !== "success") {
+                                const message = response.message || response.detail;
+                                showToast(message, 10000);
+                                throw new Error(message);
+                            }
+                            
                             await updateDeckList();
-                            if (deckSelect.getSelectedOption() === deck) {
+                            if (isRenamingSelectedDeck) {
                                 deckSelect.selectOption(newName, false);
                                 await loadDeck(newName);
                             }
@@ -1040,7 +1052,7 @@
                         }
                     }
                 });
-                
+
                 threeDots.addOption('Delete', async (event) => {
                     event.stopPropagation();
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
@@ -1122,15 +1134,21 @@
             console.error("Error while fetching user data: ", error);
         }
     }
+
+    function showLoadingScreen() {
+        if (!shadowRoot.getElementById("blobsey-flashcard-loading-div")) {
+            tableContainer.innerHTML = '';
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = "blobsey-flashcard-loading-div";
+            loadingDiv.innerHTML = blocksSvg;
+            tableContainer.appendChild(loadingDiv); 
+        }
+    }
     
     async function loadDeck(deck) {
-        tableContainer.innerHTML = '';
         flashcards = null; // Should be null just in case user enters something into search bar while loading
 
-        const loadingDiv = document.createElement('div');
-        loadingDiv.id = "blobsey-flashcard-loading-div";
-        loadingDiv.innerHTML = blocksSvg;
-        tableContainer.appendChild(loadingDiv); 
+        showLoadingScreen();
 
         try {
             const response = await browser.runtime.sendMessage({
