@@ -270,6 +270,15 @@ async function createConfigScreen() {
         const deckSelect = document.createElement('select');
         deckSelect.name = 'deck';
 
+        // Null option; if the "active" deck doesn't match any deck in list, it will show
+        const nullOption = document.createElement('option');
+        nullOption.value = "null";
+        nullOption.innerHTML = "Select a deck...";
+        nullOption.disabled = true;
+        nullOption.hidden = true;
+        nullOption.selected = true;
+        deckSelect.appendChild(nullOption);
+
         userData.decks.forEach(deck => {
             const option = document.createElement('option');
             option.value = deck;

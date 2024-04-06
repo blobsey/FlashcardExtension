@@ -1,6 +1,7 @@
 // content.js
 // Handles UI/UX, application logic
 (async function() {
+    "use strict";
     // Set up main keyboard shortcut event listener
     document.addEventListener('keydown', handleKbInput);
 
@@ -115,7 +116,7 @@
             }
 
             const urlParams = new URLSearchParams(window.location.search);
-            screenToLoad = urlParams.get('screenToLoad') || 'list';
+            const screenToLoad = urlParams.get('screenToLoad') || 'list';
             screens[screenToLoad].activate();
         }
 
@@ -751,7 +752,9 @@
             // Main container
             this.container = document.createElement('div');
             this.container.className = 'blobsey-flashcard-dropdown-container';
-            this.container.addEventListener('click', this.toggleOptionsDisplay.bind(this));
+            this.container.addEventListener('click', () => {
+                this.toggleOptionsDisplay();
+            });
     
             // Selected option text element
             this.selectedOptionText = document.createElement('span');
@@ -766,51 +769,69 @@
             // Close when click off
             shadowRoot.addEventListener('click', (event) => {
                 if (!this.container.contains(event.target)) {
-                    this.optionsContainer.classList.remove('open');
-                    this.container.classList.remove('open');
+                    this.closeOptionsDisplay();
                 }
             });
             window.addEventListener('blur', () => {
-                this.optionsContainer.classList.remove('open');
-                this.container.classList.remove('open');
+                this.closeOptionsDisplay();
             });
         }
     
-        addOption(value, text, onSelect = null) {
-            const optionElement = document.createElement('div');
-            optionElement.className = 'blobsey-flashcard-dropdown-option';
-            optionElement.textContent = text;
+        /* Value is unique identifier, displayText is literally used, customDiv is
+        arbitrary div to be used in options menu, onSelect is function */
+        addOption(value, displayText, customDiv = null, onSelect = null) {
+            let element;
+            if (customDiv) {
+                element = customDiv;
+            }
+            else {
+                element = document.createElement('div');
+                element.textContent = displayText;
+            }
+            element.className = 'blobsey-flashcard-dropdown-option';
+            this.optionsContainer.appendChild(element);
 
-            optionElement.addEventListener('click', (event) => {
-                event.stopPropagation(); 
-                this.selectOption(value, true);
-                this.toggleOptionsDisplay(); 
+            element.addEventListener('click', (event) => {
+                this.selectOption(value, event, true);
             });
         
-            this.options.push({ value, text, onSelect, optionElement });
-            this.optionsContainer.appendChild(optionElement);
+            this.options.push({ value, displayText, customDiv, onSelect, element });
+            this.optionsContainer.appendChild(element);
         }
       
         toggleOptionsDisplay() {
             this.optionsContainer.classList.toggle('open');
             this.container.classList.toggle('open');
         }
+
+        closeOptionsDisplay() {
+            this.optionsContainer.classList.remove('open');
+            this.container.classList.remove('open');
+        }
     
-        selectOption(value, triggerOnSelect) {
+        openOptionsDisplay() {
+            this.optionsContainer.classList.add('open');
+            this.container.classList.add('open');
+        }
+
+        selectOption(value, event, triggerOnSelect) {
+            this.selectedOptionText.innerHTML = "Select a deck...";
+            this.selectedOptionText.classList.add("placeholder");
             this.options.forEach((option) => {
                 if (option.value === value) {
-                    option.optionElement.classList.add('selected');
-                    this.selectedValue = option.value;
-                    this.selectedOptionText.textContent = option.text; // Update the selected option text
-                    this.updateWidth();
+                    option.element.classList.add('selected');
+                    this.selectedValue = value;
+                    this.selectedOptionText.textContent = option.displayText;
+                    this.selectedOptionText.classList.remove("placeholder");
+        
                     if (triggerOnSelect && option.onSelect) {
-                        option.onSelect(value);
+                        option.onSelect(value, event);
                     }
-                }
-                else {
-                    option.optionElement.classList.remove('selected');
+                } else {
+                    option.element.classList.remove('selected');
                 }
             });
+            this.updateWidth();
         }
 
         updateWidth() {
@@ -820,13 +841,82 @@
         getSelectedOption() {
             return this.selectedValue;
         }
-
     
         clearOptions() {
             this.optionsContainer.innerHTML = '';
             this.options = [];
             this.selectedValue = null;
             this.selectedOptionText.textContent = ''; // Clear the selected option text
+        }
+    }
+
+    class ThreeDots {
+        constructor() {
+            this.element = document.createElement('div');
+            this.element.className = 'blobsey-flashcard-three-dots-button';
+            
+            this.icon = document.createElement('span');
+            this.icon.className = "blobsey-flashcard-three-dots-icon";
+            this.icon.textContent = '⋮';
+            this.element.appendChild(this.icon);
+    
+            this.menu = document.createElement('div');
+            this.menu.className = 'blobsey-flashcard-three-dots-menu-container';
+            screenDiv.appendChild(this.menu);
+            
+            this.element.addEventListener('click', (event) => {
+                event.stopPropagation();
+                this.toggleExpand();
+            });
+
+            // Close when click off
+            document.addEventListener('click', (event) => {
+                if (!this.element.contains(event.target) && !this.menu.contains(event.target)) {
+                    this.closeMenu();
+                }
+            });
+            window.addEventListener('blur', () => {
+                this.closeMenu();
+            });
+        }
+
+        // Expand menu; if opening, check through other threedots menus and close them
+        toggleExpand() {
+            const isOpen = this.element.classList.contains('open');
+
+            // Close all other menus
+            const openMenus = shadowRoot.querySelectorAll('.blobsey-flashcard-three-dots-button.open, .blobsey-flashcard-three-dots-menu-container.open');
+            openMenus.forEach(menu => {
+                if (menu !== this.element && menu !== this.menu) {
+                    menu.classList.remove('open');
+                }
+            });
+
+            this.element.classList.toggle('open', !isOpen);
+            this.menu.classList.toggle('open', !isOpen);
+
+            // Calculate the position of the ThreeDots button
+            const buttonRect = this.element.getBoundingClientRect();
+
+            // Set the position of the menu
+            this.menu.style.top = `${buttonRect.bottom}px`;
+            this.menu.style.left = `${buttonRect.left}px`;
+        }
+
+        closeMenu() {
+            this.element.classList.remove('open');
+            this.menu.classList.remove('open');
+        }
+
+        addOption(text, onClick) {
+            const option = document.createElement('div');
+            option.textContent = text;
+            option.addEventListener('click', (event) => {
+                event.stopPropagation();
+                onClick(event);
+            });
+            this.menu.appendChild(option);
+            this.toggleExpand();
         }
     }
 
@@ -906,22 +996,71 @@
     
     async function updateDeckList() {
         try {
-            const preservedOption = deckSelect.getSelectedOption(); // Preserve previous selected value
-            deckSelect.clearOptions(); // Clear existing options
-
             // Fetch deck list
             const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
             if (result !== "success") {
                 throw new Error("Error fetching user data: ", response.result);
             }
             userData = data;
+
+            const preservedOption = deckSelect.getSelectedOption(); // Preserve previous selected value
+            deckSelect.clearOptions(); // Clear existing options
         
             // Populate deckSelect
             userData.decks.forEach(deck => {
+                const option = document.createElement('div');
+                option.className = 'blobsey-flashcard-dropdown-option';
+
+                // Text label for deck
+                const optionText = document.createElement('span');
+                optionText.textContent = (deck === userData.deck) ? `${deck} (Active)` : deck;
+                option.appendChild(optionText);
+
+                // Three dots menu
+                const threeDots = new ThreeDots();
+                threeDots.addOption('Rename', (event) => {
+                    console.log("Rename!");
+                });
+                threeDots.addOption('Delete', async (event) => {
+                    event.stopPropagation();
+                    if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
+                        try {
+                            await browser.runtime.sendMessage({
+                                action: "deleteDeck",
+                                deck: deck
+                            });
+                            userData.decks = userData.decks.filter(d => d !== deck);
+                            await updateDeckList();
+                            if (deckSelect.getSelectedOption() === deck) {
+                                deckSelect.selectOption(userData.decks[0], false);
+                                await loadDeck(userData.decks[0]);
+                            }
+                            deckSelect.openOptionsDisplay();
+                            showToast(`Deck "${deck}" deleted`, 10000);
+                        } 
+                        catch (error) {
+                            console.error("Error while deleting deck: ", error);
+                        }
+                    }
+                });
+                option.appendChild(threeDots.element);
+
                 deckSelect.addOption(
-                    deck, // value
-                    (deck === userData.deck) ? `${deck} (Active)` : deck, // text
-                    async (selectedDeck) => { await loadDeck(selectedDeck); } // onSelect
+                    deck, // unique identifier
+                    (deck === userData.deck) ? `${deck} (Active)` : deck, // displayText
+                    option, // customDiv, has deckname string and threedots menu
+                    async (selectedDeck, event) => { // onSelect
+                        event.stopPropagation();
+                        deckSelect.closeOptionsDisplay();
+
+                        // Hacky workaround to manually close the ThreeDots menu when click dropdown option
+                        const openThreeDotsMenus = shadowRoot.querySelectorAll('.blobsey-flashcard-three-dots-button.open, .blobsey-flashcard-three-dots-menu-container.open');
+                        openThreeDotsMenus.forEach(menu => {
+                            menu.classList.remove('open');
+                        });
+
+                        await loadDeck(selectedDeck); 
+                    }
                 );
             });
 
@@ -932,7 +1071,9 @@
             deckSelect.addOption(
                 "create", // value
                 "Create new...", // text
-                async () => { // onSelect
+                null, // no customDiv
+                async (value, event) => { // onSelect
+                    event.stopPropagation();
                     let counter = 1;
                     let newDeckName;  
                     do {
@@ -966,7 +1107,7 @@
         tableContainer.innerHTML = '';
         flashcards = null; // Should be null just in case user enters something into search bar while loading
 
-        loadingDiv = document.createElement('div');
+        const loadingDiv = document.createElement('div');
         loadingDiv.id = "blobsey-flashcard-loading-div";
         loadingDiv.innerHTML = blocksSvg;
         tableContainer.appendChild(loadingDiv); 

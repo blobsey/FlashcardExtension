@@ -313,12 +313,22 @@
     line-height: 1; 
 }
 
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-selected-text.placeholder {
+    opacity: 50%;
+}
+
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option {
     font-family: system-ui;
     text-align: left;
     cursor: pointer;
     padding: 10px;
     user-select: none;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option.selected {
@@ -333,6 +343,65 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+.blobsey-flashcard-ui .blobsey-flashcard-three-dots-button {
+    all: initial;
+    width: 2em;
+    height: 2em;
+    cursor: pointer;
+    user-select: none;
+    position: absolute;
+    right: 0; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: white;
+    z-index: 40000;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-three-dots-button:hover {
+    background-color: rgba(255, 255, 255, .2);
+}
+
+
+.blobsey-flashcard-ui .blobsey-flashcard-three-dots-icon {
+    z-index: 50000;
+}
+
+
+.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+    padding: 0;
+    transform: translateX(16px) translateY(-16px);
+    z-index: 60000;
+    max-height: 0;
+    width: fit-content;
+    text-align: left;
+    opacity: 0%;
+    transition: opacity 1s ease;
+    overflow: hidden;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container.open {
+    transition: max-height .15s ease, max-width .15s ease;
+    opacity: 100%;
+    max-height: 100px;
+    max-width: 100px;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container > div {
+    padding: 0.5em;
+    cursor: pointer;
+    font-family: system-ui;
+    color: white;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container > div:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
 
 /* Set Active Deck Button */
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button {
