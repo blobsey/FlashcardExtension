@@ -748,6 +748,7 @@
         constructor() {
             this.options = []; 
             this.selectedValue = null;
+            this.disabled = false;
     
             // Main container
             this.container = document.createElement('div');
@@ -800,8 +801,10 @@
         }
       
         toggleOptionsDisplay() {
-            this.optionsContainer.classList.toggle('open');
-            this.container.classList.toggle('open');
+            if (!this.disabled) {
+                this.optionsContainer.classList.toggle('open');
+                this.container.classList.toggle('open');
+            }
         }
 
         closeOptionsDisplay() {
@@ -810,8 +813,23 @@
         }
     
         openOptionsDisplay() {
-            this.optionsContainer.classList.add('open');
-            this.container.classList.add('open');
+            if (!this.disabled) {
+                this.optionsContainer.classList.add('open');
+                this.container.classList.add('open');
+            }
+        }
+
+        disable() {
+            this.selectedOptionText.innerHTML = loadingSvg;
+            this.closeOptionsDisplay();
+            this.disabled = true;
+            this.container.classList.add('disabled');
+        }
+
+        enable() {
+            this.selectOption(this.getSelectedOption(), null, false);
+            this.disabled = false;
+            this.container.classList.remove('disabled');
         }
 
         selectOption(value, event, triggerOnSelect) {
@@ -1024,10 +1042,10 @@
                     const newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
                     if (newName && newName !== deck) {
                         try {
+                            deckSelect.disable();
                             const isRenamingSelectedDeck = deckSelect.getSelectedOption() === deck;
                             if (isRenamingSelectedDeck) {
                                 showLoadingScreen();
-                                deckSelect.selectedOptionText.innerHTML = loadingSvg;
                             }
                             const response = await browser.runtime.sendMessage({
                                 action: "renameDeck",
@@ -1036,7 +1054,6 @@
                             });
                             if (response.result !== "success") {
                                 const message = response.message || response.detail;
-                                showToast(message, 10000);
                                 throw new Error(message);
                             }
                             
@@ -1045,10 +1062,15 @@
                                 deckSelect.selectOption(newName, false);
                                 await loadDeck(newName);
                             }
-                            deckSelect.openOptionsDisplay();
                             showToast(`Deck "${deck}" renamed to "${newName}"`, 10000);
-                        } catch (error) {
+                        } 
+                        catch (error) {
+                            showToast(error.message, 10000);
                             console.error("Error while renaming deck: ", error);
+                        } 
+                        finally {
+                            deckSelect.enable();
+                            deckSelect.openOptionsDisplay();
                         }
                     }
                 });
@@ -1057,21 +1079,21 @@
                     event.stopPropagation();
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
                         try {
+                            deckSelect.disable();
                             await browser.runtime.sendMessage({
                                 action: "deleteDeck",
                                 deck: deck
                             });
-                            userData.decks = userData.decks.filter(d => d !== deck);
                             await updateDeckList();
-                            if (deckSelect.getSelectedOption() === deck) {
-                                deckSelect.selectOption(userData.decks[0], false);
-                                await loadDeck(userData.decks[0]);
-                            }
-                            deckSelect.openOptionsDisplay();
                             showToast(`Deck "${deck}" deleted`, 10000);
                         } 
                         catch (error) {
+                            showToast(error.message, 10000);
                             console.error("Error while deleting deck: ", error);
+                        }
+                        finally {
+                            deckSelect.enable();
+                            deckSelect.openOptionsDisplay();
                         }
                     }
                 });
@@ -1096,8 +1118,9 @@
                 );
             });
 
-            if (preservedOption)
-                deckSelect.selectOption(preservedOption, false);
+            // Try to select the already selected option, can also be null if deleted
+            deckSelect.selectOption(preservedOption, false);
+            
         
             // Add "Create Deck" option
             deckSelect.addOption(
@@ -1122,8 +1145,6 @@
                         });
                         userData.decks = updatedDecks;
                         await updateDeckList();
-                        deckSelect.selectOption(newDeckName, false);
-                        loadDeck(newDeckName);
                     } catch (error) {
                         console.error("Error while creating a new deck: ", error);
                     }

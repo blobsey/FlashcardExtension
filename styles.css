@@ -264,6 +264,11 @@
     backdrop-filter: blur(10px);
 }
 
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-container.disabled {
+    cursor: default;
+    background-color: rgba(135, 135, 135, 0.2)
+}
+
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-container::after {
     content: "";
     position: absolute;
