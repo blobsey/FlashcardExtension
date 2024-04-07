@@ -1149,7 +1149,7 @@
                     }
                 });
 
-                threeDots.addOption('Export', async (event) => {
+                threeDots.addOption('Export to CSV...', async (event) => {
                     event.stopPropagation();
                     try {
                         threeDots.disable();
