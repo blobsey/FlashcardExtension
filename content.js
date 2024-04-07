@@ -884,6 +884,7 @@
             else {
                 this.display = displayDiv;
             }
+            this.displayCopy = this.display.innerHTML;
             this.element.appendChild(this.display);
 
             this.disabled = false;
@@ -909,7 +910,6 @@
         }
 
         disable() {
-            this.preservedDisplay = this.display;
             this.display.innerHTML = loadingSvg;
             ContextMenuElement.closeAll();
             this.disabled = true;
@@ -917,7 +917,7 @@
         }
 
         enable() {
-            this.display = this.preservedDisplay;
+            this.display.innerHTML = this.displayCopy;
             this.disabled = false;
             this.element.classList.remove('disabled');
         }
@@ -1124,7 +1124,8 @@
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
                         try {
                             deckSelect.disable();
-                            if (deckSelect.getSelectedOption() === deck) {
+                            const isDeletingSelectedDeck = deckSelect.getSelectedOption() === deck;
+                            if (isDeletingSelectedDeck) {
                                 showLoadingScreen();
                             }
                             await browser.runtime.sendMessage({
@@ -1132,7 +1133,9 @@
                                 deck: deck
                             });
                             await updateDeckList();
-                            await loadDeck(deckSelect.getSelectedOption());
+                            if (isDeletingSelectedDeck) {
+                                await loadDeck(deckSelect.getSelectedOption());
+                            }
                             showToast(`Deck "${deck}" deleted`, 10000);
                         } 
                         catch (error) {
@@ -1145,6 +1148,32 @@
                         }
                     }
                 });
+
+                threeDots.addOption('Export', async (event) => {
+                    event.stopPropagation();
+                    try {
+                        threeDots.disable();
+                        const response = await browser.runtime.sendMessage({
+                            action: "downloadDeck",
+                            deck: deck
+                        });
+
+                
+                        if (response.result !== "success") {
+                            throw new Error(response.message);
+                        }
+                
+                        showToast(`Deck "${deck}" exported successfully`, 10000);
+                    } 
+                    catch (error) {
+                        showToast(error.message, 10000);
+                        console.error("Error while exporting deck: ", error);
+                    } 
+                    finally {
+                        threeDots.enable();
+                    }
+                });
+
                 option.appendChild(threeDots.element);
 
                 deckSelect.addOption(

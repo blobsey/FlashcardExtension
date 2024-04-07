@@ -228,6 +228,9 @@ const requestHandlers = {
             body: formData
         });
         return data;
+    },
+    "downloadDeck": async (request) => {
+        return await handleApiRequest(`/download?deck=${encodeURIComponent(request.deck)}`);
     }
 };
 
@@ -249,7 +252,7 @@ async function handleApiRequest(path, options = {}) {
     options.credentials = 'include';
 
     const response = await fetch(url, options);
-    const contentType = response.headers.get('Content-Type');
+    const contentType = response.headers.get('Content-Type', '');
 
     if (!response.ok) { // If response not in 200-299
         let error;
@@ -274,7 +277,28 @@ async function handleApiRequest(path, options = {}) {
     // Return the response according to content type
     if (contentType && contentType.includes('application/json')) {
         return await response.json();
-    } else {
+    } 
+    else if (contentType && contentType.includes('text/csv')) { // If file download, handle it here
+        // Get filename from Content-Disposition header
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = disposition.split(/;(.+)/)[1].split(/=(.+)/)[1];
+        if (filename.toLowerCase().startsWith("utf-8''"))
+            filename = decodeURIComponent(filename.replace("utf-8''", ''));
+        else
+            filename = filename.replace(/['"]/g, '');
+
+        // Generate download URL and click it
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return { message: "Hello!" };
+    }
+    else {
         return await response.text();
     }
 }
