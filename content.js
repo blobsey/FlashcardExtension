@@ -779,8 +779,9 @@
         }
     
         /* Value is unique identifier, displayText is literally used, customDiv is
-        arbitrary div to be used in options menu, onSelect is function */
-        addOption(value, displayText, customDiv = null, onSelect = null) {
+        arbitrary div to be used in options menu, selectable is if it will show as selectedText,
+        onSelect is function that will be called from selectOption() */
+        addOption(value, displayText, customDiv = null, selectable = true, onSelect = null) {
             let element;
             if (customDiv) {
                 element = customDiv;
@@ -796,7 +797,7 @@
                 this.selectOption(value, event, true);
             });
         
-            this.options.push({ value, displayText, customDiv, onSelect, element });
+            this.options.push({ value, displayText, customDiv, selectable, onSelect, element });
             this.optionsContainer.appendChild(element);
         }
       
@@ -837,11 +838,13 @@
             this.selectedOptionText.classList.add("placeholder");
             this.options.forEach((option) => {
                 if (option.value === value) {
-                    option.element.classList.add('selected');
-                    this.selectedValue = value;
-                    this.selectedOptionText.textContent = option.displayText;
-                    this.selectedOptionText.classList.remove("placeholder");
-        
+                    if (option.selectable) {
+                        option.element.classList.add('selected');
+                        this.selectedValue = value;
+                        this.selectedOptionText.textContent = option.displayText;
+                        this.selectedOptionText.classList.remove("placeholder");
+                    }
+
                     if (triggerOnSelect && option.onSelect) {
                         option.onSelect(value, event);
                     }
@@ -868,73 +871,114 @@
         }
     }
 
-    class ThreeDots {
-        constructor() {
+    class ContextMenuElement {
+        constructor(displayDiv) {
             this.element = document.createElement('div');
-            this.element.className = 'blobsey-flashcard-three-dots-button';
+            this.element.className = 'blobsey-flashcard-context-menu-button';
             
-            this.icon = document.createElement('span');
-            this.icon.className = "blobsey-flashcard-three-dots-icon";
-            this.icon.textContent = '⋮';
-            this.element.appendChild(this.icon);
+            if (!displayDiv) {
+                this.display = document.createElement('span');
+                this.display.className = "blobsey-flashcard-context-menu-icon";
+                this.display.textContent = '⋮';
+            }
+            else {
+                this.display = displayDiv;
+            }
+            this.element.appendChild(this.display);
+
+            this.disabled = false;
     
             this.menu = document.createElement('div');
-            this.menu.className = 'blobsey-flashcard-three-dots-menu-container';
+            this.menu.className = 'blobsey-flashcard-context-menu-container';
             screenDiv.appendChild(this.menu);
             
             this.element.addEventListener('click', (event) => {
                 event.stopPropagation();
-                this.toggleExpand();
+                this.toggle();
             });
 
             // Close when click off
             document.addEventListener('click', (event) => {
                 if (!this.element.contains(event.target) && !this.menu.contains(event.target)) {
-                    this.closeMenu();
+                    ContextMenuElement.closeAll();
                 }
             });
             window.addEventListener('blur', () => {
-                this.closeMenu();
+                ContextMenuElement.closeAll();
             });
         }
 
-        // Expand menu; if opening, check through other threedots menus and close them
-        toggleExpand() {
-            const isOpen = this.element.classList.contains('open');
+        disable() {
+            this.preservedDisplay = this.display;
+            this.display.innerHTML = loadingSvg;
+            ContextMenuElement.closeAll();
+            this.disabled = true;
+            this.element.classList.add('disabled');
+        }
 
-            // Close all other menus
-            const openMenus = shadowRoot.querySelectorAll('.blobsey-flashcard-three-dots-button.open, .blobsey-flashcard-three-dots-menu-container.open');
-            openMenus.forEach(menu => {
-                if (menu !== this.element && menu !== this.menu) {
-                    menu.classList.remove('open');
-                }
-            });
+        enable() {
+            this.display = this.preservedDisplay;
+            this.disabled = false;
+            this.element.classList.remove('disabled');
+        }
 
-            this.element.classList.toggle('open', !isOpen);
-            this.menu.classList.toggle('open', !isOpen);
+        // Expand menu; if opening, check through other context menus and close them
+        toggle() {
+            const isOpen = this.menu.classList.contains('open');
+            ContextMenuElement.closeAll();
 
-            // Calculate the position of the ThreeDots button
+            if (!isOpen) {
+                this.menu.classList.add('open');
+            }
+        
+            // Position the menu based on the click event coordinates
+            const menuRect = this.menu.getBoundingClientRect();
+        
+            // Calculate the position of the ContextMenuElement
             const buttonRect = this.element.getBoundingClientRect();
 
-            // Set the position of the menu
-            this.menu.style.top = `${buttonRect.bottom}px`;
-            this.menu.style.left = `${buttonRect.left}px`;
+            let top = buttonRect.top + 24;
+            let left = buttonRect.right - 24;
+        
+            // Adjust the position if the menu would overflow the viewport
+            if (left + menuRect.width > window.innerWidth) {
+                left = buttonRect.right - menuRect.width;
+            }
+            if (top + menuRect.height > window.innerHeight) {
+                top = buttonRect.top - menuRect.height;
+            }
+        
+            this.menu.style.top = `${top}px`;
+            this.menu.style.left = `${left}px`;
         }
 
-        closeMenu() {
-            this.element.classList.remove('open');
-            this.menu.classList.remove('open');
+        static closeAll() {
+            const openContextMenus = shadowRoot.querySelectorAll('.blobsey-flashcard-context-menu-container.open');
+            openContextMenus.forEach(element => {
+                element.classList.remove('open');
+            });
         }
 
         addOption(text, onClick) {
             const option = document.createElement('div');
             option.textContent = text;
             option.addEventListener('click', async (event) => {
-                event.stopPropagation();
-                await onClick(event);
+                if (!this.disabled) {
+                    event.stopPropagation();
+                    this.disable();
+                    try {
+                        await onClick(event);
+                    }
+                    catch (error) {
+                        showToast(error.message, 10000);
+                        console.error(error);
+                    }
+                    finally {
+                        this.enable();
+                    }
+                }
             });
             this.menu.appendChild(option);
-            this.toggleExpand();
         }
     }
 
@@ -1035,8 +1079,8 @@
                 optionText.textContent = (deck === userData.deck) ? `${deck} (Active)` : deck;
                 option.appendChild(optionText);
 
-                // Three dots menu
-                const threeDots = new ThreeDots();
+                // Make a "three dots" button
+                const threeDots = new ContextMenuElement();
                 threeDots.addOption('Rename', async (event) => {
                     event.stopPropagation();
                     const newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
@@ -1103,15 +1147,12 @@
                     deck, // unique identifier
                     (deck === userData.deck) ? `${deck} (Active)` : deck, // displayText
                     option, // customDiv, has deckname string and threedots menu
+                    true, // selectable
                     async (selectedDeck, event) => { // onSelect
                         event.stopPropagation();
                         deckSelect.closeOptionsDisplay();
 
-                        // Hacky workaround to manually close the ThreeDots menu when click dropdown option
-                        const openThreeDotsMenus = shadowRoot.querySelectorAll('.blobsey-flashcard-three-dots-button.open, .blobsey-flashcard-three-dots-menu-container.open');
-                        openThreeDotsMenus.forEach(menu => {
-                            menu.classList.remove('open');
-                        });
+                        ContextMenuElement.closeAll();
 
                         await loadDeck(selectedDeck); 
                     }
@@ -1123,32 +1164,85 @@
             
         
             // Add "Create Deck" option
+            const createDeck = document.createElement('span');
+            createDeck.textContent = 'Create new deck...';
+            const createDeckContextMenu = new ContextMenuElement(createDeck);
+            createDeckContextMenu.addOption("Create empty deck", async (event) => {
+                event.stopPropagation();
+                let counter = 1;
+                let newDeckName;  
+                do {
+                    newDeckName = `Untitled Deck ${counter}`;
+                    counter++;
+                } while (userData.decks.includes(newDeckName));
+            
+                // Create deck with new name
+                try {
+                    ContextMenuElement.closeAll();
+                    await browser.runtime.sendMessage({
+                        action: "createDeck",
+                        deck: newDeckName
+                    });
+                    await updateDeckList();
+                } catch (error) {
+                    console.error("Error while creating a new deck: ", error);
+                }
+            });
+            createDeckContextMenu.addOption("Import...", async (event) => {
+                event.stopPropagation();
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.anki2';
+                fileInput.style.display = 'none';
+                screenDiv.appendChild(fileInput);
+            
+                fileInput.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            deckSelect.disable();
+                            const deckName = file.name.replace(/\.anki2$/, '');
+                            let counter = 1;
+                            let duplicateDeckName = null;
+                            while (userData.decks.includes(duplicateDeckName)) {
+                                counter++;
+                                duplicateDeckName = `${deckName} ${counter}`;
+                            }
+                            
+                            const response = await browser.runtime.sendMessage({
+                                action: "uploadDeck",
+                                file: file,
+                                deck: duplicateDeckName || deckName
+                            });
+            
+                            if (response.result !== "success") {
+                                throw new Error(response.message);
+                            } 
+
+                            showToast(response.message, 10000);
+                            await updateDeckList();
+                        } 
+                        catch (error) {
+                            showToast("An error occurred while importing the deck.", 10000);
+                            console.error("Error while importing deck: ", error);
+                        } 
+                        finally {
+                            deckSelect.enable();
+                            deckSelect.openOptionsDisplay();
+                        }
+                    }
+                    screenDiv.removeChild(fileInput);
+                };
+            
+                fileInput.click();
+            });
+
             deckSelect.addOption(
                 "create", // value
-                "Create new...", // text
-                null, // no customDiv
-                async (value, event) => { // onSelect
-                    event.stopPropagation();
-                    let counter = 1;
-                    let newDeckName;  
-                    do {
-                        newDeckName = `Untitled Deck ${counter}`;
-                        counter++;
-                    } while (userData.decks.includes(newDeckName));
-                
-                    // Create deck with new name
-                    try {
-                        const updatedDecks = [...userData.decks, newDeckName];
-                        await browser.runtime.sendMessage({
-                            action: "setUserData",
-                            userData: { decks: updatedDecks }
-                        });
-                        userData.decks = updatedDecks;
-                        await updateDeckList();
-                    } catch (error) {
-                        console.error("Error while creating a new deck: ", error);
-                    }
-                }
+                "Create new deck...", // text
+                createDeckContextMenu.element, // customDiv
+                false,
+                null // onSelect is null because contextMenu already has onClick
             );
         } 
         catch (error) {

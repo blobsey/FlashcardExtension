@@ -140,23 +140,29 @@ const requestHandlers = {
         const body = { card_front: request.card_front, card_back: request.card_back };
         const data = await handleApiRequest(`/edit/${request.card_id}`, {
             method: 'PUT',
-            body: body
+            body: { 
+                card_front: request.card_front, 
+                card_back: request.card_back 
+            }
         });
         return data;
     },
     "reviewFlashcard": async (request) => {
-        const body = { grade: request.grade };
         const data = await handleApiRequest(`/review/${request.card_id}`, {
             method: 'POST',
-            body: body
+            body: {
+                grade: request.grade
+            }
         });
         return data;
     },
     "addFlashcard": async (request) => {
-        const body = { card_front: request.card_front, card_back: request.card_back };
         const data = await handleApiRequest('/add', {
             method: 'POST',
-            body: JSON.stringify(body) // No need to include user_id here
+            body: { 
+                card_front: request.card_front, 
+                card_back: request.card_back 
+            }
         });
         return data;
     },
@@ -188,6 +194,13 @@ const requestHandlers = {
             body: request.userData
         });
     },
+    "createDeck": async (request) => {
+        const deck = request.deck;
+        const data = await handleApiRequest(`/create-deck/${encodeURIComponent(deck)}`, {
+            method: 'PUT'
+        });
+        return data;
+    },
     "deleteDeck": async (request) => {
         const deck = request.deck;
         const data = await handleApiRequest(`/delete-deck/${encodeURIComponent(deck)}`, {
@@ -204,6 +217,17 @@ const requestHandlers = {
             }
         });
         return data;
+    },
+    "uploadDeck": async (request) => {
+        const formData = new FormData();
+        formData.append('file', request.file, request.file.name);
+        formData.append('deck', request.deck);
+
+        const data = await handleApiRequest("/upload", {
+            method: 'POST',
+            body: formData
+        });
+        return data;
     }
 };
 
@@ -213,18 +237,11 @@ async function handleApiRequest(path, options = {}) {
     const { apiBaseUrl } = await requestHandlers["getApiBaseUrl"]();
     
     // Construct the full URL
-    const url = `${apiBaseUrl}${path}`
+    const url = `${apiBaseUrl}${path}`;
 
-    // Ensure headers object exists in options to add Content-Type and API Key
-    if (!options.headers) {
-        options.headers = {};
-    }
-
-    // Set default header for JSON content if not already set
-    options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
-
-    // Stringify the body if it's an object and content type is JSON
-    if (options.body && typeof options.body === 'object' && options.headers['Content-Type'] === 'application/json') {
+    // Set content-type to application/json by default due to firefox weirdness
+    if (options.body && !(options.body instanceof FormData)) {
+        options.headers = { 'Content-Type': 'application/json' };
         options.body = JSON.stringify(options.body);
     }
 
@@ -236,18 +253,18 @@ async function handleApiRequest(path, options = {}) {
 
     if (!response.ok) { // If response not in 200-299
         let error;
-
+    
         // If type is 'application/json' try to parse and rethrow error
         if (contentType && contentType.includes('application/json')) {
             const errorDetails = await response.json();
-            error = new Error(`API Request not ok: ${errorDetails.detail || response.statusText}`);
+            error = new Error(`API Request not ok: ${JSON.stringify(errorDetails) || response.statusText}`);
             error.details = errorDetails;
         } else { // If not 'application/json' then parse as plaintext
             const errorText = await response.text();
             error = new Error(`API Request not ok: ${errorText || response.statusText}`);
             error.responseText = errorText;
         }
-
+    
         error.status = response.status;
         error.statusText = response.statusText;
         console.error(error);

@@ -348,7 +348,7 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-three-dots-button {
+.blobsey-flashcard-ui .blobsey-flashcard-context-menu-button {
     all: initial;
     aspect-ratio: 1;
     height: 100%;
@@ -363,17 +363,17 @@
     z-index: 40000;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-three-dots-button:hover {
+.blobsey-flashcard-ui .blobsey-flashcard-context-menu-button:hover {
     background-color: rgba(255, 255, 255, .2);
 }
 
 
-.blobsey-flashcard-ui .blobsey-flashcard-three-dots-icon {
+.blobsey-flashcard-ui .blobsey-flashcard-context-menu-icon {
     z-index: 50000;
 }
 
 
-.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container {
+.blobsey-flashcard-ui .blobsey-flashcard-context-menu-container {
     position: fixed;
     background-color: rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(10px);
@@ -381,30 +381,30 @@
     transform: translateX(16px) translateY(-16px);
     z-index: 60000;
     max-height: 0;
-    width: fit-content;
     text-align: left;
     opacity: 0%;
     transition: opacity 1s ease;
     overflow: hidden;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container.open {
+.blobsey-flashcard-ui .blobsey-flashcard-context-menu-container.open {
     transition: max-height .15s ease, max-width .15s ease;
     opacity: 100%;
-    max-height: 100px;
-    max-width: 100px;
+    max-height: 10em;
+    max-width: 10em;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container > div {
-    padding: 0.5em;
+.blobsey-flashcard-ui .blobsey-flashcard-context-menu-container > div {
+    padding: 10px;
     cursor: pointer;
     font-family: system-ui;
     color: white;
     transition: background-color 0.2s ease;
     white-space: nowrap;
+    text-align: left;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-three-dots-menu-container > div:hover {
+.blobsey-flashcard-ui .blobsey-flashcard-context-menu-container > div:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
