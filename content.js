@@ -1124,11 +1124,15 @@
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
                         try {
                             deckSelect.disable();
+                            if (deckSelect.getSelectedOption() === deck) {
+                                showLoadingScreen();
+                            }
                             await browser.runtime.sendMessage({
                                 action: "deleteDeck",
                                 deck: deck
                             });
                             await updateDeckList();
+                            await loadDeck(deckSelect.getSelectedOption());
                             showToast(`Deck "${deck}" deleted`, 10000);
                         } 
                         catch (error) {
