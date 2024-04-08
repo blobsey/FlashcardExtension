@@ -841,9 +841,14 @@
             this.selectedOptionText.classList.add("placeholder");
             this.options.forEach((option) => {
                 if (option.value === value) {
-                    this.selectedOptionText.textContent = option.selectable ? option.displayText : preservedText;
+                    if (option.selectable) {
+                        this.selectedOptionText.textContent = option.displayText;
+                        this.selectedValue = value;
+                    }
+                    else {
+                        this.selectedOptionText.textContent = preservedText;
+                    }
                     option.element.classList.add('selected');
-                    this.selectedValue = value;
                     this.selectedOptionText.classList.remove("placeholder");
 
                     if (triggerOnSelect && option.onSelect) {
