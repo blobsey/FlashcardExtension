@@ -1163,7 +1163,6 @@
                             action: "downloadDeck",
                             deck: deck
                         });
-
                 
                         if (response.result !== "success") {
                             throw new Error(response.message);
@@ -1231,7 +1230,7 @@
                 event.stopPropagation();
                 const fileInput = document.createElement('input');
                 fileInput.type = 'file';
-                fileInput.accept = '.anki2';
+                fileInput.accept = '.anki2,.csv';
                 fileInput.style.display = 'none';
                 screenDiv.appendChild(fileInput);
             
@@ -1240,7 +1239,7 @@
                     if (file) {
                         try {
                             deckSelect.disable();
-                            const deckName = file.name.replace(/\.anki2$/, '');
+                            const deckName = file.name.replace(/\.(anki2|csv)$/, '');
                             let counter = 1;
                             let duplicateDeckName = null;
                             while (userData.decks.includes(duplicateDeckName)) {
