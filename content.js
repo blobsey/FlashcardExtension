@@ -834,16 +834,15 @@
         }
 
         selectOption(value, event, triggerOnSelect) {
+            const preservedText = this.selectedOptionText.textContent;
             this.selectedOptionText.innerHTML = "Select a deck...";
             this.selectedOptionText.classList.add("placeholder");
             this.options.forEach((option) => {
                 if (option.value === value) {
-                    if (option.selectable) {
-                        option.element.classList.add('selected');
-                        this.selectedValue = value;
-                        this.selectedOptionText.textContent = option.displayText;
-                        this.selectedOptionText.classList.remove("placeholder");
-                    }
+                    this.selectedOptionText.textContent = option.selectable ? option.displayText : preservedText;
+                    option.element.classList.add('selected');
+                    this.selectedValue = value;
+                    this.selectedOptionText.classList.remove("placeholder");
 
                     if (triggerOnSelect && option.onSelect) {
                         option.onSelect(value, event);
