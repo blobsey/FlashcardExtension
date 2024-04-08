@@ -656,7 +656,8 @@
                 if (flashcard && flashcard.card_id === editFlashcard.card_id)
                     flashcard = null;
                 editFlashcard = null;
-                screens["edit"].deactivate();
+                screenDiv.style.transition = ''; // Clean up animations on close
+                screens['edit'].deactivate();
                 showToast('Flashcard deleted. ', 10000); // TODO: add undo function (client side ??)
               })
               .catch(error => {
@@ -681,17 +682,18 @@
                 console.error(error.message);
             })
             .finally(() => {
-                screens["edit"].deactivate();
+                screenDiv.style.transition = ''; // Clean up animations on close
+                screens['edit'].deactivate();
             });
         };
     
         // Trigger the transition animation
-        setTimeout(() => {
+        requestAnimationFrame(() => {
+            screenDiv.style.transition = 'opacity 0.1s ease, top 0.1s ease'; // Timings
             screenDiv.style.opacity = '1'; // Fade in
             screenDiv.style.top = '0px'; // Slightly slide up
             screenDiv.style.position = 'relative'; // Set position to relative for the top property to take effect
-            screenDiv.style.transition = 'opacity 0.1s ease, top 0.1s ease'; // Timings
-        }, 50);
+        });
     }
 
     function showToast(message, duration, undoFunction) {
