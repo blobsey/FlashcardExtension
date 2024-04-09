@@ -1034,7 +1034,6 @@
         showLoadingScreen();
     
         await updateDeckList();
-        deckSelect.selectOption(userData.deck);
         await loadDeck(userData.deck);
     }
 
@@ -1064,6 +1063,7 @@
                 optionDiv.addEventListener('click', async (event) => {
                     try {
                         deckSelect.selectOption(deck);
+                        selectedOption = deck; // Save globally to persist choice
                         await loadDeck(deck);
                     }
                     catch (error) {
@@ -1179,9 +1179,6 @@
                     true // selectable
                 );
             });
-
-            // Try to select the already selected option, can also be null if deleted
-            deckSelect.selectOption(selectedOption);
         
             // Add "Create Deck" option
             const createDeck = document.createElement('span');
@@ -1264,6 +1261,9 @@
                 "Create new deck...", // displayText
                 false // selectable
             );
+
+            // Try to select the already selected option, can also be null if deleted
+            deckSelect.selectOption(selectedOption);
         } 
         catch (error) {
             console.error("Error while fetching user data: ", error);
