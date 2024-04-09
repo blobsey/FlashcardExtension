@@ -381,6 +381,7 @@
     padding: 0;
     transform: translateX(16px) translateY(-16px);
     z-index: 60000;
+    max-width: 0;
     max-height: 0;
     text-align: left;
     opacity: 0%;

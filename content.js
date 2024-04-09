@@ -1058,6 +1058,7 @@
 
                 optionDiv.addEventListener('click', async (event) => {
                     try {
+                        ContextMenuElement.closeAll(); // Hacky workaround to avoid orphan contextmenus
                         deckSelect.selectOption(deck);
                         selectedOption = deck; // Save globally to persist choice
                         await loadDeck(deck);
@@ -1076,11 +1077,11 @@
                 const threeDots = new ContextMenuElement();
                 threeDots.addOption('Rename', async (event) => {
                     event.stopPropagation();
-                    const newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
+                    let newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
                     if (newName && newName !== deck) {
+                        const isRenamingSelectedDeck = deckSelect.selectedOption === deck;
                         try {
                             deckSelect.disable();
-                            const isRenamingSelectedDeck = deckSelect.selectedOption === deck;
                             if (isRenamingSelectedDeck) {
                                 showLoadingScreen();
                             }
@@ -1095,19 +1096,20 @@
                             }
                             
                             await updateDeckList();
-                            if (isRenamingSelectedDeck) {
-                                deckSelect.selectOption(newName);
-                                await loadDeck(newName);
-                            }
                             showToast(`Deck "${deck}" renamed to "${newName}"`, 10000);
                         } 
                         catch (error) {
+                            newName = deck;
                             showToast(error.message, 10000);
                             console.error("Error while renaming deck: ", error);
                         } 
                         finally {
+                            if (isRenamingSelectedDeck) {
+                                deckSelect.selectOption(newName);
+                                await loadDeck(newName);
+                            }
                             deckSelect.enable();
-                            deckSelect.openOptionsDisplay();
+                            deckSelect.open();
                         }
                     }
                 });
@@ -1137,7 +1139,7 @@
                         }
                         finally {
                             deckSelect.enable();
-                            deckSelect.openOptionsDisplay();
+                            deckSelect.open();
                         }
                     }
                 });
