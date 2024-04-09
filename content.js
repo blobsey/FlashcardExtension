@@ -1034,7 +1034,7 @@
         showLoadingScreen();
     
         await updateDeckList();
-        await loadDeck(userData.deck);
+        await loadDeck(selectedOption);
     }
 
     function updateSetActiveDeckButtonState() {
