@@ -732,19 +732,10 @@
         No flashcards found
     </div>`;
 
-    /* List Screen
-    - searchText, tableContainer, deckSelect, userData, flashcards, setActiveDeckButton global vars
-    - createListScreen() should create searchBar, await updateDeckList(), then loadDeck(userData["deck"]).
-      Also create the setActiveDeckButton, set its status on deck load, and when pressed
-    - searchbar calls updateFlashcardList() on every input, but this does nothing if !flashcards
-    - updateFlashcardList() takes current searchtext and then updates table to reflect it
-    - updateDeckList() fetches decklist and populates the deckSelect, annotating current deck
-        * All normal drop-down options loadDeck(deck)
-        * "Create deck..." option creates a deck named "Untitled Deck 1" (or "Untitled 
-          deck 2", "Untitled Deck 3", etc.) switches drop-down to that deck, then loads it
-    - loadDeck(deck) loads the deck specified by deck by awaiting "listFlashcards" message, then
-      it calls updateFlashcardList() */
 
+    /////////////////
+    // List Screen //
+    /////////////////
 
     /* #### Reusable Dropdown class ####
     element: div of whole container
@@ -973,11 +964,13 @@
 
     let searchText = '';
     let tableContainer;
+    let scrollContainer;
     let deckSelect;
     let userData;
     let selectedOption = null;
     let flashcards;
     let setActiveDeckButton;
+    let scrollPosition = 0;
     
     async function createListScreen() {
         screenDiv.innerHTML = ''; // Clear current content
@@ -1026,14 +1019,14 @@
         createCloseButton();
     
         // Create a container for the table
-        const container = document.createElement('div');
-        container.id = 'blobsey-flashcard-list-container';
-        fullscreenDiv.appendChild(container);
+        scrollContainer = document.createElement('div');
+        scrollContainer.id = 'blobsey-flashcard-list-container';
+        fullscreenDiv.appendChild(scrollContainer);
     
         // tableContainer to hold table
         tableContainer = document.createElement('div');
         tableContainer.id = 'blobsey-flashcard-list-table-container';
-        container.appendChild(tableContainer);
+        scrollContainer.appendChild(tableContainer);
         showLoadingScreen();
     
         await updateDeckList();
@@ -1343,10 +1336,13 @@
 
                 // Add click event listener to each row
                 row.addEventListener('click', function() {
+                    scrollPosition = scrollContainer.scrollTop; // Save scroll position when leaving list screen
                     editFlashcard = card; // Update the global variable with the selected flashcard
                     screens["edit"].activate(); // Switch to the edit screen
                 });
             });
+
+            scrollContainer.scrollTop = scrollPosition; // Restore saved scroll position, if any
         }
     }
 
