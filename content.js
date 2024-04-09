@@ -857,6 +857,9 @@
         }
     }
 
+    /* #### Reusable ContextMenuElement Class #### 
+    element: div that contains all of the content
+    display: arbitrary div to use as a button, "⋮" by default */
     class ContextMenuElement {
         constructor(displayDiv) {
             this.element = document.createElement('div');
