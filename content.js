@@ -746,134 +746,114 @@
       it calls updateFlashcardList() */
 
 
-    class CustomDropdown {
+    /* #### Reusable Dropdown class ####
+    element: div of whole container
+    display: span showing the displayText of the selectedOption
+    optionsContainer: parent div for all option divs
+    */
+    class Dropdown {
         constructor() {
-            this.options = []; 
-            this.selectedValue = null;
-            this.disabled = false;
-    
-            // Main container
-            this.container = document.createElement('div');
-            this.container.className = 'blobsey-flashcard-dropdown-container';
-            this.container.addEventListener('click', () => {
-                this.toggleOptionsDisplay();
-            });
-    
-            // Selected option text element
-            this.selectedOptionText = document.createElement('span');
-            this.selectedOptionText.className = 'blobsey-flashcard-dropdown-selected-text';
-            this.container.appendChild(this.selectedOptionText);
-    
-            // Container for all options, hidden initially
+            this.element = document.createElement('div');
+            this.element.className = 'blobsey-flashcard-dropdown';
+
+            this.display = document.createElement('span');
+            this.display.className = 'blobsey-flashcard-dropdown-display';
+            this.display.innerHTML = loadingSvg;
+            this.element.appendChild(this.display);
+
             this.optionsContainer = document.createElement('div');
             this.optionsContainer.className = 'blobsey-flashcard-dropdown-options';
-            this.container.appendChild(this.optionsContainer);
+            this.element.appendChild(this.optionsContainer);
+
+            this.options = {}
+            this.selectedOption = null;
+            this.isDisabled = false;
+            this.isOpen = false;
+
+            this.element.addEventListener('click', (event) => {
+                if (!this.isDisabled) {
+                    if (this.isOpen) 
+                        this.close();
+                    else 
+                        this.open();
+                }
+            });
 
             // Close when click off
             shadowRoot.addEventListener('click', (event) => {
-                if (!this.container.contains(event.target)) {
-                    this.closeOptionsDisplay();
+                if (!this.element.contains(event.target)) {
+                    this.close();
                 }
             });
             window.addEventListener('blur', () => {
-                this.closeOptionsDisplay();
+                this.close();
             });
         }
-    
-        /* Value is unique identifier, displayText is literally used, customDiv is
-        arbitrary div to be used in options menu, selectable is if it will show as selectedText,
-        onSelect is function that will be called from selectOption() */
-        addOption(value, displayText, customDiv = null, selectable = true, onSelect = null) {
-            let element;
-            if (customDiv) {
-                element = customDiv;
-            }
-            else {
-                element = document.createElement('div');
-                element.textContent = displayText;
-            }
-            element.className = 'blobsey-flashcard-dropdown-option';
-            this.optionsContainer.appendChild(element);
 
-            element.addEventListener('click', (event) => {
-                this.selectOption(value, event, true);
+        addOption(key, div, displayText, selectable = true) {
+            this.options[key] = { div, displayText, selectable };
+            this.optionsContainer.appendChild(div);
+            div.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (!this.isDisabled && this.options[key].selectable) {
+                    this.selectOption(key);
+                    this.close();
+                }
             });
-        
-            this.options.push({ value, displayText, customDiv, selectable, onSelect, element });
-            this.optionsContainer.appendChild(element);
-        }
-      
-        toggleOptionsDisplay() {
-            if (!this.disabled) {
-                this.optionsContainer.classList.toggle('open');
-                this.container.classList.toggle('open');
-            }
-        }
-
-        closeOptionsDisplay() {
-            this.optionsContainer.classList.remove('open');
-            this.container.classList.remove('open');
-        }
-    
-        openOptionsDisplay() {
-            if (!this.disabled) {
-                this.optionsContainer.classList.add('open');
-                this.container.classList.add('open');
-            }
         }
 
         disable() {
-            this.selectedOptionText.innerHTML = loadingSvg;
-            this.closeOptionsDisplay();
-            this.disabled = true;
-            this.container.classList.add('disabled');
+            this.isDisabled = true;
+            this.element.classList.add('disabled');
+            this.display.classList.add('disabled');
         }
 
         enable() {
-            this.selectOption(this.getSelectedOption(), null, false);
-            this.disabled = false;
-            this.container.classList.remove('disabled');
+            this.isDisabled = false;
+            this.element.classList.remove('disabled');
+            this.display.classList.remove('disabled');
         }
 
-        selectOption(value, event, triggerOnSelect) {
-            const preservedText = this.selectedOptionText.textContent;
-            this.selectedOptionText.innerHTML = "Select a deck...";
-            this.selectedOptionText.classList.add("placeholder");
-            this.options.forEach((option) => {
-                if (option.value === value) {
-                    if (option.selectable) {
-                        this.selectedOptionText.textContent = option.displayText;
-                        this.selectedValue = value;
-                    }
-                    else {
-                        this.selectedOptionText.textContent = preservedText;
-                    }
-                    option.element.classList.add('selected');
-                    this.selectedOptionText.classList.remove("placeholder");
+        open() {
+            if (!this.isDisabled) {
+                this.element.classList.add('open');
+                this.optionsContainer.classList.add('open');
+                this.isOpen = true;
+            }
+        }
 
-                    if (triggerOnSelect && option.onSelect) {
-                        option.onSelect(value, event);
-                    }
-                } else {
-                    option.element.classList.remove('selected');
+        close() {
+            this.element.classList.remove('open');
+            this.optionsContainer.classList.remove('open');
+            this.isOpen = false;
+        }
+
+        selectOption(key) {
+            const option = this.options[key];
+            this.display.innerHTML = 'Select a deck...';
+            this.display.classList.add('placeholder')
+            if (option && option.selectable) {
+                if (this.selectedOption && this.options[this.selectedOption]) {
+                    this.options[this.selectedOption].div.classList.remove('selected');
                 }
-            });
-            this.updateWidth();
+                this.selectedOption = key;
+                this.options[key].div.classList.add('selected');
+                this.display.innerHTML = option.displayText; 
+                this.display.classList.remove('placeholder');
+                this.updateWidth();
+            }
+            
+        }
+
+        clearOptions() {
+            this.options = {};
+            this.selectedOption = null;
+            this.optionsContainer.innerHTML = '';
+            this.display.innerHTML = '';
         }
 
         updateWidth() {
-            this.container.style.maxWidth = `${this.selectedOptionText.offsetWidth + 20}px`; // Add some padding
-        }
-      
-        getSelectedOption() {
-            return this.selectedValue;
-        }
-    
-        clearOptions() {
-            this.optionsContainer.innerHTML = '';
-            this.options = [];
-            this.selectedValue = null;
-            this.selectedOptionText.textContent = ''; // Clear the selected option text
+            this.element.style.maxWidth = `${this.display.offsetWidth + 20}px`; 
         }
     }
 
@@ -928,7 +908,7 @@
             this.element.classList.remove('disabled');
         }
 
-        // Expand menu; if opening, check through other context menus and close them
+        // Toggle menu; if opening, check through other context menus and close them
         toggle() {
             const isOpen = this.menu.classList.contains('open');
             ContextMenuElement.closeAll();
@@ -992,6 +972,7 @@
     let tableContainer;
     let deckSelect;
     let userData;
+    let selectedOption = null;
     let flashcards;
     let setActiveDeckButton;
     
@@ -1002,8 +983,8 @@
         screenDiv.appendChild(fullscreenDiv);
     
         // Create a drop-down menu for deck selection
-        deckSelect = new CustomDropdown();
-        fullscreenDiv.appendChild(deckSelect.container);
+        deckSelect = new Dropdown();
+        fullscreenDiv.appendChild(deckSelect.element);
 
         // Set Active Deck buttons
         setActiveDeckButton = document.createElement('button');
@@ -1012,7 +993,7 @@
         setActiveDeckButton.textContent = "Loading..."
         setActiveDeckButton.addEventListener('click', async () => {
             setActiveDeckButton.innerHTML = loadingSvg;
-            const selectedDeck = deckSelect.getSelectedOption();
+            const selectedDeck = deckSelect.selectedOption.key;
             try {
                 await browser.runtime.sendMessage({
                     action: "setUserData",
@@ -1053,12 +1034,12 @@
         showLoadingScreen();
     
         await updateDeckList();
-        deckSelect.selectOption(userData.deck, false);
+        deckSelect.selectOption(userData.deck);
         await loadDeck(userData.deck);
     }
 
     function updateSetActiveDeckButtonState() {
-        const isActiveDeck = deckSelect.getSelectedOption() === userData.deck;
+        const isActiveDeck = deckSelect.selectedOption === userData.deck;
         setActiveDeckButton.disabled = isActiveDeck;
         setActiveDeckButton.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
     }
@@ -1071,19 +1052,29 @@
                 throw new Error("Error fetching user data: ", response.result);
             }
             userData = data;
+            selectedOption = selectedOption || userData.deck;
 
-            const preservedOption = deckSelect.getSelectedOption(); // Preserve previous selected value
             deckSelect.clearOptions(); // Clear existing options
         
             // Populate deckSelect
             userData.decks.forEach(deck => {
-                const option = document.createElement('div');
-                option.className = 'blobsey-flashcard-dropdown-option';
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'blobsey-flashcard-dropdown-option';
+
+                optionDiv.addEventListener('click', async (event) => {
+                    try {
+                        deckSelect.selectOption(deck);
+                        await loadDeck(deck);
+                    }
+                    catch (error) {
+                        console.error("Error occurred when selecting deck: ", error);
+                    }
+                });
 
                 // Text label for deck
                 const optionText = document.createElement('span');
                 optionText.textContent = (deck === userData.deck) ? `${deck} (Active)` : deck;
-                option.appendChild(optionText);
+                optionDiv.appendChild(optionText);
 
                 // Make a "three dots" button
                 const threeDots = new ContextMenuElement();
@@ -1093,7 +1084,7 @@
                     if (newName && newName !== deck) {
                         try {
                             deckSelect.disable();
-                            const isRenamingSelectedDeck = deckSelect.getSelectedOption() === deck;
+                            const isRenamingSelectedDeck = deckSelect.selectedOption === deck;
                             if (isRenamingSelectedDeck) {
                                 showLoadingScreen();
                             }
@@ -1109,7 +1100,7 @@
                             
                             await updateDeckList();
                             if (isRenamingSelectedDeck) {
-                                deckSelect.selectOption(newName, false);
+                                deckSelect.selectOption(newName);
                                 await loadDeck(newName);
                             }
                             showToast(`Deck "${deck}" renamed to "${newName}"`, 10000);
@@ -1130,7 +1121,7 @@
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
                         try {
                             deckSelect.disable();
-                            const isDeletingSelectedDeck = deckSelect.getSelectedOption() === deck;
+                            const isDeletingSelectedDeck = deckSelect.selectedOption === deck;
                             if (isDeletingSelectedDeck) {
                                 showLoadingScreen();
                             }
@@ -1140,7 +1131,7 @@
                             });
                             await updateDeckList();
                             if (isDeletingSelectedDeck) {
-                                await loadDeck(deckSelect.getSelectedOption());
+                                await loadDeck(deckSelect.selectedOption);
                             }
                             showToast(`Deck "${deck}" deleted`, 10000);
                         } 
@@ -1179,32 +1170,24 @@
                     }
                 });
 
-                option.appendChild(threeDots.element);
+                optionDiv.appendChild(threeDots.element);
 
                 deckSelect.addOption(
-                    deck, // unique identifier
-                    (deck === userData.deck) ? `${deck} (Active)` : deck, // displayText
-                    option, // customDiv, has deckname string and threedots menu
-                    true, // selectable
-                    async (selectedDeck, event) => { // onSelect
-                        event.stopPropagation();
-                        deckSelect.closeOptionsDisplay();
-
-                        ContextMenuElement.closeAll();
-
-                        await loadDeck(selectedDeck); 
-                    }
+                    deck, 
+                    optionDiv, 
+                    optionText.textContent, // displayText
+                    true // selectable
                 );
             });
 
             // Try to select the already selected option, can also be null if deleted
-            deckSelect.selectOption(preservedOption, false);
-            
+            deckSelect.selectOption(selectedOption);
         
             // Add "Create Deck" option
             const createDeck = document.createElement('span');
             createDeck.textContent = 'Create new deck...';
             const createDeckContextMenu = new ContextMenuElement(createDeck);
+            createDeckContextMenu.element.className = 'blobsey-flashcard-dropdown-option'
             createDeckContextMenu.addOption("Create empty deck", async (event) => {
                 event.stopPropagation();
                 let counter = 1;
@@ -1276,11 +1259,10 @@
             });
 
             deckSelect.addOption(
-                "create", // value
-                "Create new deck...", // text
-                createDeckContextMenu.element, // customDiv
-                false,
-                null // onSelect is null because contextMenu already has onClick
+                "create", // key
+                createDeckContextMenu.element, // div
+                "Create new deck...", // displayText
+                false // selectable
             );
         } 
         catch (error) {
