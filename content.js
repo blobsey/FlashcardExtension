@@ -737,11 +737,9 @@
     // List Screen //
     /////////////////
 
-    /* #### Reusable Dropdown class ####
-    element: div of whole container
-    display: span showing the displayText of the selectedOption
-    optionsContainer: parent div for all option divs
-    */
+    /* element: div of whole container
+     * display: span showing the displayText of the selectedOption
+     * optionsContainer: parent div for all option divs */
     class Dropdown {
         constructor() {
             this.element = document.createElement('div');
@@ -848,9 +846,8 @@
         }
     }
 
-    /* #### Reusable ContextMenuElement Class #### 
-    element: div that contains all of the content
-    display: arbitrary div to use as a button, "⋮" by default */
+    /* element: div that contains all of the content
+     * display: arbitrary div to use as a button, "⋮" by default */
     class ContextMenuElement {
         constructor(displayDiv) {
             this.element = document.createElement('div');
@@ -986,7 +983,7 @@
         setActiveDeckButton = document.createElement('button');
         setActiveDeckButton.id = 'blobsey-flashcard-set-active-deck-button';
         setActiveDeckButton.disabled = true;
-        setActiveDeckButton.textContent = "Loading..."
+        setActiveDeckButton.innerHTML = loadingSvg;
         setActiveDeckButton.addEventListener('click', async () => {
             setActiveDeckButton.innerHTML = loadingSvg;
             const selectedDeck = deckSelect.selectedOption;

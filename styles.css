@@ -414,11 +414,10 @@
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button {
     position: absolute;
     top: 20px;
-    left: calc(100% - 100px);
+    right: max(5em, calc(50% - 30em));
     width: max-content;
     box-sizing: border-box;
     height: 2em;
-    transform: translateX(-100%);
     padding: 5px 10px;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.75);
