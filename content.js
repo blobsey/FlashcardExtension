@@ -989,7 +989,7 @@
         setActiveDeckButton.textContent = "Loading..."
         setActiveDeckButton.addEventListener('click', async () => {
             setActiveDeckButton.innerHTML = loadingSvg;
-            const selectedDeck = deckSelect.selectedOption.key;
+            const selectedDeck = deckSelect.selectedOption;
             try {
                 await browser.runtime.sendMessage({
                     action: "setUserData",
@@ -1130,6 +1130,7 @@
                             await updateDeckList();
                             if (isDeletingSelectedDeck) {
                                 await loadDeck(deckSelect.selectedOption);
+                                flashcard = null; // 
                             }
                             showToast(`Deck "${deck}" deleted`, 10000);
                         } 
