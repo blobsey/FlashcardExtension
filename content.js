@@ -174,12 +174,13 @@
       }
 
     // Adds a flashcard
-    async function submitFlashcardAdd(cardFront, cardBack) {
+    async function submitFlashcardAdd(card_front, card_back, deck) {
         try {
           const response = await browser.runtime.sendMessage({
             action: "addFlashcard",
-            card_front: cardFront,
-            card_back: cardBack
+            card_front: card_front,
+            card_back: card_back,
+            deck: deck
           });
       
           if (response.result === "success") {
@@ -296,7 +297,7 @@
 
     // Screens that are higher have more "priority", ex. if both edit and list are active, edit will be drawn
     const screens = {
-        "edit": new Screen(createEditScreen),
+        "addEdit": new Screen(createAddEditScreen),
         "list": new Screen(createListScreen),
         "confirm": new Screen(createConfirmScreen),
         "flashcard": new Screen(createFlashcardScreen)
@@ -566,7 +567,7 @@
             editButton.textContent = 'Edit';
             editButton.onclick = () => {
                 editFlashcard = flashcard;
-                screens["edit"].activate();
+                screens["addEdit"].activate();
             };
             buttonsDiv.appendChild(editButton);
         }
@@ -587,7 +588,7 @@
         textarea.style.height = `${Math.max(maxHeightVh, textarea.scrollHeight) + 10}px`;
     }
 
-    function createEditScreen() {
+    function createAddEditScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
         screenDiv.style.opacity = '0'; // Fade in
@@ -597,8 +598,8 @@
         // Front textarea input
         const form = document.createElement('form');
         const frontInput = document.createElement('textarea');
-        frontInput.value = editFlashcard.card_front;
-        frontInput.placeholder = 'Front';
+        frontInput.value = editFlashcard ? editFlashcard.card_front : '';
+        frontInput.placeholder = 'Front of Flashcard';
         frontInput.id = 'edit-screen-textarea-front'; 
     
         // Make textarea expand when typing more
@@ -612,8 +613,8 @@
     
         const backInput = document.createElement('input');
         backInput.type = 'text';
-        backInput.value = editFlashcard.card_back;
-        backInput.placeholder = 'Back';
+        backInput.value = editFlashcard ? editFlashcard.card_back : '';
+        backInput.placeholder = 'Back of Flashcard';
         backInput.id = 'edit-screen-input-back'; 
         form.appendChild(backInput);
     
@@ -625,11 +626,12 @@
         const initialFrontValue = frontInput.value;
         const initialBackValue = backInput.value;
     
-        // Function to close edit screen to pass in to x button and cancel button
-        const onClose = (() => {
-            if ((frontInput.value === initialFrontValue && backInput.value === initialBackValue) || confirm("Really close? (Unsaved edits will be lost)")) {
+        // Function to close edit screen to pass in to cancel, save, delete, and close buttons
+        const onClose = ((prompt = true) => {
+            if ((typeof prompt === 'boolean' && !prompt) || (frontInput.value === initialFrontValue && backInput.value === initialBackValue) || confirm("Really close? (Unsaved edits will be lost)")) {
+                editFlashcard = null;
                 screenDiv.style.transition = ''; // Clean up animations on close
-                screens["edit"].deactivate();
+                screens["addEdit"].deactivate();
             }
         });
 
@@ -644,47 +646,47 @@
         buttonsDiv.appendChild(cancelButton);
     
         // Delete button
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.type = 'button';
-        deleteButton.addEventListener('click', function() {
-          if (confirm("Are you sure you want to delete this flashcard?")) {
-            submitFlashcardDelete(editFlashcard.card_id)
-              .then(() => {
-                if (nextFlashcard && nextFlashcard.card_id === editFlashcard.card_id)
-                    nextFlashcard = null;
-                if (flashcard && flashcard.card_id === editFlashcard.card_id)
-                    flashcard = null;
-                editFlashcard = null;
-                screenDiv.style.transition = ''; // Clean up animations on close
-                screens['edit'].deactivate();
-                showToast('Flashcard deleted. ', 10000); // TODO: add undo function (client side ??)
-              })
-              .catch(error => {
-                console.error(error.message);
-              });
-          }
-        });
-        buttonsDiv.appendChild(deleteButton);
-    
+        if (editFlashcard) {
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.type = 'button';
+            deleteButton.addEventListener('click', async function() {
+                if (confirm("Are you sure you want to delete this flashcard?")) {
+                    try {
+                        await submitFlashcardDelete(editFlashcard.card_id);
+                        if (nextFlashcard && nextFlashcard.card_id === editFlashcard.card_id)
+                            nextFlashcard = null;
+                        if (flashcard && flashcard.card_id === editFlashcard.card_id)
+                            flashcard = null;
+                        showToast('Flashcard deleted. ', 10000); // TODO: add undo function (client side ??)
+                        onClose(false);
+                    }
+                    catch (error) {
+                        showToast(`Error while deleting flashcard: ${error}`, 10000);
+                    }
+                }
+            });
+            buttonsDiv.appendChild(deleteButton);
+        }
+
         // Save button
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save';
         saveButton.type = 'submit';
         buttonsDiv.appendChild(saveButton);
     
-        form.onsubmit = (event) => {
+        form.onsubmit = async (event) => {
             event.preventDefault();
-            submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value).then(response => {
-                flashcard = response;
-            })
-            .catch(error => {
-                console.error(error.message);
-            })
-            .finally(() => {
-                screenDiv.style.transition = ''; // Clean up animations on close
-                screens['edit'].deactivate();
-            });
+            try {
+                if (editFlashcard)
+                    await submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value);
+                else
+                    await submitFlashcardAdd(frontInput.value, backInput.value, deckSelect.selectedOption);
+                onClose(false);
+            }
+            catch (error) {
+                console.error("Error while adding/editing flashcard: ", error);
+            }
         };
     
         // Trigger the transition animation
@@ -739,13 +741,14 @@
 
     /* element: div of whole container
      * display: span showing the displayText of the selectedOption
-     * optionsContainer: parent div for all option divs */
+     * optionsContainer: parent div for all option divs 
+     * selectedOption: key of the currently selected option */
     class Dropdown {
         constructor() {
             this.element = document.createElement('div');
             this.element.className = 'blobsey-flashcard-dropdown';
 
-            this.display = document.createElement('span');
+            this.display = document.createElement('div');
             this.display.className = 'blobsey-flashcard-dropdown-display';
             this.display.innerHTML = loadingSvg;
             this.element.appendChild(this.display);
@@ -760,7 +763,7 @@
             this.isOpen = false;
 
             this.element.addEventListener('click', (event) => {
-                if (!this.isDisabled) {
+                if (!this.isDisabled && event.target === this.element) {
                     if (this.isOpen) 
                         this.close();
                     else 
@@ -779,25 +782,22 @@
             });
         }
 
-        addOption(key, div, displayText, selectable = true) {
-            this.options[key] = { div, displayText, selectable };
-            this.optionsContainer.appendChild(div);
-            div.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (!this.isDisabled && this.options[key].selectable) {
-                    this.selectOption(key);
-                    this.close();
-                }
-            });
+        addOption(key, element, selectable = true) {
+            this.options[key] = { element, selectable };
+            this.optionsContainer.appendChild(element);
+            element.classList.add('blobsey-flashcard-dropdown-option');
         }
 
-        disable() {
+        disable(showLoading = false) {
+            if (showLoading)
+                this.display.innerHTML = loadingSvg;
             this.isDisabled = true;
             this.element.classList.add('disabled');
             this.display.classList.add('disabled');
         }
 
         enable() {
+            this.selectOption(this.selectedOption);
             this.isDisabled = false;
             this.element.classList.remove('disabled');
             this.display.classList.remove('disabled');
@@ -819,19 +819,18 @@
 
         selectOption(key) {
             const option = this.options[key];
-            this.display.innerHTML = 'Select a deck...';
-            this.display.classList.add('placeholder')
             if (option && option.selectable) {
                 if (this.selectedOption && this.options[this.selectedOption]) {
-                    this.options[this.selectedOption].div.classList.remove('selected');
+                    this.options[this.selectedOption].element.classList.remove('selected');
                 }
                 this.selectedOption = key;
-                this.options[key].div.classList.add('selected');
-                this.display.innerHTML = option.displayText; 
-                this.display.classList.remove('placeholder');
-                this.updateWidth();
+                this.options[key].element.classList.add('selected');
             }
-            
+        }
+
+        setDisplayText(displayText) {
+            this.display.textContent = displayText;
+            this.element.style.maxWidth = `${this.display.offsetWidth + 20}px`; 
         }
 
         clearOptions() {
@@ -840,74 +839,68 @@
             this.optionsContainer.innerHTML = '';
             this.display.innerHTML = '';
         }
-
-        updateWidth() {
-            this.element.style.maxWidth = `${this.display.offsetWidth + 20}px`; 
-        }
     }
 
     /* element: div that contains all of the content
-     * display: arbitrary div to use as a button, "⋮" by default */
+     * display: arbitrary div to use as a button,  */
     class ContextMenuElement {
+        static allMenus = [];
         constructor(displayDiv) {
-            this.element = document.createElement('div');
-            this.element.className = 'blobsey-flashcard-context-menu-button';
-            
-            if (!displayDiv) {
-                this.display = document.createElement('span');
-                this.display.className = "blobsey-flashcard-context-menu-icon";
-                this.display.textContent = '⋮';
-            }
-            else {
-                this.display = displayDiv;
-            }
-            this.displayCopy = this.display.innerHTML;
-            this.element.appendChild(this.display);
+            this.element = displayDiv;
+            this.elementCopy = this.element.innerHTML;
 
-            this.disabled = false;
+            this.isDisabled = false;
+            this.isOpen = false;
     
             this.menu = document.createElement('div');
             this.menu.className = 'blobsey-flashcard-context-menu-container';
             screenDiv.appendChild(this.menu);
             
             this.element.addEventListener('click', (event) => {
-                event.stopPropagation();
-                this.toggle();
+                if (this.isOpen) {
+                    this.close();
+                }
+                else {
+                    this.open();
+                }
             });
 
             // Close when click off
-            document.addEventListener('click', (event) => {
+            shadowRoot.addEventListener('click', (event) => {
                 if (!this.element.contains(event.target) && !this.menu.contains(event.target)) {
-                    ContextMenuElement.closeAll();
+                    this.close();
                 }
             });
             window.addEventListener('blur', () => {
-                ContextMenuElement.closeAll();
+                console.log("closing from window blur listener");
+                this.close();
             });
+            
+            ContextMenuElement.allMenus.push(this)
         }
 
         disable() {
-            this.display.innerHTML = loadingSvg;
-            ContextMenuElement.closeAll();
-            this.disabled = true;
+            this.element.innerHTML = loadingSvg;
+            this.close();
+            this.isDisabled = true;
             this.element.classList.add('disabled');
         }
 
         enable() {
-            this.display.innerHTML = this.displayCopy;
-            this.disabled = false;
+            this.element.innerHTML = this.elementCopy;
+            this.isDisabled = false;
             this.element.classList.remove('disabled');
         }
 
         // Toggle menu; if opening, check through other context menus and close them
-        toggle() {
-            const isOpen = this.menu.classList.contains('open');
+        open() {
+            if (this.isDisabled)
+                return;
             ContextMenuElement.closeAll();
+            this.isOpen = true;
+            this.menu.classList.add('open');
 
-            if (!isOpen) {
-                this.menu.classList.add('open');
-            }
-        
+            
             // Position the menu based on the click event coordinates
             const menuRect = this.menu.getBoundingClientRect();
         
@@ -929,33 +922,25 @@
             this.menu.style.left = `${left}px`;
         }
 
+        close() {
+            this.isOpen = false;
+            this.menu.classList.remove('open');
+        }
+
         static closeAll() {
-            const openContextMenus = shadowRoot.querySelectorAll('.blobsey-flashcard-context-menu-container.open');
-            openContextMenus.forEach(element => {
-                element.classList.remove('open');
+            ContextMenuElement.allMenus.forEach((menu) => {
+                console.log(`closing ${menu.element.textContent} from closeAll`);
+                menu.close();
             });
         }
 
-        addOption(text, onClick) {
-            const option = document.createElement('div');
-            option.textContent = text;
-            option.addEventListener('click', async (event) => {
-                if (!this.disabled) {
-                    event.stopPropagation();
-                    this.disable();
-                    try {
-                        await onClick(event);
-                    }
-                    catch (error) {
-                        showToast(error.message, 10000);
-                        console.error(error);
-                    }
-                    finally {
-                        this.enable();
-                    }
-                }
+        addOption(element) {
+            this.menu.appendChild(element);
+            element.addEventListener('click', (event) => {
+                event.stopPropagation();
+                console.log("closing from addOption");
+                this.close();
             });
-            this.menu.appendChild(option);
         }
     }
 
@@ -979,6 +964,7 @@
         deckSelect = new Dropdown();
         fullscreenDiv.appendChild(deckSelect.element);
 
+
         // Set Active Deck buttons
         setActiveDeckButton = document.createElement('button');
         setActiveDeckButton.id = 'blobsey-flashcard-set-active-deck-button';
@@ -999,7 +985,22 @@
                 console.error("Error while setting active deck: ", error);
             }
         });
-        fullscreenDiv.appendChild(setActiveDeckButton);
+        //fullscreenDiv.appendChild(setActiveDeckButton);
+
+        const deckThreeDotsIcon = document.createElement('span');
+        deckThreeDotsIcon.textContent = '⋮';
+        const deckThreeDots = new ContextMenuElement(deckThreeDotsIcon);
+        deckThreeDots.element.id = 'blobsey-flashcard-deck-threedots';
+        fullscreenDiv.appendChild(deckThreeDots.element);
+
+        const addFlashcardOption = document.createElement('div');
+        addFlashcardOption.textContent = 'Add flashcard';
+        addFlashcardOption.addEventListener('click', (event) => {
+            editFlashcard = null;
+            screens['addEdit'].activate();
+        });
+        deckThreeDots.addOption(addFlashcardOption);
+
     
         // Create a search bar
         const searchBar = document.createElement('input');
@@ -1011,6 +1012,7 @@
             updateFlashcardList();
         });
         fullscreenDiv.appendChild(searchBar);
+        searchBar.value = searchText;
         searchBar.focus();
     
         createCloseButton();
@@ -1051,34 +1053,42 @@
             // Populate deckSelect
             userData.decks.forEach(deck => {
                 const optionDiv = document.createElement('div');
-                optionDiv.className = 'blobsey-flashcard-dropdown-option';
 
-                optionDiv.addEventListener('click', async (event) => {
+                // Main button
+                const optionText = document.createElement('div');
+                optionText.className = 'blobsey-flashcard-dropdown-option-text';
+                optionText.textContent = (deck === userData.deck) ? `${deck} (Active)` : deck;
+                optionText.addEventListener('click', async (event) => {
                     try {
-                        ContextMenuElement.closeAll(); // Hacky workaround to avoid orphan contextmenus
                         deckSelect.selectOption(deck);
+                        deckSelect.setDisplayText(optionText.textContent)
                         selectedOption = deck; // Save globally to persist choice
+                        deckSelect.close();
                         await loadDeck(deck);
                     }
                     catch (error) {
                         console.error("Error occurred when selecting deck: ", error);
                     }
                 });
-
-                // Text label for deck
-                const optionText = document.createElement('span');
-                optionText.textContent = (deck === userData.deck) ? `${deck} (Active)` : deck;
                 optionDiv.appendChild(optionText);
 
                 // Make a "three dots" button
-                const threeDots = new ContextMenuElement();
-                threeDots.addOption('Rename', async (event) => {
+                const threeDotsIcon = document.createElement('span');
+                threeDotsIcon.className = 'blobsey-flashcard-threedots';
+                threeDotsIcon.textContent = '⋮';
+
+                const threeDots = new ContextMenuElement(threeDotsIcon);
+
+                const renameOption = document.createElement('div');
+                renameOption.textContent = 'Rename deck';
+                renameOption.addEventListener('click', async (event) => {
                     event.stopPropagation();
+                    threeDots.close();
                     let newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
                     if (newName && newName !== deck) {
                         const isRenamingSelectedDeck = deckSelect.selectedOption === deck;
                         try {
-                            deckSelect.disable();
+                            deckSelect.disable(true);
                             if (isRenamingSelectedDeck) {
                                 showLoadingScreen();
                             }
@@ -1110,12 +1120,14 @@
                         }
                     }
                 });
+                threeDots.addOption(renameOption);
 
-                threeDots.addOption('Delete', async (event) => {
-                    event.stopPropagation();
+                const deleteOption = document.createElement('div');
+                deleteOption.textContent = 'Delete deck';
+                deleteOption.addEventListener('click', async (event) => {
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
                         try {
-                            deckSelect.disable();
+                            deckSelect.disable(true);
                             const isDeletingSelectedDeck = deckSelect.selectedOption === deck;
                             if (isDeletingSelectedDeck) {
                                 showLoadingScreen();
@@ -1141,9 +1153,11 @@
                         }
                     }
                 });
-
-                threeDots.addOption('Export to CSV...', async (event) => {
-                    event.stopPropagation();
+                threeDots.addOption(deleteOption);
+                
+                const exportOption = document.createElement('div');
+                exportOption.textContent = 'Export to CSV...';
+                exportOption.addEventListener('click', async (event) => {
                     try {
                         threeDots.disable();
                         const response = await browser.runtime.sendMessage({
@@ -1165,24 +1179,27 @@
                         threeDots.enable();
                     }
                 });
+                threeDots.addOption(exportOption);
+
 
                 optionDiv.appendChild(threeDots.element);
 
                 deckSelect.addOption(
                     deck, 
                     optionDiv, 
-                    optionText.textContent, // displayText
                     true // selectable
                 );
             });
         
             // Add "Create Deck" option
-            const createDeck = document.createElement('span');
+            const createDeck = document.createElement('div');
             createDeck.textContent = 'Create new deck...';
+            createDeck.className = 'blobsey-flashcard-dropdown-option-text';
             const createDeckContextMenu = new ContextMenuElement(createDeck);
-            createDeckContextMenu.element.className = 'blobsey-flashcard-dropdown-option'
-            createDeckContextMenu.addOption("Create empty deck", async (event) => {
-                event.stopPropagation();
+
+            const emptyDeckOption = document.createElement('div');
+            emptyDeckOption.textContent = 'Create empty deck';
+            emptyDeckOption.addEventListener('click', async (event) => {
                 let counter = 1;
                 let newDeckName;  
                 do {
@@ -1192,7 +1209,6 @@
             
                 // Create deck with new name
                 try {
-                    ContextMenuElement.closeAll();
                     await browser.runtime.sendMessage({
                         action: "createDeck",
                         deck: newDeckName
@@ -1202,7 +1218,11 @@
                     console.error("Error while creating a new deck: ", error);
                 }
             });
-            createDeckContextMenu.addOption("Import...", async (event) => {
+            createDeckContextMenu.addOption(emptyDeckOption);
+
+            const importOption = document.createElement('div');
+            importOption.textContent = 'Import...';
+            importOption.addEventListener('click', async (event) => {
                 event.stopPropagation();
                 const fileInput = document.createElement('input');
                 fileInput.type = 'file';
@@ -1214,7 +1234,7 @@
                     const file = e.target.files[0];
                     if (file) {
                         try {
-                            deckSelect.disable();
+                            deckSelect.disable(true);
                             const deckName = file.name.replace(/\.(anki2|csv)$/, '');
                             let counter = 1;
                             let duplicateDeckName = null;
@@ -1242,7 +1262,7 @@
                         } 
                         finally {
                             deckSelect.enable();
-                            deckSelect.openOptionsDisplay();
+                            deckSelect.open()
                         }
                     }
                     screenDiv.removeChild(fileInput);
@@ -1250,16 +1270,22 @@
             
                 fileInput.click();
             });
+            createDeckContextMenu.addOption(importOption);
 
             deckSelect.addOption(
                 "create", // key
-                createDeckContextMenu.element, // div
-                "Create new deck...", // displayText
+                createDeck, // element
                 false // selectable
             );
 
             // Try to select the already selected option, can also be null if deleted
             deckSelect.selectOption(selectedOption);
+            if (selectedOption) {
+                deckSelect.setDisplayText((selectedOption === userData.deck) ? `${selectedOption} (Active)` : selectedOption);
+            }
+            else {
+                deckSelect.setDisplayText('Select a deck...');
+            }
         } 
         catch (error) {
             console.error("Error while fetching user data: ", error);
@@ -1338,7 +1364,7 @@
                 row.addEventListener('click', function() {
                     scrollPosition = scrollContainer.scrollTop; // Save scroll position when leaving list screen
                     editFlashcard = card; // Update the global variable with the selected flashcard
-                    screens["edit"].activate(); // Switch to the edit screen
+                    screens["addEdit"].activate(); // Switch to the edit screen
                 });
             });
 

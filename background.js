@@ -161,7 +161,8 @@ const requestHandlers = {
             method: 'POST',
             body: { 
                 card_front: request.card_front, 
-                card_back: request.card_back 
+                card_back: request.card_back,
+                deck: request.deck
             }
         });
         return data;

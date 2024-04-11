@@ -248,9 +248,9 @@
     top: 0;
     left: max(0px, calc(50% - 30em));
     margin: 1em;
+    padding: 0;
     min-height: 1em;
     cursor: pointer;
-    padding: 10px;
     z-index: 20000;
     text-align: left;
     transition: max-width 0.1s ease, backdrop-filter .1s ease, background-color .1s ease;
@@ -311,12 +311,15 @@
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-display {
-    font-family: system-ui;
+    all: initial;
+    color: white;
+    font: 14px system-ui;
     white-space: nowrap;
     display: inline-block;
     user-select: none;
-    padding: 0;
+    padding: 15px;
     line-height: 1; 
+    pointer-events: none;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-display.placeholder {
@@ -325,14 +328,23 @@
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option {
     font-family: system-ui;
-    text-align: left;
     cursor: pointer;
-    padding: 10px;
     user-select: none;
     position: relative;
     display: flex;
     flex-direction: row;
+    padding: 0;
+    justify-content: flex-start;
     align-items: center;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-dropdown-option-text {
+    padding: 15px;
+    display: block;
+    text-align: left;
+    line-height: 1; 
+    min-height: 1em;
+    box-sizing: border-box;
     overflow: hidden;
     white-space: nowrap;
 }
@@ -349,7 +361,29 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-context-menu-button {
+.blobsey-flashcard-ui #blobsey-flashcard-deck-threedots {
+    all: initial;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    cursor: pointer;
+    user-select: none;
+    position: absolute;
+    top: 10px;
+    right: max(60px, calc(50% - 24em));
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    /* transform: translate(-50%, -40%); */
+    color: white;
+    z-index: 40000;
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-deck-threedots:hover {
+    background-color: rgba(255, 255, 255, .2);
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-threedots {
     all: initial;
     aspect-ratio: 1;
     height: 100%;
@@ -364,7 +398,7 @@
     z-index: 40000;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-context-menu-button:hover {
+.blobsey-flashcard-ui .blobsey-flashcard-threedots:hover {
     background-color: rgba(255, 255, 255, .2);
 }
 
