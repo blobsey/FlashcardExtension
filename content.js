@@ -142,13 +142,13 @@
     
     // Edits a flashcard
     async function submitFlashcardEdit(card_id, frontText, backText) {
+        console.log(card_id, frontText, backText);
         const response = await browser.runtime.sendMessage({
             action: "editFlashcard",
             card_id: card_id,
             card_front: frontText,
             card_back: backText
-        });
-    
+        });    
         if (response.result === "success") {
             return response.flashcard; // Return the updated flashcard for further processing
         } else {
@@ -677,9 +677,10 @@
     
         form.onsubmit = async (event) => {
             event.preventDefault();
+            console.log(editFlashcard);
             try {
                 if (editFlashcard)
-                    await submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value);
+                    flashcard = await submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value);
                 else
                     await submitFlashcardAdd(frontInput.value, backInput.value, deckSelect.selectedOption);
                 onClose(false);
