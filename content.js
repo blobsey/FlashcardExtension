@@ -1106,6 +1106,7 @@
                     let newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
                     if (newName && newName !== deck) {
                         const isRenamingSelectedDeck = deckSelect.selectedOption === deck;
+                        const isRenamingActiveDeck = userData.deck === deck;
                         try {
                             deckSelect.disable(true);
                             if (isRenamingSelectedDeck) {
@@ -1136,6 +1137,14 @@
                                 selectedOption = newName;
                                 deckSelect.setDisplayText(newName);
                                 await loadDeck(newName);
+                            }
+
+                            // In case displayed flashcard is from renamed deck
+                            if (isRenamingActiveDeck) {
+                                if (screens["flashcard"].active) {
+                                    flashcard = null;
+                                    showFlashcard();
+                                }
                             }
                             deckSelect.enable();
                             deckSelect.open();
