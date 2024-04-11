@@ -428,10 +428,16 @@ async function createAddScreen() {
         if (!cardFront || !cardBack) 
             throw new Error(`${!cardFront ? "Front" : "Back"} is blank`);
 
+        const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
+        const deck = data.deck;
+        if (!deck)
+            throw new Error(`Deck is ${deck}`);
+
         const response = await browser.runtime.sendMessage({
             action: 'addFlashcard',
             card_front: cardFront,
-            card_back: cardBack
+            card_back: cardBack,
+            deck: deck
         });
 
         if(response.result !== "success") {

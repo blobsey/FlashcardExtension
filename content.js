@@ -829,6 +829,10 @@
         }
 
         setDisplayText(displayText) {
+            if (displayText === "Select a deck...")
+                this.display.classList.add("placeholder");
+            else
+                this.display.classList.remove("placeholder");
             this.display.textContent = displayText;
             this.element.style.maxWidth = `${this.display.offsetWidth + 20}px`; 
         }
@@ -841,8 +845,8 @@
         }
     }
 
-    /* element: div that contains all of the content
-     * display: arbitrary div to use as a button,  */
+    /* element: div that we "wrap" a context menu around
+     * menu: div of menu that is attached to document  */
     class ContextMenuElement {
         static allMenus = [];
         constructor(displayDiv) {
@@ -872,8 +876,14 @@
                 }
             });
             window.addEventListener('blur', () => {
-                console.log("closing from window blur listener");
                 this.close();
+            });
+
+            // Update position when resize window 
+            window.addEventListener('resize', () => {
+                if (this.isOpen) {
+                  this.updateMenuPosition();
+                }
             });
             
             ContextMenuElement.allMenus.push(this)
@@ -892,34 +902,50 @@
             this.element.classList.remove('disabled');
         }
 
-        // Toggle menu; if opening, check through other context menus and close them
+
         open() {
             if (this.isDisabled)
-                return;
-            ContextMenuElement.closeAll();
+            return;
+        
+            const menuWidth = this.calculateMenuWidth();
+            this.updateMenuPosition(menuWidth);
+        
             this.isOpen = true;
             this.menu.classList.add('open');
+        }
+        
+        calculateMenuWidth() {
+            const hiddenMenu = document.createElement('div');
+            hiddenMenu.className = 'blobsey-flashcard-context-menu-container';
+            hiddenMenu.style.visibility = 'hidden';
+            hiddenMenu.style.position = 'absolute';
+            hiddenMenu.innerHTML = this.menu.innerHTML;
+        
+            document.body.appendChild(hiddenMenu);
+            const menuWidth = hiddenMenu.getBoundingClientRect().width;
+            document.body.removeChild(hiddenMenu);
+        
+            return menuWidth;
+        }
 
-            
-            // Position the menu based on the click event coordinates
-            const menuRect = this.menu.getBoundingClientRect();
+        updateMenuPosition(menuWidth) {
+            const elementRect = this.element.getBoundingClientRect();
+            const spaceOnRight = window.innerWidth - elementRect.right;
         
-            // Calculate the position of the ContextMenuElement
-            const buttonRect = this.element.getBoundingClientRect();
+            if (spaceOnRight >= menuWidth) {
+                // Enough space on the right, grow from left to right
+                this.menu.style.right = `unset`;
+                this.menu.style.left = `${elementRect.right - 16}px`;
+                this.menu.style.transformOrigin = 'left';
+            } 
+            else {
+                // Not enough space on the right, grow from right to left
+                this.menu.style.left = `unset`;
+                this.menu.style.right = `${window.innerWidth - elementRect.left + 16}px`;
+                this.menu.style.transformOrigin = 'right';
+            }
 
-            let top = buttonRect.top + 24;
-            let left = buttonRect.right - 24;
-        
-            // Adjust the position if the menu would overflow the viewport
-            if (left + menuRect.width > window.innerWidth) {
-                left = buttonRect.right - menuRect.width;
-            }
-            if (top + menuRect.height > window.innerHeight) {
-                top = buttonRect.top - menuRect.height;
-            }
-        
-            this.menu.style.top = `${top}px`;
-            this.menu.style.left = `${left}px`;
+            this.menu.style.top = `${elementRect.bottom - 16}px`;
         }
 
         close() {
@@ -929,18 +955,12 @@
 
         static closeAll() {
             ContextMenuElement.allMenus.forEach((menu) => {
-                console.log(`closing ${menu.element.textContent} from closeAll`);
                 menu.close();
             });
         }
 
         addOption(element) {
             this.menu.appendChild(element);
-            element.addEventListener('click', (event) => {
-                event.stopPropagation();
-                console.log("closing from addOption");
-                this.close();
-            });
         }
     }
 
@@ -952,6 +972,7 @@
     let selectedOption = null;
     let flashcards;
     let setActiveDeckButton;
+    let deckThreeDots;
     let scrollPosition = 0;
     
     async function createListScreen() {
@@ -964,12 +985,24 @@
         deckSelect = new Dropdown();
         fullscreenDiv.appendChild(deckSelect.element);
 
+        const deckThreeDotsIcon = document.createElement('span');
+        deckThreeDotsIcon.textContent = '⋮';
 
-        // Set Active Deck buttons
+        deckThreeDots = new ContextMenuElement(deckThreeDotsIcon);
+        deckThreeDots.element.id = 'blobsey-flashcard-deck-threedots';
+        fullscreenDiv.appendChild(deckThreeDots.element);
+
+        const addFlashcardOption = document.createElement('div');
+        addFlashcardOption.textContent = 'Add flashcard';
+        addFlashcardOption.addEventListener('click', (event) => {
+            editFlashcard = null;
+            screens['addEdit'].activate();
+        });
+        deckThreeDots.addOption(addFlashcardOption);
+
         setActiveDeckButton = document.createElement('button');
         setActiveDeckButton.id = 'blobsey-flashcard-set-active-deck-button';
         setActiveDeckButton.disabled = true;
-        setActiveDeckButton.innerHTML = loadingSvg;
         setActiveDeckButton.addEventListener('click', async () => {
             setActiveDeckButton.innerHTML = loadingSvg;
             const selectedDeck = deckSelect.selectedOption;
@@ -985,21 +1018,7 @@
                 console.error("Error while setting active deck: ", error);
             }
         });
-        //fullscreenDiv.appendChild(setActiveDeckButton);
-
-        const deckThreeDotsIcon = document.createElement('span');
-        deckThreeDotsIcon.textContent = '⋮';
-        const deckThreeDots = new ContextMenuElement(deckThreeDotsIcon);
-        deckThreeDots.element.id = 'blobsey-flashcard-deck-threedots';
-        fullscreenDiv.appendChild(deckThreeDots.element);
-
-        const addFlashcardOption = document.createElement('div');
-        addFlashcardOption.textContent = 'Add flashcard';
-        addFlashcardOption.addEventListener('click', (event) => {
-            editFlashcard = null;
-            screens['addEdit'].activate();
-        });
-        deckThreeDots.addOption(addFlashcardOption);
+        deckThreeDots.addOption(setActiveDeckButton);
 
     
         // Create a search bar
@@ -1091,6 +1110,7 @@
                             deckSelect.disable(true);
                             if (isRenamingSelectedDeck) {
                                 showLoadingScreen();
+                                deckThreeDots.disable();
                             }
                             const response = await browser.runtime.sendMessage({
                                 action: "renameDeck",
@@ -1113,10 +1133,13 @@
                         finally {
                             if (isRenamingSelectedDeck) {
                                 deckSelect.selectOption(newName);
+                                selectedOption = newName;
+                                deckSelect.setDisplayText(newName);
                                 await loadDeck(newName);
                             }
                             deckSelect.enable();
                             deckSelect.open();
+                            deckThreeDots.enable();
                         }
                     }
                 });
@@ -1125,10 +1148,11 @@
                 const deleteOption = document.createElement('div');
                 deleteOption.textContent = 'Delete deck';
                 deleteOption.addEventListener('click', async (event) => {
+                    const isDeletingSelectedDeck = deckSelect.selectedOption === deck;
                     if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
                         try {
+                            deckThreeDots.disable();
                             deckSelect.disable(true);
-                            const isDeletingSelectedDeck = deckSelect.selectedOption === deck;
                             if (isDeletingSelectedDeck) {
                                 showLoadingScreen();
                             }
@@ -1138,8 +1162,10 @@
                             });
                             await updateDeckList();
                             if (isDeletingSelectedDeck) {
+                                deckSelect.setDisplayText("Select a deck...");
+                                selectedOption = null;
                                 await loadDeck(deckSelect.selectedOption);
-                                flashcard = null; // 
+                                flashcard = null; 
                             }
                             showToast(`Deck "${deck}" deleted`, 10000);
                         } 
@@ -1148,6 +1174,7 @@
                             console.error("Error while deleting deck: ", error);
                         }
                         finally {
+                            deckThreeDots.enable();
                             deckSelect.enable();
                             deckSelect.open();
                         }
@@ -1200,6 +1227,9 @@
             const emptyDeckOption = document.createElement('div');
             emptyDeckOption.textContent = 'Create empty deck';
             emptyDeckOption.addEventListener('click', async (event) => {
+                event.stopPropagation();
+                createDeckContextMenu.close();
+                createDeckContextMenu.disable();
                 let counter = 1;
                 let newDeckName;  
                 do {
@@ -1214,9 +1244,14 @@
                         deck: newDeckName
                     });
                     await updateDeckList();
-                } catch (error) {
+                } 
+                catch (error) {
                     console.error("Error while creating a new deck: ", error);
                 }
+                finally {
+                    createDeckContextMenu.enable();
+                }
+
             });
             createDeckContextMenu.addOption(emptyDeckOption);
 

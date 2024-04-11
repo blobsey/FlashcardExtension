@@ -446,21 +446,18 @@
 
 /* Set Active Deck Button */
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button {
-    position: absolute;
-    top: 20px;
-    right: max(5em, calc(50% - 30em));
-    width: max-content;
-    box-sizing: border-box;
-    height: 2em;
-    padding: 5px 10px;
+    all: initial;
+    width: 100%;
+    padding: 10px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    color: white;
+    font: 14px system-ui;
+    border: none;
     background: none;
-    border-radius: 3px;
     outline: none;
     background-color: rgba(255, 255, 255, 0.01);
     transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+    overflow: hidden;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button:hover {
