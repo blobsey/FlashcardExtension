@@ -677,7 +677,6 @@
     
         form.onsubmit = async (event) => {
             event.preventDefault();
-            console.log(editFlashcard);
             try {
                 if (editFlashcard)
                     flashcard = await submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value);
