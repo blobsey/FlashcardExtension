@@ -1135,7 +1135,7 @@
                             if (isRenamingSelectedDeck) {
                                 deckSelect.selectOption(newName);
                                 selectedOption = newName;
-                                deckSelect.setDisplayText(newName);
+                                deckSelect.setDisplayText((selectedOption === userData.deck) ? `${selectedOption} (Active)` : selectedOption);
                                 await loadDeck(newName);
                             }
 
