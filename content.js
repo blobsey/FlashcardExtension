@@ -57,13 +57,16 @@
 
         
         // Listen for messages from the background script to show the overlay
-        browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             switch (request.action) {
-                case "showFlashcard":
-                    showFlashcard();
+                case "showFlashcardAlarm":
+                    // Wait additional seconds to exactly line up with nextFlashcardTime
+                    const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
+                    const currentTime = Date.now();
+                    setTimeout(showFlashcardIfNeeded, Math.max(0, nextFlashcardTime - currentTime));
                     break;
                 case "showExpandedPopupScreen":
-                    showExpandedPopupScreen();
+                    showExpandedPopupScreen(request.screen);
                     break;
                 case "forceClose":
                     for (const screen in screens) {
@@ -74,27 +77,9 @@
             }
         });
 
+        // On page load, show flashcard if site in blocklist and nextFlashcardTime has expired
+        showFlashcardIfNeeded();
         
-        // On page load, check if we should show the overlay
-        browser.storage.local.get("nextFlashcardTime").then(data => {
-            const currentTime = Date.now();
-
-            // Check if the current site is in sitelist
-            if (inSiteList(window.location.href)) {
-                // Check if 'nextFlashcardTime' exists
-                if (data.hasOwnProperty('nextFlashcardTime')) {
-                    // 'nextFlashcardTime' exists, check if the current time is past this timestamp
-                    if (currentTime >= data.nextFlashcardTime) {
-                        showFlashcard(); // Time has passed, show the overlay
-                    } // If time has not passed, do nothing and wait for the next alarm
-                } else {
-                    showFlashcard(); // 'nextFlashcardTime' probably got deleted, show anyways
-                }
-            }
-        })
-        .catch(error => {
-            console.error("Error accessing storage in content script:", error);
-        });
 
         // On page load, if we are in blank.html then open screen specified by query parameter
         if (window.location.href.includes('blank.html')) {
@@ -117,7 +102,7 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const screenToLoad = urlParams.get('screenToLoad') || 'list';
-            screens[screenToLoad].activate();
+            showExpandedPopupScreen(screenToLoad);
         }
 
 
@@ -142,7 +127,6 @@
     
     // Edits a flashcard
     async function submitFlashcardEdit(card_id, frontText, backText) {
-        console.log(card_id, frontText, backText);
         const response = await browser.runtime.sendMessage({
             action: "editFlashcard",
             card_id: card_id,
@@ -151,7 +135,8 @@
         });    
         if (response.result === "success") {
             return response.flashcard; // Return the updated flashcard for further processing
-        } else {
+        } 
+        else {
             // Handle failure
             console.error("Failed to update flashcard:", response.message);
             throw new Error(response.message); // Propagate the error to be handled by the caller
@@ -161,47 +146,43 @@
     // Deletes a flashcard
     async function submitFlashcardDelete(card_id) {
         try {
-          const response = await browser.runtime.sendMessage({ action: "deleteFlashcard", card_id: card_id });
-          if (response.result === "success") {
-            return response;
-          } else {
-            throw new Error(response.message);
-          }
-        } catch (error) {
-          console.error("Error deleting flashcard:", error);
-          throw error;
+            const response = await browser.runtime.sendMessage({ action: "deleteFlashcard", card_id: card_id });
+            if (response.result === "success") {
+                return response;
+            } 
+            else {
+                throw new Error(response.message);
+            }
+        } 
+        catch (error) {
+            console.error("Error deleting flashcard:", error);
+            throw error;
         }
       }
 
     // Adds a flashcard
     async function submitFlashcardAdd(card_front, card_back, deck) {
         try {
-          const response = await browser.runtime.sendMessage({
-            action: "addFlashcard",
-            card_front: card_front,
-            card_back: card_back,
-            deck: deck
-          });
-      
-          if (response.result === "success") {
-            return response;
-          } else {
-            throw new Error(response.message);
-          }
-        } catch (error) {
-          console.error("Error adding flashcard:", error);
-          throw error;
+            const response = await browser.runtime.sendMessage({
+                action: "addFlashcard",
+                card_front: card_front,
+                card_back: card_back,
+                deck: deck
+            });
+        
+            if (response.result === "success") {
+                return response;
+            } 
+            else {
+                throw new Error(response.message);
+            }
+        } 
+        catch (error) {
+            console.error("Error adding flashcard:", error);
+            throw error;
         }
     }
     
-
-    // Sets alarm for "minutes" minutes to show next overlay
-    function setTimer(minutes) {
-        browser.runtime.sendMessage({
-            action: "resetTimer",
-            count: Math.max(1, minutes)
-        }); // Send the current count with the message
-    }
 
     // Iterates through DOM and pauses any media
     function pauseMediaPlayback() {
@@ -221,6 +202,26 @@
         });
     }
 
+
+    /* Helper function to call at page load and on "showFlashcardAlarm" alarms
+    shows flashcard if site is in blocklist and if nextFlashcardTime has expired */
+    async function showFlashcardIfNeeded() {
+        const hostname = new URL(window.location.href).hostname;
+        if (sites.some(site => hostname === site || hostname.endsWith('.' + site))) {
+            if (!flashcard) {
+                try {
+                    flashcard = await fetchNextFlashcard();
+                    showFlashcard();
+                }
+                catch (error) {
+                    if (error.message !== "No cards to review right now.")
+                        console.error(error.message);
+                    redeemTime(); // Redeem time as a fallback, in case error while reviewing flashcards
+                }
+            }
+        }
+    }
+
     // Hardcoded list of sites (TODO: don't hardcode this lol)
     const sites = [
         'www.reddit.com',
@@ -230,32 +231,41 @@
         'crouton.net'
     ];
 
-    // Function to check if the current site is allowed
-    function inSiteList(url) {
-        const hostname = new URL(url).hostname;
-        return sites.some(site => hostname === site || hostname.endsWith('.' + site));
-    }
-
-    // Tries to show a flashcard, if there are none then sets a timer 1min from now to check again
+    // Fetch flashcard, if it exists then bootstrap overlay
     async function showFlashcard() {
-        if (!flashcard) {
-            try {
-                flashcard = await fetchNextFlashcard();
-            }
-            catch (error) {
-                if (error.message !== "No cards to review right now.")
-                    console.error(error.message);
-                setTimer(1);
-                return;
-            }
+        // Calculate existing initial time grant, will be added to by grantTime()
+        const { existingTimeGrant } = await browser.storage.local.get("existingTimeGrant");
+        if (!existingTimeGrant) { // In case showFlashcard() gets called before "redeeming" time
+            const currentTime = Date.now();
+            const { nextFlashcardTime } = await browser.storage.local.get("nextFlashcardTime");
+            const calculatedTimeGrant = nextFlashcardTime ? Math.max(nextFlashcardTime - currentTime, 0) : 0;
+            await browser.storage.local.set({
+                existingTimeGrant: calculatedTimeGrant
+            });
         }
 
         pauseMediaPlayback();
         screens["flashcard"].activate();
     }
 
-    function showExpandedPopupScreen() {
-        screens["list"].activate();
+    function showExpandedPopupScreen(screen) {
+        switch (screen) {
+            case 'show':
+                if (!flashcard) {
+                    fetchNextFlashcard().then((data) => {
+                        flashcard = data;
+                        showFlashcard();
+                    })
+                    .catch((error) => {
+                        if (error.message === "No cards to review right now.")
+                            showFlashcard();
+                    });
+                }
+                break;
+            case 'list':
+                screens["list"].activate();
+                break;
+        }
     }
     
 
@@ -474,6 +484,72 @@
         userInput.focus();
     }
 
+    function prettyPrintMilliseconds(milliseconds) {
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+      
+        const parts = [];
+      
+        if (hours > 0) {
+          parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+        }
+      
+        if (minutes > 0) {
+          parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+        }
+      
+        if (seconds > 0) {
+          parts.push(`${seconds} second${seconds !== 1 ? 's' : ''}`);
+        }
+      
+        return parts.join(', ');
+      }
+      
+
+    // Helper function to calculate the nextFlashcardTime based on currentTime + calculated timeGrant
+    async function grantTime(minutes) {
+        try {
+            // Fetch any time left, if any
+            let { existingTimeGrant = 0 } = await browser.storage.local.get("existingTimeGrant");
+            existingTimeGrant += minutes * 60000;
+
+            await browser.storage.local.set({ existingTimeGrant });
+
+            // console.log(`Time Grant: ${prettyPrintMilliseconds(existingTimeGrant)}`);
+            // console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
+            // console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
+        }
+        catch (error) {
+            console.error("Error while granting time: ", error);
+        }
+    }
+
+    // Helper function to "redeem" time which clears out existingTimeGrant
+    async function redeemTime() {
+        try {
+            /* Calculate nextFlashcardTime by taking the max of current nextFlashcardTime and the
+            current time + existingTimeGrant (minimum +1 minute) */
+            const { existingTimeGrant = 0 } = await browser.storage.local.get("existingTimeGrant");
+            const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
+            const response = await browser.runtime.sendMessage({
+                action: "setTimestampAlarm",
+                nextFlashcardTime: Math.max(nextFlashcardTime, Date.now() + Math.max(existingTimeGrant, 60000))
+            });   
+            if (response.result !== "success")
+                throw new Error(JSON.stringify(response));
+
+            await browser.storage.local.remove("existingTimeGrant");  
+
+            // console.log(`## Redeemed time ##`);
+            // console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
+            // console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
+        }
+        catch (error) {
+            console.error("Error while redeeming time: ", error);
+        }
+    }
     // Shows review screen, really should be async because of strict ordering of review -> fetch -> display
     async function createConfirmScreen() {
         // Start by clearing the current content of overlayDiv
@@ -481,7 +557,7 @@
 
         // Show question
         const frontDiv = document.createElement('div');
-        frontDiv.innerHTML = flashcard ? flashcard.card_front : "<code>&ltdeleted&gt</code>";
+        frontDiv.innerHTML = flashcard ? flashcard.card_front : "<code>&ltFlashcard missing&gt</code>";
         screenDiv.appendChild(frontDiv);
 
         // Make diff div
@@ -503,7 +579,11 @@
                     action: "reviewFlashcard",
                     card_id: flashcard.card_id,
                     grade: grade
-                });    
+                });
+                
+                if (grade === 3) {
+                    grantTime(1);
+                }
             }
             catch (error) {
                 console.error(error);
@@ -547,8 +627,8 @@
             confirmButton.textContent = 'Confirm';
 
             // Override closing function for close button to apply the timer
-            const onClose = () => {
-                setTimer(count);
+            const onClose = async () => {
+                redeemTime(); // true because confirm button/close button "redeems" time
                 count = 0;
                 flashcard = null;
                 screens["flashcard"].deactivate();
@@ -558,7 +638,6 @@
             confirmButton.onclick = onClose;
 
             buttonsDiv.appendChild(confirmButton);
-
         }
 
         // Edit button
@@ -576,8 +655,6 @@
         const countNote = document.createElement('div');
         countNote.innerHTML = `Correct Answers: ${count}`;
         screenDiv.appendChild(countNote);
-
-        setTimer(count); // Also set timer just in case page refresh
     }
 
     

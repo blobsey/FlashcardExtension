@@ -50,28 +50,32 @@ async function updateNavbar() {
 const menuOptions = {
     main: {
         label: "",
-        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="-2 -2 28 28" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`,
         func: createMainScreen,
         isPersistent: true
     },
+    show: {
+        label: "Show me a Flashcard",
+        func: () => {
+            expand("show")
+            .catch((error) => { console.error("Error while calling expand: ", error); });
+        },
+        isPersistent: false
+    },
     add: {
         label: "Add Flashcards",
-        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-        <path fill="#fff" fill-rule="evenodd" d="M11.25 12.75V18h1.5v-5.25H18v-1.5h-5.25V6h-1.5v5.25H6v1.5h5.25Z" clip-rule="evenodd"/>
-        </svg>`,
         func: createAddScreen,
         isPersistent: true
     },
     list: {
         label: "List Flashcards",
-        func: expand,
+        func: () => {
+            expand("list")
+            .catch((error) => { console.error("Error while calling expand: ", error); });
+        },
         isPersistent: false
     },
     config: {
         label: "Settings",
-        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" stroke="#fff" stroke-width=".304" viewBox="-2.4 -2.4 20.8 20.8">
-        <path d="M8.178 16h-1.35a1.865 1.865 0 0 1-1.863-1.862v-.626a.186.186 0 0 0-.091-.159l-.676-.394a.184.184 0 0 0-.183 0l-.539.311a1.845 1.845 0 0 1-1.414.186 1.855 1.855 0 0 1-1.133-.869l-.679-1.18a1.867 1.867 0 0 1 .68-2.541l.548-.316a.186.186 0 0 0 .092-.16v-.78a.186.186 0 0 0-.092-.16l-.547-.316A1.866 1.866 0 0 1 .25 4.593l.679-1.18a1.855 1.855 0 0 1 1.133-.869 1.837 1.837 0 0 1 1.414.187l.538.31a.181.181 0 0 0 .184 0l.676-.394a.186.186 0 0 0 .091-.159v-.626A1.865 1.865 0 0 1 6.828 0h1.353a1.865 1.865 0 0 1 1.864 1.862v.626a.187.187 0 0 0 .09.159l.677.394a.179.179 0 0 0 .183 0l.538-.311a1.841 1.841 0 0 1 1.415-.186 1.85 1.85 0 0 1 1.132.869l.679 1.18a1.866 1.866 0 0 1-.68 2.541l-.548.316a.186.186 0 0 0-.092.16v.78a.186.186 0 0 0 .092.16l.547.316a1.865 1.865 0 0 1 .681 2.541l-.679 1.18a1.85 1.85 0 0 1-1.132.869 1.842 1.842 0 0 1-1.415-.187l-.537-.31a.186.186 0 0 0-.184 0l-.677.394a.187.187 0 0 0-.09.159v.626A1.865 1.865 0 0 1 8.178 16Zm-4.076-4.063a1.185 1.185 0 0 1 .6.161l.676.4a1.181 1.181 0 0 1 .586 1.019v.626a.866.866 0 0 0 .866.865h1.353a.867.867 0 0 0 .867-.865v-.626a1.183 1.183 0 0 1 .585-1.019l.676-.4a1.185 1.185 0 0 1 1.186 0l.537.31a.849.849 0 0 0 .658.087.854.854 0 0 0 .525-.4l.68-1.179a.868.868 0 0 0-.317-1.181l-.546-.317a1.183 1.183 0 0 1-.59-1.022v-.78a1.183 1.183 0 0 1 .59-1.022l.547-.317a.868.868 0 0 0 .316-1.181l-.68-1.179a.854.854 0 0 0-.525-.4.871.871 0 0 0-.658.086l-.538.311a1.176 1.176 0 0 1-1.185 0l-.676-.4a1.183 1.183 0 0 1-.585-1.019v-.626a.867.867 0 0 0-.867-.865H6.828a.866.866 0 0 0-.866.865v.626a1.181 1.181 0 0 1-.586 1.019l-.676.4a1.181 1.181 0 0 1-1.186 0l-.536-.31a.862.862 0 0 0-.658-.087.856.856 0 0 0-.526.4l-.68 1.179a.868.868 0 0 0 .317 1.181l.546.317a1.183 1.183 0 0 1 .59 1.022v.78a1.183 1.183 0 0 1-.59 1.022l-.547.317a.868.868 0 0 0-.316 1.181l.68 1.179a.856.856 0 0 0 .526.4.853.853 0 0 0 .658-.086l.537-.311a1.172 1.172 0 0 1 .587-.161Zm3.417-.711A3.23 3.23 0 0 1 4.293 8a3.23 3.23 0 0 1 3.226-3.226A3.23 3.23 0 0 1 10.746 8a3.23 3.23 0 0 1-3.227 3.226Zm0-5.455A2.232 2.232 0 0 0 5.29 8a2.232 2.232 0 0 0 2.229 2.229A2.233 2.233 0 0 0 9.75 8a2.233 2.233 0 0 0-2.231-2.229Z" data-name="Path 39"/>
-        </svg>`,
         func: createConfigScreen,
         isPersistent: true
     },
@@ -163,12 +167,15 @@ async function createMainScreen() {
     }
 }
 
-async function expand() {
+async function expand(screen) {
     let tabs = await browser.tabs.query({active: true, currentWindow: true});
 
     // Try to open overlay, if not possible then open in new tab
     try {
-        await browser.tabs.sendMessage(tabs[0].id, {action: "showExpandedPopupScreen"});
+        await browser.tabs.sendMessage(tabs[0].id, {
+            action: "showExpandedPopupScreen",
+            screen: screen
+        });
         window.close();
     }
     catch (error) {
@@ -188,7 +195,7 @@ async function expand() {
                     tabFaviconUrl, tabFaviconUrl
                 } 
             });
-            await browser.tabs.update(tabs[0].id, {url: browser.runtime.getURL('blank.html?screenToLoad=list')});
+            await browser.tabs.update(tabs[0].id, {url: browser.runtime.getURL(`blank.html?screenToLoad=${screen}`)});
             window.close()
         }
         catch (error) {

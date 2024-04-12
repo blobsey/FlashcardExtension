@@ -7,15 +7,14 @@ let authInfo = null;
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
-  if (alarm.name === "showFlashcardAlarm") {
-      // Notify all relevant tabs to show the overlay
-      browser.tabs.query({url: ["*://*.reddit.com/*", "*://*.youtube.com/*", "*://crouton.net/*"]})
-          .then(tabs => {
-              tabs.forEach(tab => {
-                  browser.tabs.sendMessage(tab.id, {action: "showFlashcard"}).catch(err => console.error(err));
-              });
-          }); 
-  }
+    if (alarm.name === "showFlashcardAlarm") {
+        // Notify all relevant tabs to show the overlay
+        browser.tabs.query({}).then((tabs) => {
+            tabs.forEach((tab) => {
+                browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
+            });
+        });
+    }
 });
 
 
@@ -56,14 +55,17 @@ const requestHandlers = {
         await browser.storage.local.set({ apiBaseUrl: request.apiBaseUrl });
         return "Set API Base URL successfully.";
     },
-    "resetTimer": async (request) => {
+    "setTimestampAlarm": async (request) => {
+        // Calculate minutes for browser.alarms.create()
         await browser.alarms.clear("showFlashcardAlarm");
-        const nextFlashcardTime = Date.now() + (60000 * request.count); // Current time + interval * 1 minute
+        const nextFlashcardTime = request.nextFlashcardTime || Date.now();
+        const minutes = (nextFlashcardTime - Date.now()) / 60000; 
+        await browser.alarms.create("showFlashcardAlarm", { delayInMinutes: minutes });
 
-        console.log(`Next overlay time (datetime):\t${new Date(nextFlashcardTime).toLocaleString()}`);
-    
-        await browser.storage.local.set({ nextFlashcardTime }); // set in local storage as a fallback
-        browser.alarms.create("showFlashcardAlarm", { delayInMinutes: request.count });
+        // Also set precise timestamp in local storage
+        await browser.storage.local.set({ nextFlashcardTime }); 
+
+        console.log(`Next flashcard: \t${new Date(nextFlashcardTime).toLocaleString()}`);
         return "Timer reset successfully.";
     },
     "login": async () => {
