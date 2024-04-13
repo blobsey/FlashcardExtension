@@ -61,7 +61,6 @@
             switch (request.action) {
                 case "showFlashcardAlarm":
                     // Wait additional seconds to exactly line up with nextFlashcardTime
-                    console.log("in showFlashcardAlarm handler");
                     const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
                     const currentTime = Date.now();
                     setTimeout(attemptShowFlashcard, Math.max(0, nextFlashcardTime - currentTime));
@@ -217,7 +216,6 @@
         const hostname = new URL(window.location.href).hostname;
         const currentTime = Date.now();
         const { nextFlashcardTime = currentTime} = await browser.storage.local.get("nextFlashcardTime");
-        console.log("In attemptShowFlashcard()");
 
         if ((nextFlashcardTime <= currentTime) && sites.some(site => hostname === site || hostname.endsWith('.' + site))) {
             if (!flashcard) {
@@ -256,7 +254,6 @@
             });
         }
 
-        console.log("in showFlashcard(), about to activate flashcard screen");
         pauseMediaPlayback();
         screens["flashcard"].activate();
     }
@@ -522,10 +519,6 @@
             existingTimeGrant += minutes * 60000;
 
             await browser.storage.local.set({ existingTimeGrant });
-
-            console.log(`Time Grant: ${prettyPrintMilliseconds(existingTimeGrant)}`);
-            console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
-            console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
         }
         catch (error) {
             console.error("Error while granting time: ", error);
@@ -547,10 +540,6 @@
                 throw new Error(JSON.stringify(response));
 
             await browser.storage.local.remove("existingTimeGrant");  
-
-            console.log(`## Redeemed time ##`);
-            console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
-            console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
         }
         catch (error) {
             console.error("Error while redeeming time: ", error);
