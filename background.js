@@ -68,6 +68,17 @@ const requestHandlers = {
         console.log(`Next flashcard: \t${new Date(nextFlashcardTime).toLocaleString()}`);
         return "Timer reset successfully.";
     },
+    "confirmAllTabs": async (request) => {
+        // Close any open overlays on logout
+        browser.tabs.query({}, function(tabs) {
+            tabs.forEach(function(tab) {
+                browser.tabs.sendMessage(tab.id, {action: "confirmAllTabs"})
+                .catch(() => {
+                    console.warn(`Failed closing overlay on ${tab.title} (tab ID ${tab.id})`);
+                })
+            });
+        });
+    },
     "login": async () => {
         try {
             const { apiBaseUrl } = await requestHandlers["getApiBaseUrl"]();

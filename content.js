@@ -61,9 +61,10 @@
             switch (request.action) {
                 case "showFlashcardAlarm":
                     // Wait additional seconds to exactly line up with nextFlashcardTime
+                    console.log("in showFlashcardAlarm handler");
                     const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
                     const currentTime = Date.now();
-                    setTimeout(showFlashcardIfNeeded, Math.max(0, nextFlashcardTime - currentTime));
+                    setTimeout(attemptShowFlashcard, Math.max(0, nextFlashcardTime - currentTime));
                     break;
                 case "showExpandedPopupScreen":
                     showExpandedPopupScreen(request.screen);
@@ -74,11 +75,18 @@
                     }
                     update();
                     break;
+                case "confirmAllTabs":
+                    count = 0;
+                    flashcard = null;
+                    screens["flashcard"].active = false;
+                    screens["confirm"].active = false;
+                    update();
+                    break;
             }
         });
 
-        // On page load, show flashcard if site in blocklist and nextFlashcardTime has expired
-        showFlashcardIfNeeded();
+        // On page load, force check if need to show a flashcard
+        attemptShowFlashcard();
         
 
         // On page load, if we are in blank.html then open screen specified by query parameter
@@ -205,9 +213,13 @@
 
     /* Helper function to call at page load and on "showFlashcardAlarm" alarms
     shows flashcard if site is in blocklist and if nextFlashcardTime has expired */
-    async function showFlashcardIfNeeded() {
+    async function attemptShowFlashcard() {
         const hostname = new URL(window.location.href).hostname;
-        if (sites.some(site => hostname === site || hostname.endsWith('.' + site))) {
+        const currentTime = Date.now();
+        const { nextFlashcardTime = currentTime} = await browser.storage.local.get("nextFlashcardTime");
+        console.log("In attemptShowFlashcard()");
+
+        if ((nextFlashcardTime <= currentTime) && sites.some(site => hostname === site || hostname.endsWith('.' + site))) {
             if (!flashcard) {
                 try {
                     flashcard = await fetchNextFlashcard();
@@ -244,6 +256,7 @@
             });
         }
 
+        console.log("in showFlashcard(), about to activate flashcard screen");
         pauseMediaPlayback();
         screens["flashcard"].activate();
     }
@@ -489,24 +502,17 @@
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-      
-        const parts = [];
-      
-        if (hours > 0) {
-          parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
-        }
-      
-        if (minutes > 0) {
-          parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
-        }
-      
-        if (seconds > 0) {
-          parts.push(`${seconds} second${seconds !== 1 ? 's' : ''}`);
-        }
-      
+    
+        const formatPart = (value, unit) => value > 0 ? `${value} ${unit}${value !== 1 ? 's' : ''}` : '';
+    
+        const parts = [
+        formatPart(hours, 'hour'),
+        formatPart(minutes, 'minute'),
+        formatPart(seconds, 'second')
+        ].filter(Boolean);
+    
         return parts.join(', ');
-      }
-      
+    }      
 
     // Helper function to calculate the nextFlashcardTime based on currentTime + calculated timeGrant
     async function grantTime(minutes) {
@@ -517,9 +523,9 @@
 
             await browser.storage.local.set({ existingTimeGrant });
 
-            // console.log(`Time Grant: ${prettyPrintMilliseconds(existingTimeGrant)}`);
-            // console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
-            // console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
+            console.log(`Time Grant: ${prettyPrintMilliseconds(existingTimeGrant)}`);
+            console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
+            console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
         }
         catch (error) {
             console.error("Error while granting time: ", error);
@@ -542,9 +548,9 @@
 
             await browser.storage.local.remove("existingTimeGrant");  
 
-            // console.log(`## Redeemed time ##`);
-            // console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
-            // console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
+            console.log(`## Redeemed time ##`);
+            console.log(`Current Time:\t${new Date(Date.now()).toLocaleString()}`);
+            console.log(`Next Flashcard:\t${new Date((await browser.storage.local.get("nextFlashcardTime")).nextFlashcardTime).toLocaleString()}`);
         }
         catch (error) {
             console.error("Error while redeeming time: ", error);
@@ -631,8 +637,9 @@
                 redeemTime(); // true because confirm button/close button "redeems" time
                 count = 0;
                 flashcard = null;
-                screens["flashcard"].deactivate();
-                screens["confirm"].deactivate();
+                await browser.runtime.sendMessage({
+                    action: "confirmAllTabs"
+                });
             };
             createCloseButton(onClose);
             confirmButton.onclick = onClose;
