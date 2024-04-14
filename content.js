@@ -687,7 +687,7 @@
         }
 
         // Start the animation after a 0.5-second delay
-        if (grade) {
+        if (grade && grade === 3) {
             setTimeout(startAnimation, 500);
             grade = null;
         }
