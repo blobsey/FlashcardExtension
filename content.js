@@ -502,7 +502,7 @@
     
         const parts = [
             formatPart(hours, 'hour'),
-            minutes > 0 ? `<span class="minutes">${formatPart(minutes, 'minute')}</span>` : '',
+            `<span class="minutes">${minutes} minutes</span>`,
             formatPart(seconds, 'second')
         ].filter(Boolean);
     
@@ -569,6 +569,7 @@
         // Buttons container
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = "blobsey-flashcard-buttons-div";
+        buttonsDiv.innerHTML = loadingSvg;
         screenDiv.appendChild(buttonsDiv);
 
         if (grade) {
@@ -580,13 +581,12 @@
                 });
                 
                 if (grade === 3) {
-                    grantTime(1);
+                    await grantTime(1);
                 }
             }
             catch (error) {
                 console.error(error);
             }
-            grade = null;
         }
 
         // Fetch next flashcard if haven't already
@@ -608,6 +608,8 @@
             }
         }
 
+        buttonsDiv.innerHTML = '';
+
         if (nextFlashcard) {
             const anotherButton = document.createElement('button');
             anotherButton.textContent = 'Another';
@@ -626,7 +628,7 @@
 
             // Override closing function for close button to apply the timer
             const onClose = async () => {
-                redeemTime(); // true because confirm button/close button "redeems" time
+                redeemTime(); 
                 count = 0;
                 flashcard = null;
                 await browser.runtime.sendMessage({
@@ -653,7 +655,7 @@
         // Note for flashcard count
         const { existingTimeGrant } = await browser.storage.local.get("existingTimeGrant");
         const countNote = document.createElement('div');
-        countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant)}`;
+        countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant - 60000)}`;
         screenDiv.appendChild(countNote);
 
         // Create the animation element
@@ -669,14 +671,14 @@
         function startAnimation() {
             const minutesElement = countNote.querySelector('.minutes');
             const minutesRect = minutesElement.getBoundingClientRect();
-            animationElement.style.left = `${minutesRect.left}px`;
+            animationElement.style.left = `${minutesRect.left - 8}px`;
             animationElement.style.top = `${minutesRect.top - 16}px`;
             animationElement.innerText = '+1';
             animationElement.style.opacity = '0';
             animationElement.style.transform = 'translateY(-10px)';
 
             // Increment the existingTimeGrant value after a short delay
-            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant + 60000)}`;
+            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant)}`;
 
             // Remove the animation element after the animation is complete
             setTimeout(() => {
@@ -685,7 +687,10 @@
         }
 
         // Start the animation after a 0.5-second delay
-        setTimeout(startAnimation, 500);
+        if (grade) {
+            setTimeout(startAnimation, 500);
+            grade = null;
+        }
     }
 
 
