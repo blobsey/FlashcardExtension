@@ -22,25 +22,6 @@
     // Global variables for the root div and root of shadow DOM
     let root, shadowRoot;
 
-    
-    // Prevents webpage from stealing focus when overlay is active
-    function handleFocusIn(event) {
-        // A bit hacky: if the webpage tries to steal focus, instead focus the first focusable overlay element
-        // NOTE: event.preventDefault() doesnt work with focusin events
-        if (overlayDiv && !overlayDiv.contains(event.target)) {
-            // Find the first focusable element within the overlay
-            const focusableElement = overlayDiv.querySelector(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            
-            if (focusableElement) {
-                focusableElement.focus();
-            } else {
-                overlayDiv.focus();
-            }
-        }
-    }
-
     // Initialize overlay when DOM is loaded
     document.addEventListener('DOMContentLoaded', async function() {
         // Create Shadow DOM and load CSS from file
@@ -112,6 +93,23 @@
             showExpandedPopupScreen(screenToLoad);
         }
 
+        // Prevents webpage from stealing focus when overlay is active
+        function handleFocusIn(event) {
+            // A bit hacky: if the webpage tries to steal focus, instead focus the first focusable overlay element
+            // NOTE: event.preventDefault() doesnt work with focusin events
+            if (overlayDiv && !overlayDiv.contains(event.target)) {
+                // Find the first focusable element within the overlay
+                const focusableElement = overlayDiv.querySelector(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                
+                if (focusableElement) {
+                    focusableElement.focus();
+                } else {
+                    overlayDiv.focus();
+                }
+            }
+        }
 
         // Add focusin listener once overlay is bootstrapped
         document.addEventListener('focusin', handleFocusIn);
@@ -503,13 +501,18 @@
         const formatPart = (value, unit) => value > 0 ? `${value} ${unit}${value !== 1 ? 's' : ''}` : '';
     
         const parts = [
-        formatPart(hours, 'hour'),
-        formatPart(minutes, 'minute'),
-        formatPart(seconds, 'second')
+            formatPart(hours, 'hour'),
+            minutes > 0 ? `<span class="minutes">${formatPart(minutes, 'minute')}</span>` : '',
+            formatPart(seconds, 'second')
         ].filter(Boolean);
     
         return parts.join(', ');
-    }      
+    }
+    
+
+    ////////////////////
+    // Confirm screen //
+    ////////////////////
 
     // Helper function to calculate the nextFlashcardTime based on currentTime + calculated timeGrant
     async function grantTime(minutes) {
@@ -648,12 +651,48 @@
         }
 
         // Note for flashcard count
+        const { existingTimeGrant } = await browser.storage.local.get("existingTimeGrant");
         const countNote = document.createElement('div');
-        countNote.innerHTML = `Correct Answers: ${count}`;
+        countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant)}`;
         screenDiv.appendChild(countNote);
+
+        // Create the animation element
+        const animationElement = document.createElement('span');
+        animationElement.style.position = 'absolute';
+        animationElement.style.color = '#90EE90';
+        animationElement.style.fontSize = '14px';
+        animationElement.style.opacity = '1';
+        animationElement.style.transition = 'transform 3.0s, opacity 3.0s';
+        screenDiv.appendChild(animationElement);
+
+        // Function to start the animation
+        function startAnimation() {
+            const minutesElement = countNote.querySelector('.minutes');
+            const minutesRect = minutesElement.getBoundingClientRect();
+            animationElement.style.left = `${minutesRect.left}px`;
+            animationElement.style.top = `${minutesRect.top - 16}px`;
+            animationElement.innerText = '+1';
+            animationElement.style.opacity = '0';
+            animationElement.style.transform = 'translateY(-10px)';
+
+            // Increment the existingTimeGrant value after a short delay
+            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant + 60000)}`;
+
+            // Remove the animation element after the animation is complete
+            setTimeout(() => {
+                animationElement.remove();
+            }, 3000);
+        }
+
+        // Start the animation after a 0.5-second delay
+        setTimeout(startAnimation, 500);
     }
 
-    
+
+    /////////////////////
+    // Add/Edit Screen //
+    /////////////////////
+
     // Helper function to make textarea grow vertically
     function adjustHeight(textarea) {
         const maxHeightVh = (window.innerHeight * 40) / 100; // 40vh == min height

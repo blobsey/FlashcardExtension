@@ -363,7 +363,7 @@ function adjustSize(textarea) {
         // Calculate height minus the textarea
         otherElementsHeight -= textarea.offsetHeight;
 
-        // Display the final height in an alert
+        // Calculate max dimensions of textarea
         maxHeight = maxBodyHeight - otherElementsHeight
         maxWidth = parseInt(bodyComputedStyle.maxWidth, 10) || 784; // Fallback to default max width
     }
