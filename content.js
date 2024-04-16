@@ -965,7 +965,6 @@
     /* element: div that we "wrap" a context menu around
      * menu: div of menu that is attached to document  */
     class ContextMenuElement {
-        static allMenus = [];
         constructor(displayDiv) {
             this.element = displayDiv;
             this.elementCopy = this.element.innerHTML;
@@ -1002,8 +1001,6 @@
                   this.updateMenuPosition();
                 }
             });
-            
-            ContextMenuElement.allMenus.push(this)
         }
 
         disable() {
@@ -1070,14 +1067,41 @@
             this.menu.classList.remove('open');
         }
 
-        static closeAll() {
-            ContextMenuElement.allMenus.forEach((menu) => {
-                menu.close();
-            });
-        }
-
         addOption(element) {
             this.menu.appendChild(element);
+        }
+    }
+
+    class SetActiveDeckButton {
+        constructor(deck) {
+            this.button = document.createElement('button');
+            this.button.id = 'blobsey-flashcard-set-active-deck-button';
+            this.button._deck = deck;
+            const isActiveDeck = deck === userData.deck;
+            this.button.disabled = isActiveDeck;
+            this.button.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
+            this.button.addEventListener('click', async () => {
+                this.button.innerHTML = loadingSvg;
+                try {
+                    await browser.runtime.sendMessage({
+                        action: "setUserData",
+                        userData: { deck: deck }
+                    });
+                    userData.deck = deck;
+                    await updateDeckList();
+                    
+                    const buttons = shadowRoot.querySelectorAll('#blobsey-flashcard-set-active-deck-button');
+                    buttons.forEach(button => {
+                        const isActiveDeck = button._deck === userData.deck;
+                        button.disabled = isActiveDeck;
+                        button.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
+                    });
+
+                    showToast(`Set active deck to "${this.button._deck}"`, 10000);
+                } catch (error) {
+                    console.error("Error while setting active deck: ", error);
+                }
+            });
         }
     }
 
@@ -1088,11 +1112,11 @@
     let userData;
     let selectedOption = null;
     let flashcards;
-    let setActiveDeckButton;
     let deckThreeDots;
     let scrollPosition = 0;
     
     async function createListScreen() {
+
         screenDiv.innerHTML = ''; // Clear current content
         const fullscreenDiv = document.createElement('div');
         fullscreenDiv.id = 'blobsey-flashcard-fullscreen-div';
@@ -1116,26 +1140,6 @@
             screens['addEdit'].activate();
         });
         deckThreeDots.addOption(addFlashcardOption);
-
-        setActiveDeckButton = document.createElement('button');
-        setActiveDeckButton.id = 'blobsey-flashcard-set-active-deck-button';
-        setActiveDeckButton.disabled = true;
-        setActiveDeckButton.addEventListener('click', async () => {
-            setActiveDeckButton.innerHTML = loadingSvg;
-            const selectedDeck = deckSelect.selectedOption;
-            try {
-                await browser.runtime.sendMessage({
-                    action: "setUserData",
-                    userData: { deck: selectedDeck }
-                });
-                userData.deck = selectedDeck;
-                await updateDeckList();
-                updateSetActiveDeckButtonState();
-            } catch (error) {
-                console.error("Error while setting active deck: ", error);
-            }
-        });
-        deckThreeDots.addOption(setActiveDeckButton);
 
     
         // Create a search bar
@@ -1166,12 +1170,10 @@
     
         await updateDeckList();
         await loadDeck(selectedOption);
-    }
 
-    function updateSetActiveDeckButtonState() {
-        const isActiveDeck = deckSelect.selectedOption === userData.deck;
-        setActiveDeckButton.disabled = isActiveDeck;
-        setActiveDeckButton.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
+        // Add Set Active Deck button to selectedDeck threeDots menu
+        const setActiveDeckButton = new SetActiveDeckButton(deckSelect.selectedOption);
+        deckThreeDots.addOption(setActiveDeckButton.button);
     }
     
     async function updateDeckList() {
@@ -1270,6 +1272,15 @@
                     }
                 });
                 threeDots.addOption(renameOption);
+
+
+                // Add a "Set as active deck" to every threeDots in deck dropdown
+                const setActiveOption = new SetActiveDeckButton(deck);
+                setActiveOption.button.addEventListener('click', () => {
+                    threeDots.close();
+                });
+                threeDots.addOption(setActiveOption.button);
+
 
                 const deleteOption = document.createElement('div');
                 deleteOption.textContent = 'Delete deck';
@@ -1484,7 +1495,6 @@
         }
         finally {
             updateFlashcardList();
-            updateSetActiveDeckButtonState();
         }
     }
     
