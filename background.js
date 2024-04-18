@@ -11,7 +11,12 @@ browser.alarms.onAlarm.addListener(alarm => {
         // Notify all relevant tabs to show the overlay
         browser.tabs.query({}).then((tabs) => {
             tabs.forEach((tab) => {
-                browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
+                try {
+                    browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
+                }
+                catch (error) {
+                    console.warn(`Couldn't send "showFlashcardAlarm" to tab ${tab.title}`);
+                }
             });
         });
     }
