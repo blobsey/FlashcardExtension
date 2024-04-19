@@ -200,9 +200,15 @@ span { /* span is used to auto-widen textarea */
     cursor: pointer;
 }
 
+#content #blockedSitesList {
+    max-height: 30em;
+    overflow-y: scroll;
+}
+
 #content #siteEntry {
     display: flex;
     flex-direction: row;
+    margin-right: 1em;
 }
 
 #content #siteEntry .blockedSiteInput, #content #siteEntry div {
@@ -223,11 +229,41 @@ span { /* span is used to auto-widen textarea */
 
 }
 
+input[type="checkbox"] {
+    appearance: none;  /* Removes default system appearance */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 24px;  /* Width of the custom checkbox */
+    height: 24px; /* Height of the custom checkbox */
+    background-color: white;
+    border: 2px solid #ddd;
+    position: relative;
+    cursor: pointer;
+}
+
+/* unchecked */
+input[type="checkbox"]:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M5.75 3h12.5A2.75 2.75 0 0 1 21 5.75v12.5A2.75 2.75 0 0 1 18.25 21H5.75A2.75 2.75 0 0 1 3 18.25V5.75A2.75 2.75 0 0 1 5.75 3Zm0 1.5c-.69 0-1.25.56-1.25 1.25v12.5c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25V5.75c0-.69-.56-1.25-1.25-1.25H5.75Z'/%3E%3C/svg%3E%0A");    background-repeat: no-repeat;
+}
+
+/* checked */
+input[type="checkbox"]:checked:before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18.25 3A2.75 2.75 0 0 1 21 5.75v12.5A2.75 2.75 0 0 1 18.25 21H5.75A2.75 2.75 0 0 1 3 18.25V5.75A2.75 2.75 0 0 1 5.75 3h12.5Zm0 1.5H5.75c-.69 0-1.25.56-1.25 1.25v12.5c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25V5.75c0-.69-.56-1.25-1.25-1.25ZM10 14.44l6.47-6.47a.75.75 0 0 1 1.133.976l-.073.084-7 7a.75.75 0 0 1-.976.073l-.084-.073-3-3a.75.75 0 0 1 .976-1.133l.084.073L10 14.44l6.47-6.47L10 14.44Z'/%3E%3C/svg%3E%0A");
+}
+
 #content #siteEntry .activeCheckbox {
     width: 2em;
     display: inline-block;
     height: 2em;
     box-sizing: border-box;
+    border: none;
+    border-image: none;
 }
 
 #content #siteEntry button {
@@ -241,5 +277,5 @@ span { /* span is used to auto-widen textarea */
 }
 
 #content #siteEntry .deleteButton {
-    right: 2em;
+    right: 2em
 }

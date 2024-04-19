@@ -276,20 +276,18 @@ async function createConfigScreen() {
             if (event)
                 event.preventDefault();
 
-            const updatedUserData = {
-                max_new_cards: maxNewCardsInput.value || null,
-                deck: deckSelect.value,
-                blocked_sites: blockedSites
-            };
-
             try {
-                const { result } = await browser.runtime.sendMessage({
+                const response = await browser.runtime.sendMessage({
                     action: "setUserData",
-                    userData: updatedUserData
+                    userData: {
+                        max_new_cards: maxNewCardsInput.value || null,
+                        deck: deckSelect.value,
+                        blocked_sites: blockedSites
+                    }
                 });
 
-                if (result !== "success") 
-                    throw new Error(result);
+                if (response.result !== "success") 
+                    throw new Error(JSON.stringify(response));
             } catch (error) {
                 console.error("Error updating user data:", error);
             }
@@ -360,15 +358,25 @@ async function createConfigScreen() {
                 const siteEntry = document.createElement('div');
                 siteEntry.id = 'siteEntry';
 
+                // Active flag checkbox
+                const activeCheckbox = document.createElement('input');
+                activeCheckbox.className = 'activeCheckbox';
+                activeCheckbox.type = 'checkbox';
+                activeCheckbox.checked = site.active;
+                activeCheckbox.onchange = () => {
+                    site.active = activeCheckbox.checked;
+                    saveFunc();
+                };
+                siteEntry.appendChild(activeCheckbox);
+
                 // Blocked URL display text
                 const urlDisplay = document.createElement('div');
                 urlDisplay.textContent = site.url;
                 siteEntry.appendChild(urlDisplay);
                 
-                const confirmFunc = (event) => {
-                    event.preventDefault();
+                const confirmFunc = () => {
                     site.url = urlInput.value;
-                    saveFunc(event);
+                    saveFunc();
                     refreshBlockedSitesUI();
                 }
 
@@ -386,16 +394,6 @@ async function createConfigScreen() {
                 });
 
                 siteEntry.appendChild(urlInput);
-
-                // Active flag checkbox
-                const activeCheckbox = document.createElement('input');
-                activeCheckbox.className = 'activeCheckbox';
-                activeCheckbox.type = 'checkbox';
-                activeCheckbox.checked = site.active;
-                activeCheckbox.onchange = () => {
-                    site.active = activeCheckbox.checked;
-                };
-                siteEntry.appendChild(activeCheckbox);
 
                 // Hidden confirm button to save change
                 const confirmButton = document.createElement('button');
@@ -422,8 +420,7 @@ async function createConfigScreen() {
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'deleteButton';
                 deleteButton.textContent = 'D';
-                deleteButton.onclick = (event) => {
-                    event.preventDefault();
+                deleteButton.onclick = () => {
                     blockedSites.splice(index, 1);
                     saveFunc();
                     refreshBlockedSitesUI();
@@ -436,12 +433,12 @@ async function createConfigScreen() {
             const addNewBlockedSite = document.createElement('div');
             addNewBlockedSite.textContent = 'Add new site...';
             addNewBlockedSite.id = 'addNewBlockedSite';
-            addNewBlockedSite.addEventListener('click', (event) => {
+            addNewBlockedSite.addEventListener('click', () => {
                 blockedSites.push({
                     url: 'https://',
                     active: true
                 });
-                saveFunc(event);
+                saveFunc();
                 refreshBlockedSitesUI();
 
                 // Select all edit buttons
