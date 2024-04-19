@@ -398,7 +398,6 @@ async function createConfigScreen() {
                 // Hidden confirm button to save change
                 const confirmButton = document.createElement('button');
                 confirmButton.className = 'confirmButton';
-                confirmButton.textContent = 'C';
                 confirmButton.style.display = 'none';
                 confirmButton.onclick = confirmFunc;
                 siteEntry.appendChild(confirmButton);
@@ -406,7 +405,6 @@ async function createConfigScreen() {
                 // Edit button
                 const editButton = document.createElement('button');
                 editButton.className = 'editButton';
-                editButton.textContent = 'E';
                 editButton.onclick = (event) => {
                     event.preventDefault();
                     urlInput.style.display = 'inline-block';
@@ -419,7 +417,6 @@ async function createConfigScreen() {
 
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'deleteButton';
-                deleteButton.textContent = 'D';
                 deleteButton.onclick = () => {
                     blockedSites.splice(index, 1);
                     saveFunc();

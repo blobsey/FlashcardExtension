@@ -215,19 +215,16 @@ span { /* span is used to auto-widen textarea */
     display: inline-block;
     text-align: left;
     width: 100%;
-    height: 2em;
-    line-height: 2em;
+    margin: auto;
     box-sizing: border-box;
 }
 
 #content #siteEntry div {
     overflow-x: hidden;
     text-overflow: ellipsis;
+    padding-left: .25em;
 }
 
-#content #siteEntry .blockedSiteInput {
-
-}
 
 input[type="checkbox"] {
     appearance: none;  /* Removes default system appearance */
@@ -260,22 +257,46 @@ input[type="checkbox"]:checked:before {
 #content #siteEntry .activeCheckbox {
     width: 2em;
     display: inline-block;
-    height: 2em;
+    padding-top: .5em;
     box-sizing: border-box;
     border: none;
     border-image: none;
 }
 
 #content #siteEntry button {
+    opacity: 50%;
     width: 2em;
     height: 2em;
     display: inline-block;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    border: none; 
+    width: 24px; 
+    height: 24px; 
+    cursor: pointer;
 }
 
-#content #siteEntry .editButton, #content #siteEntry .confirmButton {
-    right: 4em;
+#content #siteEntry button:hover {
+    background-color: unset;
+    opacity: 75%;
 }
+
+#content #siteEntry .confirmButton {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M3 5.75A2.75 2.75 0 0 1 5.75 3h9.964a3.25 3.25 0 0 1 2.299.952l2.035 2.035c.61.61.952 1.437.952 2.299v9.964A2.75 2.75 0 0 1 18.25 21H5.75A2.75 2.75 0 0 1 3 18.25V5.75ZM5.75 4.5c-.69 0-1.25.56-1.25 1.25v12.5c0 .69.56 1.25 1.25 1.25H6v-5.25A2.25 2.25 0 0 1 8.25 12h7.5A2.25 2.25 0 0 1 18 14.25v5.25h.25c.69 0 1.25-.56 1.25-1.25V8.286c0-.465-.184-.91-.513-1.238l-2.035-2.035a1.75 1.75 0 0 0-.952-.49V7.25a2.25 2.25 0 0 1-2.25 2.25h-4.5A2.25 2.25 0 0 1 7 7.25V4.5H5.75Zm10.75 15v-5.25a.75.75 0 0 0-.75-.75h-7.5a.75.75 0 0 0-.75.75v5.25h9Zm-8-15v2.75c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75V4.5h-6Z'/%3E%3C/svg%3E%0A");
+}
+
+#content #siteEntry .editButton {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-2 0 26 28'%3E%3Cpath fill='%23fff' d='M21.03 2.97a3.578 3.578 0 0 1 0 5.06L9.062 20a2.25 2.25 0 0 1-.999.58l-5.116 1.395a.75.75 0 0 1-.92-.921l1.395-5.116a2.25 2.25 0 0 1 .58-.999L15.97 2.97a3.578 3.578 0 0 1 5.06 0ZM15 6.06 5.062 16a.75.75 0 0 0-.193.333l-1.05 3.85 3.85-1.05A.75.75 0 0 0 8 18.937L17.94 9 15 6.06Zm2.03-2.03-.97.97L19 7.94l.97-.97a2.078 2.078 0 1 0-2.94-2.94Z'/%3E%3C/svg%3E%0A");
+}
+    
 
 #content #siteEntry .deleteButton {
-    right: 2em
+    margin-left: .25em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='6 6 42 42'%3E%3Cpath fill='%23fff' d='M24 7.25a5.75 5.75 0 0 1 5.746 5.53l.004.22H37a1.25 1.25 0 0 1 .128 2.494L37 15.5h-1.091l-1.703 22.57A4.25 4.25 0 0 1 29.968 42H18.032a4.25 4.25 0 0 1-4.238-3.93L12.09 15.5H11a1.25 1.25 0 0 1-1.244-1.122l-.006-.128c0-.647.492-1.18 1.122-1.244L11 13h7.25A5.75 5.75 0 0 1 24 7.25Zm9.402 8.25H14.598l1.69 22.382a1.75 1.75 0 0 0 1.744 1.618h11.936a1.75 1.75 0 0 0 1.745-1.618l1.69-22.382Zm-6.152 5.25c.647 0 1.18.492 1.244 1.122L28.5 22v11a1.25 1.25 0 0 1-2.494.128L26 33V22c0-.69.56-1.25 1.25-1.25Zm-6.5 0c.647 0 1.18.492 1.244 1.122L22 22v11a1.25 1.25 0 0 1-2.494.128L19.5 33V22c0-.69.56-1.25 1.25-1.25Zm3.25-11a3.25 3.25 0 0 0-3.245 3.066L20.75 13h6.5A3.25 3.25 0 0 0 24 9.75Z'/%3E%3C/svg%3E%0A");
+}
+
+#content #siteEntry .deleteButton:hover {
+    opacity: 75%;
+    filter: brightness(0) saturate(100%) invert(19%) sepia(94%) saturate(7477%) hue-rotate(358deg) brightness(99%) contrast(119%);
 }
