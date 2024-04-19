@@ -258,7 +258,7 @@ async function createConfigScreen() {
     const contentDiv = document.getElementById('content');
     contentDiv.innerHTML = '';
 
-    const form = document.createElement('form');
+    const form = document.createElement('div');
     contentDiv.appendChild(form);
 
     try {
@@ -268,6 +268,32 @@ async function createConfigScreen() {
         if (result !== "success") {
             throw new Error(result);
         }
+
+        let blockedSites = userData.blocked_sites.slice(); // convert userData blocked_sites to array
+
+        // Function called whenever element changed
+        const saveFunc = async (event) => {
+            if (event)
+                event.preventDefault();
+
+            const updatedUserData = {
+                max_new_cards: maxNewCardsInput.value || null,
+                deck: deckSelect.value,
+                blocked_sites: blockedSites
+            };
+
+            try {
+                const { result } = await browser.runtime.sendMessage({
+                    action: "setUserData",
+                    userData: updatedUserData
+                });
+
+                if (result !== "success") 
+                    throw new Error(result);
+            } catch (error) {
+                console.error("Error updating user data:", error);
+            }
+        };
 
         // Deck dropdown
         const deckLabel = document.createElement('label');
@@ -296,6 +322,8 @@ async function createConfigScreen() {
             deckSelect.appendChild(option);
         });
 
+        deckSelect.addEventListener('change', saveFunc);
+
         form.appendChild(deckSelect);
         
         // max_new_cards input field
@@ -313,10 +341,13 @@ async function createConfigScreen() {
         maxNewCardsInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, ''); // Remove any non-digit characters
         });
+        maxNewCardsInput.addEventListener('change', saveFunc);
         form.appendChild(maxNewCardsInput);
 
 
-        let blockedSites = userData.blocked_sites.slice(); // Initialize in-memory data
+        const blockedSitesLabel = document.createElement('label');
+        blockedSitesLabel.textContent = 'Blocked Sites';
+        form.appendChild(blockedSitesLabel);
 
         const blockedSitesList = document.createElement('div');
         blockedSitesList.id = 'blockedSitesList';
@@ -334,40 +365,31 @@ async function createConfigScreen() {
                 urlDisplay.textContent = site.url;
                 siteEntry.appendChild(urlDisplay);
                 
+                const confirmFunc = (event) => {
+                    event.preventDefault();
+                    site.url = urlInput.value;
+                    saveFunc(event);
+                    refreshBlockedSitesUI();
+                }
+
                 // Hidden input to show when editing
                 const urlInput = document.createElement('input');
+                urlInput.className = 'blockedSiteInput';
                 urlInput.type = 'text';
                 urlInput.value = site.url;
                 urlInput.style.display = 'none';
+                urlInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        confirmFunc(event);
+                    }
+                });
+
                 siteEntry.appendChild(urlInput);
-
-                // Hidden confirm button to save change
-                const confirmButton = document.createElement('button');
-                confirmButton.id = 'confirmButton';
-                confirmButton.textContent = 'C';
-                confirmButton.style.display = 'none';
-                confirmButton.onclick = (event) => {
-                    event.preventDefault();
-                    site.url = urlInput.value;
-                    refreshBlockedSitesUI();
-                }
-                siteEntry.appendChild(confirmButton);
-
-                // Edit button
-                const editButton = document.createElement('button');
-                editButton.id = 'editButton';
-                editButton.textContent = 'E';
-                editButton.onclick = (event) => {
-                    event.preventDefault();
-                    urlInput.style.display = 'inline-block';
-                    confirmButton.style.display = 'block';
-                    urlDisplay.style.display = 'none';
-                    editButton.style.display = 'none';
-                };
-                siteEntry.appendChild(editButton);
 
                 // Active flag checkbox
                 const activeCheckbox = document.createElement('input');
+                activeCheckbox.className = 'activeCheckbox';
                 activeCheckbox.type = 'checkbox';
                 activeCheckbox.checked = site.active;
                 activeCheckbox.onchange = () => {
@@ -375,47 +397,67 @@ async function createConfigScreen() {
                 };
                 siteEntry.appendChild(activeCheckbox);
 
+                // Hidden confirm button to save change
+                const confirmButton = document.createElement('button');
+                confirmButton.className = 'confirmButton';
+                confirmButton.textContent = 'C';
+                confirmButton.style.display = 'none';
+                confirmButton.onclick = confirmFunc;
+                siteEntry.appendChild(confirmButton);
+
+                // Edit button
+                const editButton = document.createElement('button');
+                editButton.className = 'editButton';
+                editButton.textContent = 'E';
+                editButton.onclick = (event) => {
+                    event.preventDefault();
+                    urlInput.style.display = 'inline-block';
+                    confirmButton.style.display = 'block';
+                    urlDisplay.style.display = 'none';
+                    editButton.style.display = 'none';
+                    urlInput.focus();
+                };
+                siteEntry.appendChild(editButton);
+
                 const deleteButton = document.createElement('button');
-                deleteButton.id = 'deleteButton';
+                deleteButton.className = 'deleteButton';
                 deleteButton.textContent = 'D';
                 deleteButton.onclick = (event) => {
                     event.preventDefault();
                     blockedSites.splice(index, 1);
+                    saveFunc();
                     refreshBlockedSitesUI();
                 };
                 siteEntry.appendChild(deleteButton);
 
                 blockedSitesList.appendChild(siteEntry);
             });
+
+            const addNewBlockedSite = document.createElement('div');
+            addNewBlockedSite.textContent = 'Add new site...';
+            addNewBlockedSite.id = 'addNewBlockedSite';
+            addNewBlockedSite.addEventListener('click', (event) => {
+                blockedSites.push({
+                    url: 'https://',
+                    active: true
+                });
+                saveFunc(event);
+                refreshBlockedSitesUI();
+
+                // Select all edit buttons
+                const editButtons = blockedSitesList.querySelectorAll('.editButton');
+                // Access the last edit button using array access notation
+                const lastEditButton = editButtons[editButtons.length - 1];
+
+                if (lastEditButton) {
+                    lastEditButton.click();
+                }
+            });
+            blockedSitesList.append(addNewBlockedSite);
         }
 
         refreshBlockedSitesUI();
 
-        // Create save button
-        const saveButton = createButtonWithStatus("Save", async (event) => {
-            event.preventDefault();
-
-            const formData = new FormData(form);
-            const updatedUserData = {
-                max_new_cards: parseInt(formData.get('max_new_cards')) || null,
-                deck: formData.get('deck'),
-                blocked_sites: blockedSites
-            };
-
-            try {
-                const { result } = await browser.runtime.sendMessage({
-                    action: "setUserData",
-                    userData: updatedUserData
-                });
-
-                if (result !== "success") 
-                    throw new Error(result);
-            } catch (error) {
-                console.error("Error updating user data:", error);
-            }
-        });
-
-        contentDiv.append(saveButton);
     } catch (error) {
         console.error('Failed to load user data:', error);
     }

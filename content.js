@@ -211,33 +211,46 @@
     /* Helper function to call at page load and on "showFlashcardAlarm" alarms
     shows flashcard if site is in blocklist and if nextFlashcardTime has expired */
     async function attemptShowFlashcard() {
-        const hostname = new URL(window.location.href).hostname;
+        const currentUrl = window.location.href;
         const currentTime = Date.now();
-        const { nextFlashcardTime = currentTime} = await browser.storage.local.get("nextFlashcardTime");
-
-        if ((nextFlashcardTime <= currentTime) && sites.some(site => hostname === site || hostname.endsWith('.' + site))) {
-            if (!flashcard) {
-                try {
-                    flashcard = await fetchNextFlashcard();
-                    showFlashcard();
-                }
-                catch (error) {
-                    if (error.message !== "No cards to review right now.")
-                        console.error(error.message);
-                    redeemTime(); // Redeem time as a fallback, in case error while reviewing flashcards
+        try {
+            const { nextFlashcardTime = currentTime } = await browser.storage.local.get("nextFlashcardTime");
+            const response = await browser.runtime.sendMessage({ action: "getUserData" });
+            if (response.result !== "success")
+                throw new Error(JSON.stringify(response));
+    
+            const blockedSites = response.data.blocked_sites;
+    
+            const isBlocked = blockedSites.some(site => {
+                if (!site.active) return false;
+    
+                const blockedUrl = new URL(site.url);
+                const currentUrl = new URL(window.location.href);
+    
+                return currentUrl.hostname === blockedUrl.hostname ||
+                       currentUrl.hostname.endsWith('.' + blockedUrl.hostname);
+            });
+    
+            if (isBlocked && nextFlashcardTime <= currentTime) {
+                if (!flashcard) {
+                    try {
+                        flashcard = await fetchNextFlashcard();
+                        showFlashcard();
+                    }
+                    catch (error) {
+                        if (error.message !== "No cards to review right now.")
+                            console.error(error.message);
+                        redeemTime(); // Redeem time as a fallback, in case of an error while reviewing flashcards
+                    }
                 }
             }
         }
+        catch (error) {
+            console.error("Error while attempting to show flashcard: ", error);
+        }
     }
+    
 
-    // Hardcoded list of sites (TODO: don't hardcode this lol)
-    const sites = [
-        'www.reddit.com',
-        'www.youtube.com',
-        'twitter.com',
-        'www.tiktok.com',
-        'crouton.net'
-    ];
 
     // Fetch flashcard, if it exists then bootstrap overlay
     async function showFlashcard() {
