@@ -315,6 +315,82 @@ async function createConfigScreen() {
         });
         form.appendChild(maxNewCardsInput);
 
+
+        let blockedSites = userData.blocked_sites.slice(); // Initialize in-memory data
+
+        const blockedSitesList = document.createElement('div');
+        blockedSitesList.id = 'blockedSitesList';
+        form.appendChild(blockedSitesList);
+
+        function refreshBlockedSitesUI() {
+            blockedSitesList.innerHTML = '';
+
+            blockedSites.forEach((site, index) => {
+                const siteEntry = document.createElement('div');
+                siteEntry.id = 'siteEntry';
+
+                // Blocked URL display text
+                const urlDisplay = document.createElement('div');
+                urlDisplay.textContent = site.url;
+                siteEntry.appendChild(urlDisplay);
+                
+                // Hidden input to show when editing
+                const urlInput = document.createElement('input');
+                urlInput.type = 'text';
+                urlInput.value = site.url;
+                urlInput.style.display = 'none';
+                siteEntry.appendChild(urlInput);
+
+                // Hidden confirm button to save change
+                const confirmButton = document.createElement('button');
+                confirmButton.id = 'confirmButton';
+                confirmButton.textContent = 'C';
+                confirmButton.style.display = 'none';
+                confirmButton.onclick = (event) => {
+                    event.preventDefault();
+                    site.url = urlInput.value;
+                    refreshBlockedSitesUI();
+                }
+                siteEntry.appendChild(confirmButton);
+
+                // Edit button
+                const editButton = document.createElement('button');
+                editButton.id = 'editButton';
+                editButton.textContent = 'E';
+                editButton.onclick = (event) => {
+                    event.preventDefault();
+                    urlInput.style.display = 'inline-block';
+                    confirmButton.style.display = 'block';
+                    urlDisplay.style.display = 'none';
+                    editButton.style.display = 'none';
+                };
+                siteEntry.appendChild(editButton);
+
+                // Active flag checkbox
+                const activeCheckbox = document.createElement('input');
+                activeCheckbox.type = 'checkbox';
+                activeCheckbox.checked = site.active;
+                activeCheckbox.onchange = () => {
+                    site.active = activeCheckbox.checked;
+                };
+                siteEntry.appendChild(activeCheckbox);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.id = 'deleteButton';
+                deleteButton.textContent = 'D';
+                deleteButton.onclick = (event) => {
+                    event.preventDefault();
+                    blockedSites.splice(index, 1);
+                    refreshBlockedSitesUI();
+                };
+                siteEntry.appendChild(deleteButton);
+
+                blockedSitesList.appendChild(siteEntry);
+            });
+        }
+
+        refreshBlockedSitesUI();
+
         // Create save button
         const saveButton = createButtonWithStatus("Save", async (event) => {
             event.preventDefault();
@@ -322,7 +398,8 @@ async function createConfigScreen() {
             const formData = new FormData(form);
             const updatedUserData = {
                 max_new_cards: parseInt(formData.get('max_new_cards')) || null,
-                deck: formData.get('deck')
+                deck: formData.get('deck'),
+                blocked_sites: blockedSites
             };
 
             try {
@@ -391,7 +468,7 @@ function adjustSize(textarea) {
     measuringSpan.textContent = textarea.value || textarea.placeholder;
 
     // Adjust width based on measuringSpan - ensure no maxWidth constraint
-    textarea.style.width = `${Math.min(maxWidth, measuringSpan.offsetWidth + 30)}px`; 
+    textarea.style.width = `${Math.min(maxWidth, measuringSpan.offsetWidth + 45)}px`; 
 }
 
 async function createAddScreen() {

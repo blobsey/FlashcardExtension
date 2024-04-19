@@ -12,7 +12,7 @@ browser.alarms.onAlarm.addListener(alarm => {
         browser.tabs.query({}).then((tabs) => {
             tabs.forEach((tab) => {
                 try {
-                    browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
+                    const response = browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
                 }
                 catch (error) {
                     console.warn(`Couldn't send "showFlashcardAlarm" to tab ${tab.title}`);

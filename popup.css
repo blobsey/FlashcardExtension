@@ -199,3 +199,28 @@ span { /* span is used to auto-widen textarea */
     border: 1px solid grey;
     cursor: pointer;
 }
+
+#content #siteEntry {
+    display: flex;
+    flex-direction: row;
+}
+
+#content #siteEntry div {
+    padding: 1em 0;
+}
+
+#content #siteEntry input[type="checkbox"] {
+    width: unset;
+}
+
+#content #siteEntry button {
+    position: absolute;
+}
+
+#content #siteEntry #editButton, #content #siteEntry #confirmButton {
+    right: 2em;
+}
+
+#content #siteEntry #deleteButton {
+    right: 4em;
+}
