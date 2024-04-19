@@ -300,3 +300,13 @@ input[type="checkbox"]:checked:before {
     opacity: 75%;
     filter: brightness(0) saturate(100%) invert(19%) sepia(94%) saturate(7477%) hue-rotate(358deg) brightness(99%) contrast(119%);
 }
+
+#content #addNewBlockedSite {
+    height: 2em;
+    cursor: pointer;
+    line-height: 2em;
+}
+
+#content #addNewBlockedSite:hover {
+    background-color: rgba(255, 255, 255, .25)
+}
