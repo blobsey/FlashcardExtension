@@ -1083,6 +1083,10 @@
         addOption(element) {
             this.menu.appendChild(element);
         }
+
+        clearOptions() {
+            this.menu.innerHTML = '';
+        }
     }
 
     class SetActiveDeckButton {
@@ -1139,21 +1143,13 @@
         deckSelect = new Dropdown();
         fullscreenDiv.appendChild(deckSelect.element);
 
+        // Create a three dots menu in top right pertaining to currently selected deck
         const deckThreeDotsIcon = document.createElement('span');
         deckThreeDotsIcon.textContent = '⋮';
 
         deckThreeDots = new ContextMenuElement(deckThreeDotsIcon);
         deckThreeDots.element.id = 'blobsey-flashcard-deck-threedots';
         fullscreenDiv.appendChild(deckThreeDots.element);
-
-        const addFlashcardOption = document.createElement('div');
-        addFlashcardOption.textContent = 'Add flashcard';
-        addFlashcardOption.addEventListener('click', (event) => {
-            editFlashcard = null;
-            screens['addEdit'].activate();
-        });
-        deckThreeDots.addOption(addFlashcardOption);
-
     
         // Create a search bar
         const searchBar = document.createElement('input');
@@ -1183,10 +1179,6 @@
     
         await updateDeckList();
         await loadDeck(selectedOption);
-
-        // Add Set Active Deck button to selectedDeck threeDots menu
-        const setActiveDeckButton = new SetActiveDeckButton(deckSelect.selectedOption);
-        deckThreeDots.addOption(setActiveDeckButton.button);
     }
     
     async function updateDeckList() {
@@ -1211,10 +1203,12 @@
                 optionText.textContent = (deck === userData.deck) ? `${deck} (Active)` : deck;
                 optionText.addEventListener('click', async (event) => {
                     try {
+                        // Select the option, updating selectedOption and loading deck
                         deckSelect.selectOption(deck);
                         deckSelect.setDisplayText(optionText.textContent)
                         selectedOption = deck; // Save globally to persist choice
                         deckSelect.close();
+
                         await loadDeck(deck);
                     }
                     catch (error) {
@@ -1515,6 +1509,22 @@
         if (!flashcards) {
             return;
         }
+
+        // Also construct three dots in top right, wiping out any existing
+        deckThreeDots.clearOptions();
+
+        // "Add Flashcard" option
+        const addFlashcardOption = document.createElement('div');
+        addFlashcardOption.textContent = 'Add flashcard';
+        addFlashcardOption.addEventListener('click', (event) => {
+            editFlashcard = null;
+            screens['addEdit'].activate();
+        });
+        deckThreeDots.addOption(addFlashcardOption);
+        
+        // Add Set Active Deck button to selectedDeck threeDots menu
+        const setActiveDeckButton = new SetActiveDeckButton(deckSelect.selectedOption);
+        deckThreeDots.addOption(setActiveDeckButton.button);
     
         tableContainer.innerHTML = ''; // Clear existing content
     
