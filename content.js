@@ -317,6 +317,7 @@
     let nextFlashcard = null;
     let editFlashcard = null;
     let kbShortcuts = {};
+    let screenshot = null;
 
     class Screen {
         constructor(render) {
@@ -359,8 +360,9 @@
             else {
                 currentScreen = screen;
                 kbShortcuts = {"Tab": trapFocus};
-                createOverlayIfNotExists();
-                screen.render();
+                createOverlayIfNotExists().then(() => {
+                    screen.render();
+                });
                 return;
             }
         }
@@ -387,6 +389,8 @@
             overlayDiv.style.opacity = '0';
             overlayDiv.style.backdropFilter = 'blur(0px)'
         }
+
+        screenshot.remove();
         
         // Reset currentScreen 
         currentScreen = null;
@@ -426,10 +430,30 @@
     }
 
     // Create overlay which darkens/blurs screen, prepare screenDiv for rendering
-    function createOverlayIfNotExists() {
+    async function createOverlayIfNotExists() {
         // Get the root div of the overlay and wipe it out
         overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay');
         if (!overlayDiv) {
+            screenshot = document.createElement('div');
+            screenshot.id = "blobsey-flashcard-screenshot";
+
+            // Create blurred background from screenshot
+            try {
+                const response = await browser.runtime.sendMessage({action: "captureTab"});
+                screenshot.style.backgroundImage = `url(${response.screenshotUri})`;
+                screenshot.style.backgroundSize = 'cover';
+                screenshot.style.filter = 'blur(10px)';
+                screenshot.style.transition = 'opacity .25s ease';
+                screenshot.style.opacity = '0';
+                shadowRoot.appendChild(screenshot);
+                setTimeout(() => {
+                    screenshot.style.opacity = '1';
+                }, 10);
+            }
+            catch (error) {
+                console.error('Error capturing screenshot (falling back to black screen): ', error);
+                screenshot.backgroundColor = 'black';
+            }
             originalOverflowState = document.documentElement.style.overflow;
             document.documentElement.style.overflow = 'hidden';
             overlayDiv = document.createElement('div');
@@ -437,14 +461,10 @@
             overlayDiv.setAttribute('tabindex', '-1');
             shadowRoot.appendChild(overlayDiv);
 
-            
-            // setTimeout workaround so blur will show up
             setTimeout(() => {
-                // Blur the background
-                overlayDiv.style.backdropFilter = 'blur(10px)';
                 overlayDiv.style.opacity = '1';
-            }, 10); 
-        
+            }, 10);
+
             // Create container for current Screen
             screenDiv = document.createElement('div');
             screenDiv.classList.add('blobsey-flashcard-ui');
@@ -1142,7 +1162,6 @@
     let scrollPosition = 0;
     
     async function createListScreen() {
-
         screenDiv.innerHTML = ''; // Clear current content
         const fullscreenDiv = document.createElement('div');
         fullscreenDiv.id = 'blobsey-flashcard-fullscreen-div';

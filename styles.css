@@ -9,14 +9,23 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, .75); 
-    backdrop-filter: blur(0px); 
-    opacity: 0; 
-    transition: opacity .25s ease, backdrop-filter .25s ease;
     z-index: 9998;
+    opacity: 0;
+    transition: opacity ease 0.25s;
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 0;
+}
+
+#blobsey-flashcard-screenshot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    filter: blur(10px);
+    z-index: 9997;
 }
 
 
