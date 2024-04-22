@@ -38,31 +38,35 @@
 
         
         // Listen for messages from the background script to show the overlay
-        browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-            switch (request.action) {
-                case "showFlashcardAlarm":
-                    // Wait additional seconds to exactly line up with nextFlashcardTime
-                    const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
-                    const currentTime = Date.now();
-                    setTimeout(attemptShowFlashcard, Math.max(0, nextFlashcardTime - currentTime));
-                    break;
-                case "showExpandedPopupScreen":
-                    showExpandedPopupScreen(request.screen);
-                    break;
-                case "forceClose":
-                    for (const screen in screens) {
-                        screens[screen].active = false;
-                    }
-                    update();
-                    break;
-                case "confirmAllTabs":
-                    count = 0;
-                    flashcard = null;
-                    screens["flashcard"].active = false;
-                    screens["confirm"].active = false;
-                    update();
-                    break;
-            }
+        browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            (async () => {
+                switch (request.action) {
+                    case "showFlashcardAlarm":
+                        // Wait additional seconds to exactly line up with nextFlashcardTime
+                        const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
+                        const currentTime = Date.now();
+                        setTimeout(attemptShowFlashcard, Math.max(0, nextFlashcardTime - currentTime));
+                        break;
+                    case "showExpandedPopupScreen":
+                        showExpandedPopupScreen(request.screen);
+                        break;
+                    case "forceClose":
+                        for (const screen in screens) {
+                            screens[screen].active = false;
+                        }
+                        update();
+                        break;
+                    case "confirmAllTabs":
+                        count = 0;
+                        flashcard = null;
+                        screens["flashcard"].active = false;
+                        screens["confirm"].active = false;
+                        update();
+                        break;
+                }
+            });
+
+            return true;
         });
 
         // On page load, force check if need to show a flashcard
