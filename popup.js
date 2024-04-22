@@ -492,8 +492,8 @@ function adjustSize(textarea) {
         measuringSpan.style.visibility = 'hidden';
         measuringSpan.style.position = 'absolute';
         measuringSpan.style.whiteSpace = 'pre';
-        // Jank to ensure that measuringSpan doesn't get too tall
-        measuringSpan.style.transform = 'translateY(-10000px)'; 
+        // Jank to ensure that measuringSpan doesn't affect scrolling of page
+        measuringSpan.style.transform = 'translateX(-100000px) translateY(-100000px)'; 
         document.body.appendChild(measuringSpan);
     }
 
@@ -502,6 +502,7 @@ function adjustSize(textarea) {
 
     // Update measuringSpan content
     measuringSpan.textContent = textarea.value || textarea.placeholder;
+    console.log(textarea.value);
 
     // Adjust width based on measuringSpan - ensure no maxWidth constraint
     textarea.style.width = `${Math.min(maxWidth, measuringSpan.offsetWidth + 45)}px`; 
