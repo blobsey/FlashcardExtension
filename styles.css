@@ -144,8 +144,7 @@
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
+    background-color: grey;
     color: #fff;
     padding: 8px 12px;
     border-radius: 3px;
@@ -272,7 +271,7 @@
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown.open {
     max-width: min(calc(100vw - 4em), 20em) !important;
     background-color: rgba(0, 0, 0, .25) !important;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(3px);
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown.disabled {
@@ -434,7 +433,7 @@
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-context-menu-container.open {
-    transition: max-height .15s ease, max-width .15s ease;
+    transition: max-height .45s ease, max-width .15s ease;
     opacity: 100%;
     max-height: 15em;
     max-width: 10em;
@@ -448,6 +447,8 @@
     transition: background-color 0.2s ease;
     white-space: nowrap;
     text-align: left;
+    overflow: none;
+    text-overflow: clip;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-context-menu-container > div:hover {
@@ -468,6 +469,8 @@
     background-color: rgba(255, 255, 255, 0.01);
     transition: background-color 0.1s, border-color 0.1s, color 0.1s;
     overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button:hover {
