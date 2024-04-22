@@ -45,6 +45,9 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Handlers for requests
 const requestHandlers = {
+    "captureTab": async (request) => {
+        return { screenshotUri: await browser.tabs.captureVisibleTab() };
+    },
     "setBlankHtmlData": async (request) => {
         await browser.storage.local.set({ blankHtmlData: request.data });
         return "Set blank.html data successfully";

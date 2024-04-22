@@ -2,6 +2,7 @@
 // Handles UI/UX, application logic
 (async function() {
     "use strict";
+    
     // Set up main keyboard shortcut event listener
     document.addEventListener('keydown', handleKbInput);
 
@@ -46,15 +47,18 @@
                         const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
                         const currentTime = Date.now();
                         setTimeout(attemptShowFlashcard, Math.max(0, nextFlashcardTime - currentTime));
+                        sendResponse({ result: "success" });
                         break;
                     case "showExpandedPopupScreen":
                         showExpandedPopupScreen(request.screen);
+                        sendResponse({ result: "success" });
                         break;
                     case "forceClose":
                         for (const screen in screens) {
                             screens[screen].active = false;
                         }
                         update();
+                        sendResponse({ result: "success" });
                         break;
                     case "confirmAllTabs":
                         count = 0;
@@ -62,9 +66,10 @@
                         screens["flashcard"].active = false;
                         screens["confirm"].active = false;
                         update();
+                        sendResponse({ result: "success" });
                         break;
                 }
-            });
+            })();
 
             return true;
         });
