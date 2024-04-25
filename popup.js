@@ -303,10 +303,9 @@ async function createConfigScreen() {
 
         // Null option; if the "active" deck doesn't match any deck in list, it will show
         const nullOption = document.createElement('option');
-        nullOption.value = "null";
-        nullOption.innerHTML = "Select a deck...";
-        nullOption.disabled = true;
-        nullOption.hidden = true;
+        nullOption.value = "";
+        nullOption.textContent = "<all flashcards>";
+        nullOption.style.fontStyle = "italic";
         nullOption.selected = true;
         deckSelect.appendChild(nullOption);
 

@@ -331,8 +331,8 @@
     pointer-events: none;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-dropdown-display.placeholder {
-    opacity: 50%;
+.blobsey-flashcard-ui .italicize {
+    font-style: italic;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-dropdown-option {

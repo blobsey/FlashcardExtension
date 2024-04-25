@@ -4,6 +4,8 @@
 // Global variables
 let openLoginWindows = new Map();
 let authInfo = null;
+let userData = null;
+let userDataTimestamp = Date.now();
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
@@ -153,8 +155,9 @@ const requestHandlers = {
             return {message: "Authentication invalid"};
         }
     },
-    "fetchNextFlashcard": async () => {
-        const data = await handleApiRequest("/next");
+    "fetchNextFlashcard": async (request) => {
+        const deck = request.deck || "";
+        const data = await handleApiRequest(`/next?deck=${encodeURIComponent(deck)}`);
         return data;
     },
     "editFlashcard": async (request) => {
@@ -189,7 +192,7 @@ const requestHandlers = {
         return data;
     },
     "listFlashcards": async (request) => {
-        const deck = request.deck; // Get the deck parameter from the request
+        const deck = request.deck || ""; // Get the deck parameter from the request
         const data = await handleApiRequest(`/list?deck=${encodeURIComponent(deck)}`);
         return data;
     },
@@ -206,11 +209,18 @@ const requestHandlers = {
         return authInfo;
     },
     "getUserData": async () => {
-        return await handleApiRequest("/user-data", {
-            method: 'GET'
-        });
+        if (!userData || userDataTimestamp + 60000 < Date.now()) {
+            userData = await handleApiRequest("/user-data", {
+                method: 'GET'
+            });
+            userDataTimestamp = Date.now();
+        }
+        console.log(userData);
+        return userData;
     },
     "setUserData": async (request) => {
+        userData = null;
+        userDataTimestamp = Date.now();
         return await handleApiRequest("/user-data", {
             method: 'PUT',
             body: request.userData
@@ -252,7 +262,8 @@ const requestHandlers = {
         return data;
     },
     "downloadDeck": async (request) => {
-        return await handleApiRequest(`/download?deck=${encodeURIComponent(request.deck)}`);
+        const deck = request.deck || '';
+        return await handleApiRequest(`/download?deck=${encodeURIComponent(deck)}`);
     }
 };
 

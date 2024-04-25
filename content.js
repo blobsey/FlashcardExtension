@@ -130,13 +130,37 @@
     // Application Logic Functions //
     /////////////////////////////////
 
-    // Fetches a flashcard by sending a message to background.js
-    async function fetchNextFlashcard() {
-        const response = await browser.runtime.sendMessage({action: "fetchNextFlashcard"});
-        if (response.result === "error" || response.message) {
-            throw new Error(response.message || "An unspecified error occurred");
+
+    // Fetches userData
+    async function getUserData() {
+        try {
+            const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
+            if (result !== "success") {
+                throw new Error(JSON.stringify(response));
+            }
+            return data;
         }
-        return response.flashcard;
+        catch (error) {
+            console.error("Error while fetching userdata: ", error);
+        }
+    }
+
+    // Fetches a flashcard by sending a message to background.js
+    async function fetchNextFlashcard(deck) {
+        const userData = await getUserData();
+        try {
+            const response = await browser.runtime.sendMessage({
+                action: "fetchNextFlashcard",
+                deck: userData.deck
+            });
+            if (response.result !== "success") {
+                throw new Error(JSON.stringify(response));
+            }
+            return response.flashcard;
+        }
+        catch (error) {
+            console.error("Error while fetching next flashcard: ", error);
+        }
     }
     
     // Edits a flashcard
@@ -224,13 +248,10 @@
         const currentTime = Date.now();
         try {
             const { nextFlashcardTime = currentTime } = await browser.storage.local.get("nextFlashcardTime");
-            const response = await browser.runtime.sendMessage({ action: "getUserData" });
-            if (response.result !== "success")
-                throw new Error(JSON.stringify(response));
     
-            const blockedSites = response.data.blocked_sites;
+            const userData = await getUserData();
     
-            const isBlocked = blockedSites.some(site => {
+            const isBlocked = userData.blocked_sites.some(site => {
                 if (!site.active) return false;
     
                 const blockedUrl = new URL(site.url);
@@ -979,7 +1000,7 @@
         selectOption(key) {
             const option = this.options[key];
             if (option && option.selectable) {
-                if (this.selectedOption && this.options[this.selectedOption]) {
+                if (this.options[this.selectedOption]) {
                     this.options[this.selectedOption].element.classList.remove('selected');
                 }
                 this.selectedOption = key;
@@ -987,11 +1008,11 @@
             }
         }
 
-        setDisplayText(displayText) {
-            if (displayText === "Select a deck...")
-                this.display.classList.add("placeholder");
+        setDisplayText(displayText, italicize = false) {
+            if (italicize)
+                this.display.classList.add("italicize");
             else
-                this.display.classList.remove("placeholder");
+                this.display.classList.remove("italicize");    
             this.display.textContent = displayText;
             this.element.style.maxWidth = `${this.display.offsetWidth + 20}px`; 
         }
@@ -1119,35 +1140,55 @@
     }
 
     class SetActiveDeckButton {
+        static allButtons = new WeakMap();
+
         constructor(deck) {
             this.button = document.createElement('button');
             this.button.id = 'blobsey-flashcard-set-active-deck-button';
-            this.button._deck = deck;
-            const isActiveDeck = deck === userData.deck;
-            this.button.disabled = isActiveDeck;
-            this.button.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
+            this.deck = deck;
+
+            // Load until state is loaded
+            this.button.disabled = true;
+            this.button.innerHTML = loadingSvg;
+            getUserData().then((userData) => {
+                this.updateButtonState(userData.deck);
+            });
+
+            SetActiveDeckButton.allButtons.set(this.button, this);
+
             this.button.addEventListener('click', async () => {
-                this.button.innerHTML = loadingSvg;
                 try {
+                    this.button.disabled = true;
+                    this.button.innerHTML = loadingSvg; // Show loading indicator
                     await browser.runtime.sendMessage({
                         action: "setUserData",
-                        userData: { deck: deck }
-                    });
-                    userData.deck = deck;
-                    await updateDeckList();
-                    
-                    const buttons = shadowRoot.querySelectorAll('#blobsey-flashcard-set-active-deck-button');
-                    buttons.forEach(button => {
-                        const isActiveDeck = button._deck === userData.deck;
-                        button.disabled = isActiveDeck;
-                        button.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
+                        userData: { deck: this.deck }
                     });
 
-                    showToast(`Set active deck to "${this.button._deck}"`, 10000);
-                } catch (error) {
-                    console.error("Error while setting active deck: ", error);
+                    const buttons = shadowRoot.querySelectorAll('#blobsey-flashcard-set-active-deck-button');
+                    buttons.forEach(button => {
+                        const instance = SetActiveDeckButton.allButtons.get(button);
+                        if (instance) {
+                            const isActiveDeck = instance.deck === this.deck;
+                            button.disabled = isActiveDeck;
+                            button.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
+                        }
+                    });
+
+                    await updateDeckList(false);
+                    showToast(`Set active deck to "${this.deck}"`);
+                }
+                catch (error) {
+                    console.error("Error setting active deck: ", error);
+                    showToast(`Error setting active deck: ${error}`, 5000);
                 }
             });
+        }
+
+        updateButtonState(activeDeck) {
+            const isActiveDeck = this.deck === activeDeck;
+            this.button.disabled = isActiveDeck;
+            this.button.textContent = isActiveDeck ? 'Active Deck' : 'Set Active Deck';
         }
     }
 
@@ -1155,7 +1196,6 @@
     let tableContainer;
     let scrollContainer;
     let deckSelect;
-    let userData;
     let selectedOption = null;
     let flashcards;
     let deckThreeDots;
@@ -1205,19 +1245,16 @@
         scrollContainer.appendChild(tableContainer);
         showLoadingScreen();
     
-        await updateDeckList();
-        await loadDeck(selectedOption);
+        await updateDeckList(); 
     }
     
-    async function updateDeckList() {
+    // Updates decklist and then if refreshDeck is true, load selectedDeck
+    async function updateDeckList(refreshDeck = true) {
         try {
-            // Fetch deck list
-            const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
-            if (result !== "success") {
-                throw new Error("Error fetching user data: ", response.result);
-            }
-            userData = data;
-            selectedOption = selectedOption || userData.deck;
+            const userData = await getUserData();
+            userData.decks.unshift('');
+            if (!selectedOption && selectedOption !== '') // Ugly hack because technically '' is valid
+                selectedOption = userData.deck;
 
             deckSelect.clearOptions(); // Clear existing options
         
@@ -1228,12 +1265,17 @@
                 // Main button
                 const optionText = document.createElement('div');
                 optionText.className = 'blobsey-flashcard-dropdown-option-text';
-                optionText.textContent = (deck === userData.deck) ? `${deck} (Active)` : deck;
+                const displayText = deck || "All flashcards"; // Deck with empty string signifies "All flashcards"
+                optionText.textContent = (deck === userData.deck) ? `${displayText} (Active)` : displayText;
+                if (!deck)
+                    optionText.classList.add("italicize");
                 optionText.addEventListener('click', async (event) => {
                     try {
                         // Select the option, updating selectedOption and loading deck
                         deckSelect.selectOption(deck);
-                        deckSelect.setDisplayText(optionText.textContent)
+
+                        // Set displayText, signifying if deck is '' (All flashcards)
+                        deckSelect.setDisplayText(optionText.textContent, deck === '') 
                         selectedOption = deck; // Save globally to persist choice
                         deckSelect.close();
 
@@ -1252,62 +1294,64 @@
 
                 const threeDots = new ContextMenuElement(threeDotsIcon);
 
-                const renameOption = document.createElement('div');
-                renameOption.textContent = 'Rename deck';
-                renameOption.addEventListener('click', async (event) => {
-                    event.stopPropagation();
-                    threeDots.close();
-                    let newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
-                    if (newName && newName !== deck) {
-                        const isRenamingSelectedDeck = deckSelect.selectedOption === deck;
-                        const isRenamingActiveDeck = userData.deck === deck;
-                        try {
-                            deckSelect.disable(true);
-                            if (isRenamingSelectedDeck) {
-                                showLoadingScreen();
-                                deckThreeDots.disable();
-                            }
-                            const response = await browser.runtime.sendMessage({
-                                action: "renameDeck",
-                                oldDeckName: deck,
-                                newDeckName: newName
-                            });
-                            if (response.result !== "success") {
-                                const message = response.message || response.detail;
-                                throw new Error(message);
-                            }
-                            
-                            await updateDeckList();
-                            showToast(`Deck "${deck}" renamed to "${newName}"`, 10000);
-                        } 
-                        catch (error) {
-                            newName = deck;
-                            showToast(error.message, 10000);
-                            console.error("Error while renaming deck: ", error);
-                        } 
-                        finally {
-                            if (isRenamingSelectedDeck) {
-                                deckSelect.selectOption(newName);
-                                selectedOption = newName;
-                                deckSelect.setDisplayText((selectedOption === userData.deck) ? `${selectedOption} (Active)` : selectedOption);
-                                await loadDeck(newName);
-                            }
-
-                            // In case displayed flashcard is from renamed deck
-                            if (isRenamingActiveDeck) {
-                                if (screens["flashcard"].active) {
-                                    flashcard = null;
-                                    showFlashcard();
+                // Rename option in deck dropdown
+                if (deck) {
+                    const renameOption = document.createElement('div');
+                    renameOption.textContent = 'Rename deck';
+                    renameOption.addEventListener('click', async (event) => {
+                        event.stopPropagation();
+                        threeDots.close();
+                        let newName = prompt(`Enter a new name for the deck "${deck}":`, deck);
+                        if (newName && newName !== deck) {
+                            const isRenamingSelectedDeck = deckSelect.selectedOption === deck;
+                            const isRenamingActiveDeck = userData.deck === deck;
+                            try {
+                                deckSelect.disable(true);
+                                if (isRenamingSelectedDeck) {
+                                    showLoadingScreen();
+                                    deckThreeDots.disable();
                                 }
+                                const response = await browser.runtime.sendMessage({
+                                    action: "renameDeck",
+                                    oldDeckName: deck,
+                                    newDeckName: newName
+                                });
+                                if (response.result !== "success") {
+                                    const message = response.message || response.detail;
+                                    throw new Error(message);
+                                }
+                                
+                                await updateDeckList();
+                                showToast(`Deck "${deck}" renamed to "${newName}"`, 10000);
+                            } 
+                            catch (error) {
+                                newName = deck;
+                                showToast(error.message, 10000);
+                                console.error("Error while renaming deck: ", error);
+                            } 
+                            finally {
+                                if (isRenamingSelectedDeck) {
+                                    deckSelect.selectOption(newName);
+                                    selectedOption = newName;
+                                    deckSelect.setDisplayText((selectedOption === userData.deck) ? `${selectedOption} (Active)` : selectedOption);
+                                    await loadDeck(newName);
+                                }
+    
+                                // In case displayed flashcard is from renamed deck
+                                if (isRenamingActiveDeck) {
+                                    if (screens["flashcard"].active) {
+                                        flashcard = null;
+                                        showFlashcard();
+                                    }
+                                }
+                                deckSelect.enable();
+                                deckSelect.open();
+                                deckThreeDots.enable();
                             }
-                            deckSelect.enable();
-                            deckSelect.open();
-                            deckThreeDots.enable();
                         }
-                    }
-                });
-                threeDots.addOption(renameOption);
-
+                    });
+                    threeDots.addOption(renameOption);
+                }
 
                 // Add a "Set as active deck" to every threeDots in deck dropdown
                 const setActiveOption = new SetActiveDeckButton(deck);
@@ -1316,43 +1360,42 @@
                 });
                 threeDots.addOption(setActiveOption.button);
 
-
-                const deleteOption = document.createElement('div');
-                deleteOption.textContent = 'Delete deck';
-                deleteOption.addEventListener('click', async (event) => {
-                    const isDeletingSelectedDeck = deckSelect.selectedOption === deck;
-                    if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
-                        try {
-                            deckThreeDots.disable();
-                            deckSelect.disable(true);
-                            if (isDeletingSelectedDeck) {
-                                showLoadingScreen();
+                if (deck) {
+                    const deleteOption = document.createElement('div');
+                    deleteOption.textContent = 'Delete deck';
+                    deleteOption.addEventListener('click', async (event) => {
+                        const isDeletingSelectedDeck = deckSelect.selectedOption === deck;
+                        if (confirm(`Are you sure you want to delete the deck "${deck}"?`)) {
+                            try {
+                                deckThreeDots.disable();
+                                deckSelect.disable(true);
+                                if (isDeletingSelectedDeck) {
+                                    showLoadingScreen();
+                                }
+                                await browser.runtime.sendMessage({
+                                    action: "deleteDeck",
+                                    deck: deck
+                                });
+                                if (isDeletingSelectedDeck) {
+                                    selectedOption = "";
+                                    flashcard = null; 
+                                }
+                                await updateDeckList();
+                                showToast(`Deck "${deck}" deleted`, 10000);
+                            } 
+                            catch (error) {
+                                showToast(error.message, 10000);
+                                console.error("Error while deleting deck: ", error);
                             }
-                            await browser.runtime.sendMessage({
-                                action: "deleteDeck",
-                                deck: deck
-                            });
-                            await updateDeckList();
-                            if (isDeletingSelectedDeck) {
-                                deckSelect.setDisplayText("Select a deck...");
-                                selectedOption = null;
-                                await loadDeck(deckSelect.selectedOption);
-                                flashcard = null; 
+                            finally {
+                                deckThreeDots.enable();
+                                deckSelect.enable();
+                                deckSelect.open();
                             }
-                            showToast(`Deck "${deck}" deleted`, 10000);
-                        } 
-                        catch (error) {
-                            showToast(error.message, 10000);
-                            console.error("Error while deleting deck: ", error);
                         }
-                        finally {
-                            deckThreeDots.enable();
-                            deckSelect.enable();
-                            deckSelect.open();
-                        }
-                    }
-                });
-                threeDots.addOption(deleteOption);
+                    });
+                    threeDots.addOption(deleteOption);
+                }
                 
                 const exportOption = document.createElement('div');
                 exportOption.textContent = 'Export to CSV...';
@@ -1415,7 +1458,7 @@
                         action: "createDeck",
                         deck: newDeckName
                     });
-                    await updateDeckList();
+                    await updateDeckList(false);
                 } 
                 catch (error) {
                     console.error("Error while creating a new deck: ", error);
@@ -1485,14 +1528,15 @@
                 false // selectable
             );
 
-            // Try to select the already selected option, can also be null if deleted
+            // Try to select the already selected option, fallback to null (All flashcards)
             deckSelect.selectOption(selectedOption);
-            if (selectedOption) {
-                deckSelect.setDisplayText((selectedOption === userData.deck) ? `${selectedOption} (Active)` : selectedOption);
-            }
-            else {
-                deckSelect.setDisplayText('Select a deck...');
-            }
+            let selectedOptionText = selectedOption || "All flashcards";
+            if (userData.deck === selectedOption) 
+                selectedOptionText += ' (Active)';
+            deckSelect.setDisplayText(selectedOptionText, selectedOption === '');
+
+            if (refreshDeck)
+                loadDeck(selectedOption);
         } 
         catch (error) {
             console.error("Error while fetching user data: ", error);
