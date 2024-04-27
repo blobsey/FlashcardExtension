@@ -265,11 +265,11 @@
                 if (!flashcard) {
                     try {
                         flashcard = await fetchNextFlashcard();
-                        showFlashcard();
+                        if (flashcard) // Might be undefined if no flashcards to review 
+                            showFlashcard();
                     }
                     catch (error) {
-                        if (error.message !== "No cards to review right now.")
-                            console.error(error.message);
+                        console.error("Error fetching flashcard: ", error);
                         redeemTime(); // Redeem time as a fallback, in case of an error while reviewing flashcards
                     }
                 }
@@ -308,8 +308,7 @@
                         showFlashcard();
                     })
                     .catch((error) => {
-                        if (error.message === "No cards to review right now.")
-                            showFlashcard();
+                        console.error("Error while fetching flashcard: ", error);
                     });
                 }
                 break;
@@ -613,7 +612,6 @@
     }
     // Shows review screen, really should be async because of strict ordering of review -> fetch -> display
     async function createConfirmScreen() {
-        // Start by clearing the current content of overlayDiv
         screenDiv.innerHTML = '';
 
         // Show question
@@ -652,22 +650,20 @@
             }
         }
 
+        const messageDiv = document.createElement('div');
+        screenDiv.appendChild(messageDiv);
+
         // Fetch next flashcard if haven't already
         if (!nextFlashcard) {
             try {
                 nextFlashcard = await fetchNextFlashcard();
+                if (!nextFlashcard) {
+                    messageDiv.textContent = "No more cards to review for today! :)";
+                }
             }
             catch (error) {
-                const messageDiv = document.createElement('div');
-                screenDiv.appendChild(messageDiv);
-
-                if (error.message === "No cards to review right now.") {
-                    messageDiv.innerHTML = "No more cards to review for today! :)";
-                }
-                else {
                     messageDiv.innerHTML = error.message;
                     console.error(error);
-                }
             }
         }
 
@@ -718,7 +714,6 @@
         // Note for flashcard count
         const { existingTimeGrant } = await browser.storage.local.get("existingTimeGrant");
         const countNote = document.createElement('div');
-        countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant - 60000)}`;
         screenDiv.appendChild(countNote);
 
         // Create the animation element
@@ -751,8 +746,12 @@
 
         // Start the animation after a 0.5-second delay
         if (grade && grade === 3) {
+            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant - 60000)}`;
             setTimeout(startAnimation, 500);
             grade = null;
+        }
+        else {
+            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant)}`;
         }
     }
 

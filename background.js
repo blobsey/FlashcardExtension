@@ -215,7 +215,6 @@ const requestHandlers = {
             });
             userDataTimestamp = Date.now();
         }
-        console.log(userData);
         return userData;
     },
     "setUserData": async (request) => {
