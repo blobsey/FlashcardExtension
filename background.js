@@ -6,6 +6,9 @@ let openLoginWindows = new Map();
 let authInfo = null;
 let userData = null;
 let userDataTimestamp = Date.now();
+
+browser.alarms.create('testAlarm', { periodInMinutes: 1 });
+
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
 browser.alarms.onAlarm.addListener(alarm => {
@@ -14,6 +17,7 @@ browser.alarms.onAlarm.addListener(alarm => {
         browser.tabs.query({}).then((tabs) => {
             tabs.forEach((tab) => {
                 try {
+                    console.log("Sending showFlashcardAlarm to tabs");
                     const response = browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
                 }
                 catch (error) {
@@ -66,16 +70,16 @@ const requestHandlers = {
         return "Set API Base URL successfully.";
     },
     "setTimestampAlarm": async (request) => {
-        // Calculate minutes for browser.alarms.create()
-        await browser.alarms.clear("showFlashcardAlarm");
         const nextFlashcardTime = request.nextFlashcardTime || Date.now();
-        const minutes = (nextFlashcardTime - Date.now()) / 60000; 
-        await browser.alarms.create("showFlashcardAlarm", { delayInMinutes: minutes });
+        await browser.alarms.create("showFlashcardAlarm", { 
+            when: nextFlashcardTime,
+            periodInMinutes: 1 // Should continue to fire unless reset
+        });
 
         // Also set precise timestamp in local storage
         await browser.storage.local.set({ nextFlashcardTime }); 
 
-        console.log(`Next flashcard: \t${new Date(nextFlashcardTime).toLocaleString()}`);
+        console.log(`Alarm time:\t(${new Date(nextFlashcardTime).toLocaleString()})\nCurrent time:\t(${new Date(Date.now()).toLocaleString()})\n`);
         return "Timer reset successfully.";
     },
     "confirmAllTabs": async (request) => {

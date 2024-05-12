@@ -43,10 +43,7 @@
             (async () => {
                 switch (request.action) {
                     case "showFlashcardAlarm":
-                        // Wait additional seconds to exactly line up with nextFlashcardTime
-                        const { nextFlashcardTime = Date.now() } = await browser.storage.local.get("nextFlashcardTime");
-                        const currentTime = Date.now();
-                        setTimeout(attemptShowFlashcard, Math.max(0, nextFlashcardTime - currentTime));
+                        attemptShowFlashcard();
                         sendResponse({ result: "success" });
                         break;
                     case "showExpandedPopupScreen":
@@ -270,7 +267,6 @@
                     }
                     catch (error) {
                         console.error("Error fetching flashcard: ", error);
-                        redeemTime(); // Redeem time as a fallback, in case of an error while reviewing flashcards
                     }
                 }
             }
