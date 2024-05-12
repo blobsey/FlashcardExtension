@@ -452,23 +452,31 @@
         if (!overlayDiv) {
             screenshot = document.createElement('div');
             screenshot.id = "blobsey-flashcard-screenshot";
+            shadowRoot.appendChild(screenshot);
 
             // Create blurred background from screenshot
             try {
+                const { currentTab } = await browser.runtime.sendMessage({action: "getCurrentTab"});
+                const { tab: thisTab } = await browser.runtime.sendMessage({action: "getThisTab"}); 
+                if (currentTab.id !== thisTab.id)
+                    throw new Error(); // To avoid screenshotting the wrong tab (fall back to normal CSS filters)
+
                 const response = await browser.runtime.sendMessage({action: "captureTab"});
                 screenshot.style.backgroundImage = `url(${response.screenshotUri})`;
                 screenshot.style.backgroundSize = 'cover';
                 screenshot.style.filter = 'blur(10px)';
+                screenshot.style.transform = 'scale(1.03)';
+            }
+            catch (error) {
+                screenshot.style.backdropFilter = 'blur(10px)';
+                console.log(`Tab is not active tab, using (expensive) CSS filters!`);
+            }
+            finally {
                 screenshot.style.transition = 'opacity .25s ease';
                 screenshot.style.opacity = '0';
-                shadowRoot.appendChild(screenshot);
                 setTimeout(() => {
                     screenshot.style.opacity = '1';
                 }, 10);
-            }
-            catch (error) {
-                console.error('Error capturing screenshot (falling back to black screen): ', error);
-                screenshot.backgroundColor = 'black';
             }
             originalOverflowState = document.documentElement.style.overflow;
             document.documentElement.style.overflow = 'hidden';

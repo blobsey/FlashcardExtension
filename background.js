@@ -34,7 +34,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     (async () => { // functions are async, so need to use async IIFE
         try {
             if (requestHandlers.hasOwnProperty(request.action)) {
-                const data = await requestHandlers[request.action](request);
+                const data = await requestHandlers[request.action](request, sender);
                 sendResponse({ result: "success", ...data });
             } else {
                 throw new Error(`Message malformed: ${request}`);
@@ -51,6 +51,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Handlers for requests
 const requestHandlers = {
+    "getThisTab": async (request, sender) => {
+        return { tab: sender.tab };
+    },
+    "getCurrentTab": async (request) => {
+        return { currentTab: (await browser.tabs.query({ active: true, currentWindow: true }))[0] };
+    },
     "captureTab": async (request) => {
         return { screenshotUri: await browser.tabs.captureVisibleTab() };
     },
