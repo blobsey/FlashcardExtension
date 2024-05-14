@@ -533,7 +533,7 @@
         screenDiv.innerHTML = '';
 
         const containerDiv = document.createElement('div');
-        containerDiv.id = 'blobsey-flashcard-flashcard-display-container'
+        containerDiv.id = 'blobsey-flashcard-display-container'
         screenDiv.appendChild(containerDiv);
 
         const frontDiv = document.createElement('div');
@@ -784,7 +784,8 @@
         screenDiv.style.position = 'relative'; // Set position to relative for the top property to take effect
     
         // Front textarea input
-        const form = document.createElement('form');
+        const containerDiv = document.createElement('div');
+        containerDiv.id = 'blobsey-flashcard-display-container';
         const frontInput = document.createElement('textarea');
         frontInput.value = editFlashcard ? editFlashcard.card_front : '';
         frontInput.placeholder = 'Front of Flashcard';
@@ -793,8 +794,8 @@
         // Make textarea expand when typing more
         frontInput.addEventListener('input', function() { adjustHeight(this) });
     
-        form.appendChild(frontInput);
-        screenDiv.appendChild(form);
+        containerDiv.appendChild(frontInput);
+        screenDiv.appendChild(containerDiv);
         frontInput.focus();
         
         adjustHeight(frontInput); // Initially fit textarea to content
@@ -804,11 +805,11 @@
         backInput.value = editFlashcard ? editFlashcard.card_back : '';
         backInput.placeholder = 'Back of Flashcard';
         backInput.id = 'edit-screen-input-back'; 
-        form.appendChild(backInput);
+        containerDiv.appendChild(backInput);
     
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = 'blobsey-flashcard-buttons-div'
-        form.appendChild(buttonsDiv);
+        containerDiv.appendChild(buttonsDiv);
 
         // Save initial values so we can detect when editor is "dirty"
         const initialFrontValue = frontInput.value;
@@ -860,10 +861,9 @@
         // Save button
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save';
-        saveButton.type = 'submit';
         buttonsDiv.appendChild(saveButton);
     
-        form.onsubmit = async (event) => {
+        saveButton.addEventListener('click', async (event) => {
             event.preventDefault();
             try {
                 if (editFlashcard)
@@ -875,7 +875,7 @@
             catch (error) {
                 console.error("Error while adding/editing flashcard: ", error);
             }
-        };
+        });
     
         // Trigger the transition animation
         requestAnimationFrame(() => {

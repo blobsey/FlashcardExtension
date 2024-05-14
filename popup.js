@@ -550,7 +550,7 @@ async function createAddScreen() {
         const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
         const deck = data.deck;
         if (!deck)
-            throw new Error(`Deck is ${deck}`);
+            throw new Error(`Please select a deck`);
 
         const response = await browser.runtime.sendMessage({
             action: 'addFlashcard',
