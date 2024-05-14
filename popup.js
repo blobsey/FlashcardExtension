@@ -543,7 +543,19 @@ async function createAddScreen() {
     nullOption.selected = true;
     nullOption.disabled = true;
     nullOption.hidden = true;
+
     deckSelect.appendChild(nullOption);
+
+
+    deckSelect.addEventListener('change', () => {
+        if (deckSelect.value === "") { 
+            deckSelect.classList.add('placeholder');
+        } else {
+            deckSelect.classList.remove('placeholder');
+        }
+        console.log(deckSelect.value);
+        browser.storage.local.set({ savedDeckSelection: deckSelect.value });
+    });
 
     const { result, data: userData } = await browser.runtime.sendMessage({ action: "getUserData" });
     const { savedDeckSelection } = await browser.storage.local.get('savedDeckSelection');
@@ -559,9 +571,7 @@ async function createAddScreen() {
         deckSelect.appendChild(option);
     });
 
-    deckSelect.addEventListener('change', () => {
-        browser.storage.local.set({ savedDeckSelection: deckSelect.value });
-    });
+
 
     // Listeners to update local storage whenever user types
     textareaFront.addEventListener('input', function() {

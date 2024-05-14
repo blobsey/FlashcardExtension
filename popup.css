@@ -194,13 +194,16 @@ span { /* span is used to auto-widen textarea */
 #content select {
     font: .75rem monospace;
     background-color: black;
-    color: white;
+    color: rgba(255, 255, 255, 0.75);
     padding: 8px;
     border-radius: 4px;
     border: 1px solid rgba(128, 128, 128, 0.5);
     cursor: pointer;
 }
 
+#content select.placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
 
 #deckSelect-addScreen {
     position: fixed;
@@ -208,6 +211,11 @@ span { /* span is used to auto-widen textarea */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000; 
+}
+
+#content select option {
+    color: rgba(255, 255, 255, 0.75); 
+    font-style: normal; 
 }
 
 

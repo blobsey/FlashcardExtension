@@ -370,7 +370,7 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.blobsey-flashcard-ui #blobsey-flashcard-deck-threedots {
+.blobsey-flashcard-ui #blobsey-flashcard-deck-threedots, .blobsey-flashcard-ui #blobsey-flashcard-refresh-button {
     all: initial;
     width: 40px;
     height: 40px;
@@ -379,7 +379,6 @@
     user-select: none;
     position: absolute;
     top: 10px;
-    right: max(60px, calc(50% - 24em));
     display: flex; 
     align-items: center; 
     justify-content: center; 
@@ -388,9 +387,18 @@
     z-index: 40000;
 }
 
-.blobsey-flashcard-ui #blobsey-flashcard-deck-threedots:hover {
+.blobsey-flashcard-ui #blobsey-flashcard-deck-threedots:hover, .blobsey-flashcard-ui #blobsey-flashcard-refresh-button:hover {
     background-color: rgba(255, 255, 255, .2);
 }
+
+.blobsey-flashcard-ui #blobsey-flashcard-deck-threedots {
+    right: max(60px, calc(50% - 24em));
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-refresh-button {
+    right: max(120px, calc(50% - 24em + 60px));
+}
+
 
 .blobsey-flashcard-ui .blobsey-flashcard-threedots {
     all: initial;
