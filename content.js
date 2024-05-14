@@ -957,9 +957,7 @@
             });
 
             // Close when click off
-            shadowRoot.addEventListener('mousedown', (event) => {
-                if (event.button !== 0) // Only react on left click
-                    return; 
+            shadowRoot.addEventListener('click', (event) => {
                 if (!this.element.contains(event.target)) {
                     this.close();
                 }
@@ -1598,13 +1596,15 @@
         deckThreeDots.clearOptions();
 
         // "Add Flashcard" option
-        const addFlashcardOption = document.createElement('div');
-        addFlashcardOption.textContent = 'Add flashcard';
-        addFlashcardOption.addEventListener('click', (event) => {
-            editFlashcard = null;
-            screens['addEdit'].activate();
-        });
-        deckThreeDots.addOption(addFlashcardOption);
+        if (deckSelect.selectedOption !== '') {
+            const addFlashcardOption = document.createElement('div');
+            addFlashcardOption.textContent = 'Add flashcard';
+            addFlashcardOption.addEventListener('click', (event) => {
+                editFlashcard = null;
+                screens['addEdit'].activate();
+            });
+            deckThreeDots.addOption(addFlashcardOption);
+        }
         
         // Add Set Active Deck button to selectedDeck threeDots menu
         const setActiveDeckButton = new SetActiveDeckButton(deckSelect.selectedOption);
