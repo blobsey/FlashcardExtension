@@ -501,7 +501,6 @@ function adjustSize(textarea) {
 
     // Update measuringSpan content
     measuringSpan.textContent = textarea.value || textarea.placeholder;
-    console.log(textarea.value);
 
     // Adjust width based on measuringSpan - ensure no maxWidth constraint
     textarea.style.width = `${Math.min(maxWidth, measuringSpan.offsetWidth + 45)}px`; 
@@ -563,6 +562,9 @@ async function createAddScreen() {
         if(response.result !== "success") {
             throw new Error(response.message);
         }
+        else {
+            return { front: response.card_front, back: response.card_back };
+        }
     };
 
     const buttonWithStatus = createButtonWithStatus('Add Flashcard', submitAction);
@@ -594,10 +596,15 @@ function createButtonWithStatus(buttonText, actionFunction) {
 
         try {
             // Await the action function
-            await actionFunction(event);
+            const response = await actionFunction(event);
             // On success, show the success indicator
             statusIndicator.innerHTML = successSvg;
-            statusIndicator.title = ""; // Reset or set success title
+
+            // Show the response on hover
+            statusIndicator.title = response ? JSON.stringify(response, null, 2).replace(/\\n/g, '\n') : '';
+            setTimeout(() => {
+                statusIndicator.innerHTML = '';
+            }, 5000);
         } catch (error) {
             // On error, show the error indicator and log the error
             statusIndicator.innerHTML = errorSvg;

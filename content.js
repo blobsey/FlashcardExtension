@@ -133,7 +133,7 @@
         try {
             const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
             if (result !== "success") {
-                throw new Error(JSON.stringify(response));
+                throw new Error(JSON.stringify(data));
             }
             return data;
         }
@@ -1260,7 +1260,7 @@
                 selectedOption = userData.deck;
 
             deckSelect.clearOptions(); // Clear existing options
-        
+
             // Populate deckSelect
             userData.decks.forEach(deck => {
                 const optionDiv = document.createElement('div');
@@ -1446,6 +1446,7 @@
             emptyDeckOption.textContent = 'Create empty deck';
             emptyDeckOption.addEventListener('click', async (event) => {
                 event.stopPropagation();
+                const userData = await getUserData();
                 createDeckContextMenu.close();
                 createDeckContextMenu.disable();
                 let counter = 1;
