@@ -530,6 +530,38 @@ async function createAddScreen() {
         adjustSize(textareaFront);
     });; // Adjust size after setting value
 
+    // Deck select
+    const deckSelect = document.createElement('select');
+    deckSelect.id = 'deckSelect-addScreen';
+    deckSelect.name = 'deck';
+
+    // Add blank option, disallow adding to it
+    const nullOption = document.createElement('option');
+    nullOption.value = "";
+    nullOption.textContent = "<select a deck>";
+    nullOption.style.fontStyle = "italic";
+    nullOption.selected = true;
+    nullOption.disabled = true;
+    nullOption.hidden = true;
+    deckSelect.appendChild(nullOption);
+
+    const { result, data: userData } = await browser.runtime.sendMessage({ action: "getUserData" });
+    const { savedDeckSelection } = await browser.storage.local.get('savedDeckSelection');
+    const selectedDeck = savedDeckSelection || userData.deck;
+
+    userData.decks.forEach(deck => {
+        const option = document.createElement('option');
+        option.value = deck;
+        option.textContent = deck;
+        if (deck === selectedDeck) {
+            option.selected = true;
+        }
+        deckSelect.appendChild(option);
+    });
+
+    deckSelect.addEventListener('change', () => {
+        browser.storage.local.set({ savedDeckSelection: deckSelect.value });
+    });
 
     // Listeners to update local storage whenever user types
     textareaFront.addEventListener('input', function() {
@@ -548,27 +580,33 @@ async function createAddScreen() {
             throw new Error(`${!cardFront ? "Front" : "Back"} is blank`);
 
         const { result, data } = await browser.runtime.sendMessage({ action: "getUserData" });
-        const deck = data.deck;
-        if (!deck)
+        
+        if (deckSelect.value === '') {
             throw new Error(`Please select a deck`);
+        }
 
         const response = await browser.runtime.sendMessage({
             action: 'addFlashcard',
             card_front: cardFront,
             card_back: cardBack,
-            deck: deck
+            deck: deckSelect.value
         });
 
         if(response.result !== "success") {
             throw new Error(response.message);
         }
         else {
-            return { card_id: response.card_id, card_front: response.card_front, card_back: response.card_back };
+            return { 
+                card_id: response.card_id.slice(4) + "..." + response.card_id.slice(-4), 
+                card_front: response.card_front, 
+                card_back: response.card_back 
+            };
         }
     };
 
     const buttonWithStatus = createButtonWithStatus('Add Flashcard', submitAction);
 
+    contentDiv.appendChild(deckSelect);
     contentDiv.appendChild(textareaFront);
     contentDiv.appendChild(inputBack);
     contentDiv.appendChild(buttonWithStatus); 

@@ -192,13 +192,24 @@ span { /* span is used to auto-widen textarea */
 }
 
 #content select {
+    font: .75rem monospace;
     background-color: black;
     color: white;
     padding: 8px;
     border-radius: 4px;
-    border: 1px solid grey;
+    border: 1px solid rgba(128, 128, 128, 0.5);
     cursor: pointer;
 }
+
+
+#deckSelect-addScreen {
+    position: fixed;
+    top: 2px; 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000; 
+}
+
 
 #content #blockedSitesList {
     max-height: 30em;
