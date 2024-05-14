@@ -396,7 +396,7 @@
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-refresh-button {
-    right: max(120px, calc(50% - 24em + 60px));
+    right: max(100px, calc(50% - 24em + 40px));
 }
 
 
