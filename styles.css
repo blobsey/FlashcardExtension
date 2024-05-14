@@ -382,7 +382,6 @@
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    /* transform: translate(-50%, -40%); */
     color: white;
     z-index: 40000;
 }
