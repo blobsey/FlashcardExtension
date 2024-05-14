@@ -945,7 +945,9 @@
             this.isDisabled = false;
             this.isOpen = false;
 
-            this.element.addEventListener('click', (event) => {
+            this.element.addEventListener('mousedown', (event) => {
+                if (event.button !== 0) // Only react on left click
+                    return; 
                 if (!this.isDisabled && event.target === this.element) {
                     if (this.isOpen) 
                         this.close();
@@ -955,7 +957,9 @@
             });
 
             // Close when click off
-            shadowRoot.addEventListener('click', (event) => {
+            shadowRoot.addEventListener('mousedown', (event) => {
+                if (event.button !== 0) // Only react on left click
+                    return; 
                 if (!this.element.contains(event.target)) {
                     this.close();
                 }
@@ -1042,7 +1046,9 @@
             this.menu.className = 'blobsey-flashcard-context-menu-container';
             screenDiv.appendChild(this.menu);
             
-            this.element.addEventListener('click', (event) => {
+            this.element.addEventListener('mousedown', (event) => {
+                if (event.button !== 0) // Only react on left click
+                    return; 
                 if (this.isOpen) {
                     this.close();
                 }
@@ -1052,7 +1058,9 @@
             });
 
             // Close when click off
-            shadowRoot.addEventListener('click', (event) => {
+            shadowRoot.addEventListener('mousedown', (event) => {
+                if (event.button !== 0) // Only react on left click
+                    return; 
                 if (!this.element.contains(event.target) && !this.menu.contains(event.target)) {
                     this.close();
                 }
