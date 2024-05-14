@@ -553,7 +553,6 @@ async function createAddScreen() {
         } else {
             deckSelect.classList.remove('placeholder');
         }
-        console.log(deckSelect.value);
         browser.storage.local.set({ savedDeckSelection: deckSelect.value });
     });
 
