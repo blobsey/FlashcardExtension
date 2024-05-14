@@ -532,28 +532,33 @@
 
         screenDiv.innerHTML = '';
 
-        const form = document.createElement('form');
-        screenDiv.appendChild(form);
+        const containerDiv = document.createElement('div');
+        containerDiv.id = 'blobsey-flashcard-flashcard-display-container'
+        screenDiv.appendChild(containerDiv);
 
         const frontDiv = document.createElement('div');
         frontDiv.innerHTML = flashcard.card_front;
-        form.appendChild(frontDiv);
+        containerDiv.appendChild(frontDiv);
 
         const userInput = document.createElement('input');
         userInput.type = 'text';
         userInput.placeholder = 'Type answer here'
-        form.appendChild(userInput);
+        containerDiv.appendChild(userInput);
 
-        form.onsubmit = (event) => {
-            event.preventDefault();
-            userAnswer = userInput.value;
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent the default action to avoid any unintended effects
+                
+                userAnswer = userInput.value;
 
-            const isCorrect = userAnswer.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
-            if (isCorrect) { ++count; }
-            grade = isCorrect ? 3 : 1;
+                const isCorrect = userAnswer.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
+                if (isCorrect) { ++count; }
+                grade = isCorrect ? 3 : 1;
+    
+                screens["confirm"].activate();
+            }
+        });
 
-            screens["confirm"].activate();
-        };
 
         userInput.focus();
     }

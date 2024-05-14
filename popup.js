@@ -563,7 +563,7 @@ async function createAddScreen() {
             throw new Error(response.message);
         }
         else {
-            return { front: response.card_front, back: response.card_back };
+            return { card_id: response.card_id, card_front: response.card_front, card_back: response.card_back };
         }
     };
 
@@ -602,9 +602,6 @@ function createButtonWithStatus(buttonText, actionFunction) {
 
             // Show the response on hover
             statusIndicator.title = response ? JSON.stringify(response, null, 2).replace(/\\n/g, '\n') : '';
-            setTimeout(() => {
-                statusIndicator.innerHTML = '';
-            }, 5000);
         } catch (error) {
             // On error, show the error indicator and log the error
             statusIndicator.innerHTML = errorSvg;

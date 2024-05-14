@@ -55,7 +55,7 @@
     white-space: pre-wrap;
 }
 
-.blobsey-flashcard-ui form {
+.blobsey-flashcard-ui #blobsey-flashcard-flashcard-display-container {
     display: flex;
     flex-direction: column;
     align-items: center;
