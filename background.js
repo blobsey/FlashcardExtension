@@ -236,6 +236,7 @@ const requestHandlers = {
         });
     },
     "createDeck": async (request) => {
+        userData = null;
         const deck = request.deck;
         const data = await handleApiRequest(`/create-deck/${encodeURIComponent(deck)}`, {
             method: 'PUT'
@@ -243,6 +244,7 @@ const requestHandlers = {
         return data;
     },
     "deleteDeck": async (request) => {
+        userData = null;
         const deck = request.deck;
         const data = await handleApiRequest(`/delete-deck/${encodeURIComponent(deck)}`, {
             method: 'DELETE'
@@ -250,6 +252,7 @@ const requestHandlers = {
         return data;
     },
     "renameDeck": async (request) => {
+        userData = null;
         const data = await handleApiRequest("/rename-deck", {
             method: 'PUT',
             body: {
@@ -260,6 +263,7 @@ const requestHandlers = {
         return data;
     },
     "uploadDeck": async (request) => {
+        userData = null;
         const formData = new FormData();
         formData.append('file', request.file, request.file.name);
         formData.append('deck', request.deck);
