@@ -546,15 +546,19 @@ async function createAddScreen() {
 
     deckSelect.appendChild(nullOption);
 
-
-    deckSelect.addEventListener('change', () => {
+    const applyPlaceholderStyle = () => {
         if (deckSelect.value === "") { 
             deckSelect.classList.add('placeholder');
         } else {
             deckSelect.classList.remove('placeholder');
         }
+    }
+
+    deckSelect.addEventListener('change', () => {
+        applyPlaceholderStyle();
         browser.storage.local.set({ savedDeckSelection: deckSelect.value });
     });
+
 
     const { result, data: userData } = await browser.runtime.sendMessage({ action: "getUserData" });
     const { savedDeckSelection } = await browser.storage.local.get('savedDeckSelection');
@@ -570,7 +574,7 @@ async function createAddScreen() {
         deckSelect.appendChild(option);
     });
 
-
+    applyPlaceholderStyle(); // If selected option is "" then apply placeholder style (make less opaque)
 
     // Listeners to update local storage whenever user types
     textareaFront.addEventListener('input', function() {

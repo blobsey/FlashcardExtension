@@ -886,7 +886,7 @@
         });
     }
 
-    function showToast(message, duration, undoFunction) {
+    function showToast(message, duration = 5000, undoFunction = null) {
         const toast = document.createElement('div');
         toast.classList.add('toast');
       
@@ -1193,7 +1193,8 @@
                     });
 
                     await updateDeckList(false);
-                    showToast(`Set active deck to "${this.deck}"`);
+                    const displayText = this.deck || "All flashcards";
+                    showToast(`Set active deck to "${displayText}"`, 5000);
                 }
                 catch (error) {
                     console.error("Error setting active deck: ", error);
@@ -1237,23 +1238,28 @@
         fullscreenDiv.appendChild(deckThreeDots.element);
 
         // Refresh button
-        const refreshButton = document.createElement('button');
+        const refreshButton = document.createElement('div');
         refreshButton.id = 'blobsey-flashcard-refresh-button';
         refreshButton.innerHTML = refreshSvg;
         refreshButton.addEventListener('click', async (event) => {
             event.preventDefault();
+            // Disallow press while loading
+            if (refreshButton.classList.contains('disabled'))
+                return;
+
             try {
                 refreshButton.innerHTML = loadingSvg;
+                refreshButton.classList.add('disabled');
                 deckSelect.disable();
                 deckThreeDots.disable();
                 await updateDeckList();
-                await loadDeck(selectedOption);
             }
             catch (error) {
                 console.error("Failed to refresh deck: ", error);
             }
             finally {
                 refreshButton.innerHTML = refreshSvg;
+                refreshButton.classList.remove('disabled');
                 deckSelect.enable();
                 deckThreeDots.enable();
             }
@@ -1371,6 +1377,7 @@
                                 console.error("Error while renaming deck: ", error);
                             } 
                             finally {
+                                const userData = await getUserData();
                                 if (isRenamingSelectedDeck) {
                                     deckSelect.selectOption(newName);
                                     selectedOption = newName;
@@ -1398,6 +1405,9 @@
                 const setActiveOption = new SetActiveDeckButton(deck);
                 setActiveOption.button.addEventListener('click', () => {
                     threeDots.close();
+                    setTimeout(() => { // Ugly hack to reopen deck dropdown
+                        deckSelect.open();
+                    }, 1000);
                 });
                 threeDots.addOption(setActiveOption.button);
 
@@ -1578,7 +1588,7 @@
             deckSelect.setDisplayText(selectedOptionText, selectedOption === '');
 
             if (refreshDeck)
-                loadDeck(selectedOption);
+                await loadDeck(selectedOption);
         } 
         catch (error) {
             console.error("Error while fetching user data: ", error);
