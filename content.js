@@ -1368,7 +1368,6 @@
                                     throw new Error(message);
                                 }
                                 
-                                await updateDeckList();
                                 showToast(`Deck "${deck}" renamed to "${newName}"`, 10000);
                             } 
                             catch (error) {
@@ -1382,7 +1381,6 @@
                                     deckSelect.selectOption(newName);
                                     selectedOption = newName;
                                     deckSelect.setDisplayText((selectedOption === userData.deck) ? `${selectedOption} (Active)` : selectedOption);
-                                    await loadDeck(newName);
                                 }
     
                                 // In case displayed flashcard is from renamed deck
@@ -1392,6 +1390,8 @@
                                         showFlashcard();
                                     }
                                 }
+
+                                await updateDeckList();
                                 deckSelect.enable();
                                 deckSelect.open();
                                 deckThreeDots.enable();
@@ -1538,13 +1538,26 @@
                         try {
                             deckSelect.disable(true);
                             const deckName = file.name.replace(/\.(anki2|csv)$/, '');
+
+                            // If deck name already exists, add a monotonically increasing number to it
                             let counter = 1;
                             let duplicateDeckName = null;
                             while (userData.decks.includes(duplicateDeckName)) {
                                 counter++;
                                 duplicateDeckName = `${deckName} ${counter}`;
                             }
+
+                            // Create the deck first
+                            const createDeckResp = await browser.runtime.sendMessage({
+                                action: "createDeck",
+                                deck: duplicateDeckName || deckName
+                            });
+
+                            if (createDeckResp.result !== "success") {
+                                throw new Error(JSON.stringify(createDeckResp));
+                            }
                             
+                            // Upload to the newly created deck
                             const response = await browser.runtime.sendMessage({
                                 action: "uploadDeck",
                                 file: file,
@@ -1552,14 +1565,14 @@
                             });
             
                             if (response.result !== "success") {
-                                throw new Error(response.message);
+                                throw new Error(JSON.stringify(response));
                             } 
 
                             showToast(response.message, 10000);
                             await updateDeckList();
                         } 
                         catch (error) {
-                            showToast("An error occurred while importing the deck.", 10000);
+                            showToast(`An error occurred while importing the deck: ${error}`, 10000);
                             console.error("Error while importing deck: ", error);
                         } 
                         finally {
