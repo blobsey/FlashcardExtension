@@ -1407,7 +1407,7 @@
                     threeDots.close();
                     setTimeout(() => { // Ugly hack to reopen deck dropdown
                         deckSelect.open();
-                    }, 1000);
+                    }, 250);
                 });
                 threeDots.addOption(setActiveOption.button);
 
