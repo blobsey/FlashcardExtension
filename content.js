@@ -406,7 +406,8 @@
             overlayDiv.style.backdropFilter = 'blur(0px)'
         }
 
-        screenshot.remove();
+        if (screenshot)
+            screenshot.remove();
         
         // Reset currentScreen 
         currentScreen = null;
