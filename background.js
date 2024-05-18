@@ -7,26 +7,27 @@ let authInfo = null;
 let userData = null;
 let userDataTimestamp = Date.now();
 
-browser.alarms.create('testAlarm', { periodInMinutes: 1 });
-
     
 // If the alarm fires, send a message to show overlay. content.js will decide if the overlay actually shows
-browser.alarms.onAlarm.addListener(alarm => {
+browser.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === "showFlashcardAlarm") {
-        // Notify all relevant tabs to show the overlay
-        browser.tabs.query({}).then((tabs) => {
-            tabs.forEach((tab) => {
+        try {
+            // Notify all relevant tabs to show the overlay
+            const tabs = await browser.tabs.query({});
+            for (const tab of tabs) {
                 try {
-                    console.log("Sending showFlashcardAlarm to tabs");
-                    const response = browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
+                    console.log("Sending showFlashcardAlarm to tab", tab.id);
+                    await browser.tabs.sendMessage(tab.id, { action: "showFlashcardAlarm" });
+                } catch (error) {
+                    console.warn(`Couldn't send "showFlashcardAlarm" to tab ${tab.id}: ${error.message}`);
                 }
-                catch (error) {
-                    console.warn(`Couldn't send "showFlashcardAlarm" to tab ${tab.title}`);
-                }
-            });
-        });
+            }
+        } catch (err) {
+            console.error('Error querying tabs:', err);
+        }
     }
 });
+
 
 
 // Boilerplate to turn a browser message into corresponding function
@@ -130,9 +131,7 @@ const requestHandlers = {
     
                     // Validate authentication
                     const data = await handleApiRequest("/validate-authentication");
-                    if (data.message && data.message === "Authentication valid") {
-                        console.log("Authentication successful");
-                    } else {
+                    if (data.message !== "Authentication valid") {
                         console.error("Authentication failed");
                     }
                 }
