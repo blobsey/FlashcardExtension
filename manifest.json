@@ -17,8 +17,14 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["styles.css"],
+      "js": [
+        "lib/marked.min.js",
+        "lib/purify.min.js",
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
       "run_at": "document_start"
     }
   ],
@@ -30,5 +36,9 @@
   "icons": {
     "48": "icon.png"
   },
-  "web_accessible_resources": ["blank.html"]
+  "web_accessible_resources": [
+    "blank.html",
+    "licenses/marked.LICENSE",
+    "licenses/dompurify.LICENSE"
+    ]
 }

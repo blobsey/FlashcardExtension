@@ -36,7 +36,6 @@
         const styleEl = document.createElement('style');
         styleEl.textContent = cssText;
         shadowRoot.appendChild(styleEl);
-
         
         // Listen for messages from the background script to show the overlay
         browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -167,7 +166,7 @@
             card_id: card_id,
             card_front: frontText,
             card_back: backText
-        });    
+        });
         if (response.result === "success") {
             return response.flashcard; // Return the updated flashcard for further processing
         } 
@@ -537,8 +536,12 @@
         containerDiv.id = 'blobsey-flashcard-display-container'
         screenDiv.appendChild(containerDiv);
 
+        const formattedCardFront = marked.parse(flashcard.card_front);
+        const sanitizedCardFront = DOMPurify.sanitize(formattedCardFront);
+
         const frontDiv = document.createElement('div');
-        frontDiv.innerHTML = flashcard.card_front;
+        frontDiv.id = 'blobsey-flashcard-frontDiv';
+        frontDiv.innerHTML = sanitizedCardFront;
         containerDiv.appendChild(frontDiv);
 
         const userInput = document.createElement('input');
@@ -569,17 +572,31 @@
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-    
-        const formatPart = (value, unit) => value > 0 ? `${value} ${unit}${value !== 1 ? 's' : ''}` : '';
-    
+        
         const parts = [
-            formatPart(hours, 'hour'),
-            `<span class="minutes">${minutes} minutes</span>`,
-            formatPart(seconds, 'second')
-        ].filter(Boolean);
+            { value: hours, unit: 'hour', className: 'blobsey-flashcard-hours' },
+            { value: minutes, unit: 'minute', className: 'blobsey-flashcard-minutes' },
+            { value: seconds, unit: 'second', className: 'blobsey-flashcard-seconds' }
+        ];
     
-        return parts.join(', ');
+        // Gonna return multiple DOM elements, so use a document fragment
+        const fragment = document.createDocumentFragment();
+    
+        parts.forEach((part, index) => {
+            if (part.unit === 'minute' || part.value > 0) {
+                if (index > 0 && fragment.hasChildNodes()) {
+                    fragment.appendChild(document.createTextNode(', '));
+                }
+                const span = document.createElement('span');
+                span.className = part.className;
+                span.textContent = `${part.value} ${part.unit}${part.value !== 1 ? 's' : ''}`;
+                fragment.appendChild(span);
+            }
+        });
+    
+        return fragment;
     }
+    
     
 
     ////////////////////
@@ -620,27 +637,74 @@
             console.error("Error while redeeming time: ", error);
         }
     }
+
+    function loadSvg(element, path) {
+        element.innerHTML = '';
+        const svgUrl = browser.runtime.getURL(`svg/${path}.svg`);
+        const svgImg = document.createElement('img');
+        svgImg.src = svgUrl;
+        element.appendChild(svgImg);
+    }
+
     // Shows review screen, really should be async because of strict ordering of review -> fetch -> display
     async function createConfirmScreen() {
         screenDiv.innerHTML = '';
-
-        // Show question
-        const frontDiv = document.createElement('div');
-        frontDiv.innerHTML = flashcard ? flashcard.card_front : "<code>&ltFlashcard missing&gt</code>";
-        screenDiv.appendChild(frontDiv);
-
-        // Make diff div
+        
         if (flashcard) {
-            const diffMessage = `Your answer: ${userAnswer}<br>Correct answer: ${flashcard.card_back}`;
+            const formattedCardFront = marked.parse(flashcard.card_front || `<code>&lt;Flashcard missing&gt;</code>`);
+            const sanitizedCardFront = DOMPurify.sanitize(formattedCardFront);
+
+            const frontDiv = document.createElement('div');
+            frontDiv.id = 'blobsey-flashcard-frontDiv';
+            frontDiv.innerHTML = sanitizedCardFront;
+            screenDiv.appendChild(frontDiv);
+
+            // Line between front and back of card
+            const dividerDiv = document.createElement('div');
+            dividerDiv.id = 'blobsey-flashcard-divider';
+            dividerDiv.classList.add('blobsey-flashcard-underline');
+            screenDiv.appendChild(dividerDiv);
+            
             const diffDiv = document.createElement('div');
-            diffDiv.innerHTML = diffMessage;
+            diffDiv.id = 'blobsey-flashcard-diffDiv';
+        
+            // User Answer Section
+            const userAnswerLabel = document.createElement('strong');
+            userAnswerLabel.classList.add('diff-label');
+            userAnswerLabel.textContent = 'Your answer:';
+            diffDiv.appendChild(userAnswerLabel);
+        
+            const userAnswerSpan = document.createElement('span');
+            userAnswerSpan.classList.add('diff-answer');
+            userAnswerSpan.textContent = userAnswer;
+            diffDiv.appendChild(userAnswerSpan);
+        
+            // Correct Answer Section
+            const correctAnswerLabel = document.createElement('strong');
+            correctAnswerLabel.classList.add('diff-label');
+            correctAnswerLabel.textContent = 'Correct answer:';
+            diffDiv.appendChild(correctAnswerLabel);
+        
+            const correctAnswerSpan = document.createElement('span');
+            correctAnswerSpan.classList.add('diff-answer');
+            correctAnswerSpan.textContent = flashcard.card_back;
+            diffDiv.appendChild(correctAnswerSpan);
+        
+            // Append the diffDiv to the screenDiv
             screenDiv.appendChild(diffDiv);
         }
+        else {
+            const flashcardDeletedDiv = document.createElement('div');
+            flashcardDeletedDiv.innerHTML = '<code>?ltFlashcard missing?gt</code>';
+            screenDiv.appendChild(flashcardDeletedDiv);
+        }
+        
+        
 
         // Buttons container
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = "blobsey-flashcard-buttons-div";
-        buttonsDiv.innerHTML = loadingSvg;
+        loadSvg(buttonsDiv, 'loadingSmall'); // Loading icon
         screenDiv.appendChild(buttonsDiv);
 
         if (grade) {
@@ -672,7 +736,7 @@
                 }
             }
             catch (error) {
-                    messageDiv.innerHTML = error.message;
+                    messageDiv.textContent = error.message;
                     console.error(error);
             }
         }
@@ -724,6 +788,7 @@
         // Note for flashcard count
         const { existingTimeGrant } = await browser.storage.local.get("existingTimeGrant");
         const countNote = document.createElement('div');
+        countNote.id = 'blobsey-flashcard-time-grant';
         screenDiv.appendChild(countNote);
 
         // Create the animation element
@@ -737,7 +802,7 @@
 
         // Function to start the animation
         function startAnimation() {
-            const minutesElement = countNote.querySelector('.minutes');
+            const minutesElement = countNote.querySelector('.blobsey-flashcard-minutes');
             const minutesRect = minutesElement.getBoundingClientRect();
             animationElement.style.left = `${minutesRect.left - 8}px`;
             animationElement.style.top = `${minutesRect.top - 16}px`;
@@ -746,7 +811,8 @@
             animationElement.style.transform = 'translateY(-10px)';
 
             // Increment the existingTimeGrant value after a short delay
-            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant)}`;
+            countNote.innerHTML = 'Time: ';
+            countNote.appendChild(prettyPrintMilliseconds(existingTimeGrant));
 
             // Remove the animation element after the animation is complete
             setTimeout(() => {
@@ -756,12 +822,14 @@
 
         // Start the animation after a 0.5-second delay
         if (grade && grade === 3) {
-            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant - 60000)}`;
+            countNote.innerHTML = 'Time: ';
+            countNote.appendChild(prettyPrintMilliseconds(existingTimeGrant - 60000));
             setTimeout(startAnimation, 500);
             grade = null;
         }
         else {
-            countNote.innerHTML = `Time: ${prettyPrintMilliseconds(existingTimeGrant)}`;
+            countNote.innerHTML = 'Time: ';
+            countNote.appendChild(prettyPrintMilliseconds(existingTimeGrant));
         }
     }
 
@@ -914,18 +982,6 @@
         }, duration);
     }
 
-    const loadingSvg = `<svg width="24" height="24" viewBox="0 0 24 24" stroke="white" fill="white" xmlns="http://www.w3.org/2000/svg"><style>.spinner_I8Q1{animation:spinner_qhi1 .75s linear infinite}.spinner_vrS7{animation-delay:-.375s}@keyframes spinner_qhi1{0%,100%{r:1.5px}50%{r:3px}}</style><circle class="spinner_I8Q1" cx="4" cy="12" r="1.5"/><circle class="spinner_I8Q1 spinner_vrS7" cx="12" cy="12" r="3"/><circle class="spinner_I8Q1" cx="20" cy="12" r="1.5"/><script xmlns="" id="bw-fido2-page-script"/>
-    </svg>`;
-    const blocksSvg = `<svg fill="white" width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_9y7u{animation:spinner_fUkk 2.4s linear infinite;animation-delay:-2.4s}.spinner_DF2s{animation-delay:-1.6s}.spinner_q27e{animation-delay:-.8s}@keyframes spinner_fUkk{8.33%{x:13px;y:1px}25%{x:13px;y:1px}33.3%{x:13px;y:13px}50%{x:13px;y:13px}58.33%{x:1px;y:13px}75%{x:1px;y:13px}83.33%{x:1px;y:1px}}</style><rect class="spinner_9y7u" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_DF2s" x="1" y="1" rx="1" width="10" height="10"/><rect class="spinner_9y7u spinner_q27e" x="1" y="1" rx="1" width="10" height="10"/></svg>`;
-    const catSvg = `
-    <div id = "blobsey-flashcard-cat">
-        <svg height="200px" width="200px" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve" fill="#ffffff" stroke="#ffffff"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <style type="text/css"> .st0{fill:#ffffff;} </style> <g> <polygon class="st0" points="96.388,197.393 97.009,203.262 159.896,196.556 159.268,190.688 "></polygon> <path class="st0" d="M155.486,111.05c-8.683,0-15.734,7.052-15.734,15.727c0,8.69,7.052,15.734,15.734,15.734 s15.72-7.044,15.72-15.734C171.206,118.101,164.169,111.05,155.486,111.05z"></path> <polygon class="st0" points="97.515,171.836 161.953,176.924 162.408,171.042 97.969,165.968 "></polygon> <polygon class="st0" points="272.209,42.238 258.943,59.935 281.057,64.352 "></polygon> <polygon class="st0" points="143.93,42.238 135.082,64.352 157.203,59.935 "></polygon> <path class="st0" d="M276.395,126.776c0-8.675-7.044-15.727-15.734-15.727c-8.682,0-15.728,7.052-15.728,15.727 c0,8.69,7.045,15.734,15.728,15.734C269.351,142.511,276.395,135.466,276.395,126.776z"></path> <polygon class="st0" points="319.758,197.393 256.879,190.688 256.25,196.556 319.137,203.262 "></polygon> <polygon class="st0" points="318.163,165.968 253.745,171.042 254.207,176.924 318.625,171.836 "></polygon> <path class="st0" d="M242.4,203.637c-4.475,1.076-8.257,1.523-11.404,1.523c-4.171,0-7.196-0.78-9.455-1.913 c-3.349-1.71-5.298-4.273-6.64-7.578c-1.299-3.27-1.776-7.196-1.776-10.732c0-2.216,0.195-4.165,0.39-5.788l9.382-9.376 c1.732-1.718,2.245-4.323,1.314-6.582c-0.938-2.252-3.14-3.717-5.572-3.717h-21.132c-2.498,0-4.736,1.53-5.623,3.868 c-0.902,2.331-0.267,4.958,1.581,6.64l9.022,8.17c0.259,1.74,0.519,4.107,0.519,6.799c0.022,4.721-0.866,10.098-3.335,13.779 c-1.256,1.862-2.814,3.37-5.081,4.518c-2.252,1.133-5.269,1.913-9.44,1.913c-3.147,0-6.929-0.447-11.404-1.53 c-2.425-0.57-4.879,0.931-5.456,3.356c-0.57,2.425,0.931,4.879,3.363,5.464c5.024,1.191,9.484,1.754,13.497,1.761 c5.298,0,9.802-1.018,13.526-2.887c4.359-2.187,7.405-5.529,9.448-9.16l0.801,1.56c1.992,3.009,4.836,5.731,8.545,7.6 c3.724,1.869,8.236,2.887,13.526,2.887c4.006,0,8.474-0.57,13.505-1.768c2.432-0.592,3.926-3.032,3.341-5.457 C247.265,204.561,244.825,203.059,242.4,203.637z"></path> <path class="st0" d="M435.895,246.307c0.657-0.678,1.624-1.306,2.31-1.646l0.404-0.188l21.436-7.145l-2.743-5.492 c7.716-9.448,10.978-22.324,7.651-34.861c-4.54-17.178-20.116-29.181-37.878-29.181c-3.385,0-6.756,0.44-10.047,1.299l-0.289,0.086 l-0.281,0.087c-11.043,3.211-21.776,9.116-31.159,17.091c-8.863,7.607-15.886,16.701-20.952,27.08 c-5.94,12.118-9.079,26.301-9.058,40.974c0.008,18.527,4.604,38.087,14.053,59.747c4.503,10.372,6.799,21.66,6.799,33.583 c0.043,16.037-4.338,32.572-11.924,45.629c-2.367-7.744-5.55-15.128-9.491-22.021c-18.513-32.414-41.891-82.374-53.33-107.354 c27.917-11.57,47.751-29.808,59.105-54.398c32.226-69.844-9.982-128.408-40.014-152.644C293.385,0.007,276.727,0.007,269.509,0 h-0.007c-1.314,0-2.627,0.109-3.919,0.325c-11.7,1.956-26.561,13.944-44.23,35.684H208.91h-12.457 c-17.668-21.739-32.522-33.728-44.23-35.684C150.939,0.109,149.625,0,148.304,0h-0.086c-7.261,0-23.898,0.231-50.891,56.954 C67.295,81.191,25.093,139.769,57.32,209.598c10.949,23.724,29.801,41.552,56.188,53.179 c-8.834,21.747-30.775,74.226-50.422,108.581c-19.018,33.28-19.538,78.52-1.256,110.01C73.119,500.841,90.527,512,109.582,512 h93.901h10.87h93.9c14.645,0,28.148-6.46,38.83-18.404c14.039-1.56,27.897-6.359,40.563-14.103 c20.202-12.372,37.236-31.7,49.289-55.915c11.526-23.305,17.611-49.512,17.625-75.82c0.008-22.764-4.482-44.605-13.338-64.93 c-6.214-14.255-7.514-23.328-7.506-28.43c0.007-4.272,0.816-5.961,1.162-6.684L435.895,246.307z M432.402,225.881l-0.419,0.13 c-0.491,0.188-1.371,0.52-2.461,1.075c-2.201,1.083-5.153,2.944-7.715,5.594c-1.711,1.768-3.291,3.876-4.598,6.546 c-1.718,3.573-3.082,8.206-3.103,15.157c-0.008,8.38,2.166,20.267,9.144,36.282c8.127,18.651,11.714,38.167,11.707,57.077 c-0.015,24.041-5.709,47.145-15.575,67.109c-9.917,19.92-23.999,36.918-41.964,47.925c-11.916,7.275-25.738,11.765-40.353,11.779 c-7.232,10.87-17.135,17.842-28.813,17.842c-27.21,0-73.084,0-93.9,0c0,0-4.128,0-10.87,0c-20.823,0-66.691,0-93.901,0 c-36.016,0-55.662-65.478-29.469-111.317c26.192-45.838,55.654-121.147,55.654-121.147l2.729-8.92 c-25.76-7.55-50.61-21.97-63.37-49.635c-35.951-77.885,37.928-131.792,37.928-131.792s23.075-49.982,35.25-49.982l0.7,0.065 c11.981,1.992,37.936,35.943,37.936,35.943h21.97h21.956c0,0,25.969-33.951,37.95-35.943l0.692-0.065 c12.184,0.007,35.244,49.982,35.244,49.982s73.893,53.908,37.943,131.792c-13.453,29.159-40.331,43.572-67.549,50.776l1.408,4.504 c0,0,34.969,78.585,61.154,124.423c8.286,14.493,11.974,30.935,12.024,46.662l-0.916,5.406c2.722-0.975,5.442-2.187,8.207-3.862 c6.726-4.085,13.41-10.386,19.234-18.491c11.707-16.182,19.552-39.394,19.488-63.053c0-13.988-2.642-28.12-8.438-41.407 c-8.596-19.726-12.399-36.86-12.407-51.952c-0.022-12.429,2.685-23.407,7.066-32.357c4.374-8.957,10.278-15.792,16.03-20.729 c11.613-9.873,22.331-12.731,24.049-13.237c1.682-0.447,3.364-0.664,5.031-0.664c8.675,0,16.614,5.802,18.932,14.601 c2.743,10.343-3.349,20.931-13.62,23.854L432.402,225.881z"></path> </g> </g></svg>
-        No flashcards found
-    </div>`;
-    const refreshSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="#fff" viewBox="-22.4 -22.4 76.8 76.8">
-    <path d="M15.544 28.08c-.002-.006-.008-.01-.012-.015l-2.873-4.489a.75.75 0 0 0-.992-.266l-.256.157c-.344.188-.337.673-.133 1.008l1.841 2.857c-.157-.035-.316-.063-.471-.103a11.803 11.803 0 0 1-7.485-5.988c-1.448-2.797-1.72-5.99-.766-8.992s3.118-5.452 5.915-6.899a.971.971 0 0 0-.892-1.724c-3.258 1.686-5.763 4.54-6.874 8.036s-.794 7.215.892 10.473a13.761 13.761 0 0 0 8.72 6.973c.043.011.087.017.13.028l-2.541 1.288a.672.672 0 0 0-.254.948l.098.256c.205.335.557.454.9.266l4.651-2.381c.006-.004.012-.003.018-.007l.312-.171a.679.679 0 0 0 .256-.953zm13.015-18.055c-1.783-3.447-4.862-5.988-8.618-6.972-.267-.07-.541-.124-.814-.179l2.494-1.265c.344-.189.549-.614.345-.949l-.099-.255a.75.75 0 0 0-.991-.267l-4.651 2.381c-.006.003-.012.002-.018.006l-.312.171a.673.673 0 0 0-.332.422.672.672 0 0 0 .077.53l.185.304c.003.006.008.01.012.016l2.873 4.489a.75.75 0 0 0 .991.266l.226-.157c.344-.188.366-.673.163-1.008l-1.85-2.87c.407.063.811.138 1.207.242 3.226.845 5.856 3.027 7.387 5.986 1.448 2.797 1.72 5.99.765 8.991s-3.02 5.451-5.818 6.901a.97.97 0 1 0 .894 1.723 13.643 13.643 0 0 0 6.776-8.035 13.64 13.64 0 0 0-.893-10.473z"/>
-  </svg>`;
-
 
     /////////////////
     // List Screen //
@@ -942,7 +998,7 @@
 
             this.display = document.createElement('div');
             this.display.className = 'blobsey-flashcard-dropdown-display';
-            this.display.innerHTML = loadingSvg;
+            loadSvg(this.display, 'loadingSmall');
             this.element.appendChild(this.display);
 
             this.optionsContainer = document.createElement('div');
@@ -983,8 +1039,8 @@
         }
 
         disable(showLoading = false) {
-            if (showLoading)
-                this.display.innerHTML = loadingSvg;
+            if (showLoading) 
+                loadSvg(this.display, 'loadingSmall');
             this.isDisabled = true;
             this.element.classList.add('disabled');
             this.display.classList.add('disabled');
@@ -1085,7 +1141,7 @@
         }
 
         disable() {
-            this.element.innerHTML = loadingSvg;
+            loadSvg(this.element, 'loadingSmall');
             this.close();
             this.isDisabled = true;
             this.element.classList.add('disabled');
@@ -1167,7 +1223,7 @@
 
             // Load until state is loaded
             this.button.disabled = true;
-            this.button.innerHTML = loadingSvg;
+            loadSvg(this.button, 'loadingSmall');
             getUserData().then((userData) => {
                 this.updateButtonState(userData.deck);
             });
@@ -1177,7 +1233,7 @@
             this.button.addEventListener('click', async () => {
                 try {
                     this.button.disabled = true;
-                    this.button.innerHTML = loadingSvg; // Show loading indicator
+                    loadSvg(this.button, 'loadingSmall');
                     await browser.runtime.sendMessage({
                         action: "setUserData",
                         userData: { deck: this.deck }
@@ -1241,7 +1297,7 @@
         // Refresh button
         const refreshButton = document.createElement('div');
         refreshButton.id = 'blobsey-flashcard-refresh-button';
-        refreshButton.innerHTML = refreshSvg;
+        loadSvg(refreshButton, 'refresh');
         refreshButton.addEventListener('click', async (event) => {
             event.preventDefault();
             // Disallow press while loading
@@ -1249,9 +1305,9 @@
                 return;
 
             try {
-                refreshButton.innerHTML = loadingSvg;
+                loadSvg(refreshButton,'loadingSmall');
                 refreshButton.classList.add('disabled');
-                deckSelect.disable();
+                deckSelect.disable(false);
                 deckThreeDots.disable();
                 await updateDeckList();
             }
@@ -1259,7 +1315,7 @@
                 console.error("Failed to refresh deck: ", error);
             }
             finally {
-                refreshButton.innerHTML = refreshSvg;
+                loadSvg(refreshButton, 'refresh');
                 refreshButton.classList.remove('disabled');
                 deckSelect.enable();
                 deckThreeDots.enable();
@@ -1614,7 +1670,7 @@
             tableContainer.innerHTML = '';
             const loadingDiv = document.createElement('div');
             loadingDiv.id = "blobsey-flashcard-loading-div";
-            loadingDiv.innerHTML = blocksSvg;
+            loadSvg(loadingDiv,'loadingBig');
             tableContainer.appendChild(loadingDiv); 
         }
     }
@@ -1635,7 +1691,7 @@
         }
         catch (error) {
             flashcards = null;
-            tableContainer.innerHTML = error;
+            tableContainer.textContent = error;
             console.error("Error while loading deck: ", error);
         }
         finally {
@@ -1681,8 +1737,15 @@
         );
     
         if (filteredFlashcards.length === 0) {
-            tableContainer.innerHTML = catSvg;
-        } 
+            const cat = document.createElement('div');
+            cat.id = 'blobsey-flashcard-cat';
+            loadSvg(cat, 'cat');
+            tableContainer.appendChild(cat);
+
+            const noFlashcardsFoundDiv = document.createElement('div');
+            noFlashcardsFoundDiv.textContent = 'No flashcards found';
+            cat.appendChild(noFlashcardsFoundDiv);
+        }
         else {
             filteredFlashcards.forEach(card => {
                 const row = document.createElement('tr');
