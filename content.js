@@ -651,7 +651,7 @@
         screenDiv.innerHTML = '';
         
         if (flashcard) {
-            const formattedCardFront = marked.parse(flashcard.card_front || `<code>&lt;Flashcard missing&gt;</code>`);
+            const formattedCardFront = marked.parse(flashcard.card_front);
             const sanitizedCardFront = DOMPurify.sanitize(formattedCardFront);
 
             const frontDiv = document.createElement('div');
@@ -695,7 +695,7 @@
         }
         else {
             const flashcardDeletedDiv = document.createElement('div');
-            flashcardDeletedDiv.innerHTML = '<code>?ltFlashcard missing?gt</code>';
+            flashcardDeletedDiv.innerHTML = '<pre><code>&lt;Flashcard missing&gt;<code></pre>';
             screenDiv.appendChild(flashcardDeletedDiv);
         }
         
