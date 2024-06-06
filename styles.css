@@ -54,10 +54,16 @@
     white-space: pre-wrap;
 }
 
+.blobsey-flashcard-ui #blobsey-flashcard-frontDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+/* 
 .blobsey-flashcard-ui #blobsey-flashcard-frontDiv * {
     margin: 0;
     line-height: 1;
-}
+} */
 
 #blobsey-flashcard-diffDiv {
     margin-left: -3em;
@@ -201,16 +207,12 @@
     font: 14px monospace, system-ui, sans-serif; 
 }       
 
-.blobsey-flashcard-ui code {
-    padding: .1em;
-}
-
 .blobsey-flashcard-ui pre {
     color: #d1d5db; 
     background-color: rgba(0, 0, 0, .25); 
     border-radius: 3px; 
     border: 1px solid rgba(255, 255, 255, .2); 
-    white-space: pre-wrap;
+    white-space: pre-wrap; 
     display: block;
     width: max-content;
     overflow-x: auto; 
