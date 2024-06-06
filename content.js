@@ -324,15 +324,14 @@
     let currentScreen = null; // Keeps track of currently displayed screen to avoid unnecessary re-draws
     let originalOverflowState = ''; // Original page scrolling behavior
 
-    // For passing information between screens
-    let count = 0; 
-    let grade = null;
-    let userAnswer = null;
-    let flashcard = null;
-    let nextFlashcard = null;
-    let editFlashcard = null;
-    let kbShortcuts = {};
-    let screenshot = null;
+    let count = 0; // Number of flashcards gotten correct in this session
+    let grade = null; // 3 or 1 depending on if user got flashcard correct, also can be null if it has already been "consumed"
+    let userAnswer = null; // Passed between flashcard screen and confirm screen
+    let flashcard = null; // Currently displayed flashcard in createFlashcardScreen and createConfirmScreen
+    let nextFlashcard = null; // Used in confirm screen to hold the next flashcard before
+    let editFlashcard = null; // Holds flashcard which is the target of the edit screen
+    let kbShortcuts = {}; // Dict of keyboard shortcuts/overrides, gets destroyed and recreated for every screen
+    let screenshot = null; // URI for screenshot used as background of overlay
 
     class Screen {
         constructor(render) {
@@ -353,13 +352,22 @@
 
     // Screens that are higher have more "priority", ex. if both edit and list are active, edit will be drawn
     const screens = {
-        "addEdit": new Screen(createAddEditScreen),
+        "add": new Screen(createAddScreen)
+        "edit": new Screen(createEditScreen),
         "list": new Screen(createListScreen),
         "confirm": new Screen(createConfirmScreen),
         "flashcard": new Screen(createFlashcardScreen)
     };
 
     function update() {
+        // Find highest priority screen that's active
+        let screen = null;
+        for (const key in screens) {
+            if (screens[key].active) {
+                screen = screens[key];
+            }
+        }
+
         // Draw highest priority screen
         const screen = getCurrentScreen();
         if (screen) {
@@ -413,17 +421,6 @@
         
         // Restore the original overflow state (scrolling behavior)
         document.documentElement.style.overflow = originalOverflowState;
-    }
-
-    // Iterates through "screens" to get the topmost active one (highest priority)
-    function getCurrentScreen() {
-
-        for (const key in screens) {
-            if (screens[key].active) {
-                return screens[key];
-            }
-        }
-        return null; // If no active screens, return null
     }
 
 
@@ -780,7 +777,7 @@
             editButton.textContent = 'Edit';
             editButton.onclick = () => {
                 editFlashcard = flashcard;
-                screens["addEdit"].activate();
+                screens["edit"].activate();
             };
             buttonsDiv.appendChild(editButton);
         }
@@ -845,7 +842,7 @@
         textarea.style.height = `${Math.max(maxHeightVh, textarea.scrollHeight) + 10}px`;
     }
 
-    function createAddEditScreen() {
+    function createEditScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
         screenDiv.style.opacity = '0'; // Fade in
@@ -856,7 +853,7 @@
         const containerDiv = document.createElement('div');
         containerDiv.id = 'blobsey-flashcard-display-container';
         const frontInput = document.createElement('textarea');
-        frontInput.value = editFlashcard ? editFlashcard.card_front : '';
+        frontInput.value = editFlashcard.card_front;
         frontInput.placeholder = 'Front of Flashcard';
         frontInput.id = 'edit-screen-textarea-front'; 
     
@@ -871,7 +868,7 @@
     
         const backInput = document.createElement('input');
         backInput.type = 'text';
-        backInput.value = editFlashcard ? editFlashcard.card_back : '';
+        backInput.value = editFlashcard.card_back;
         backInput.placeholder = 'Back of Flashcard';
         backInput.id = 'edit-screen-input-back'; 
         containerDiv.appendChild(backInput);
@@ -889,7 +886,7 @@
             if ((typeof prompt === 'boolean' && !prompt) || (frontInput.value === initialFrontValue && backInput.value === initialBackValue) || confirm("Really close? (Unsaved edits will be lost)")) {
                 editFlashcard = null;
                 screenDiv.style.transition = ''; // Clean up animations on close
-                screens["addEdit"].deactivate();
+                screens["edit"].deactivate();
             }
         });
 
@@ -904,28 +901,26 @@
         buttonsDiv.appendChild(cancelButton);
     
         // Delete button
-        if (editFlashcard) {
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.type = 'button';
-            deleteButton.addEventListener('click', async function() {
-                if (confirm("Are you sure you want to delete this flashcard?")) {
-                    try {
-                        await submitFlashcardDelete(editFlashcard.card_id);
-                        if (nextFlashcard && nextFlashcard.card_id === editFlashcard.card_id)
-                            nextFlashcard = null;
-                        if (flashcard && flashcard.card_id === editFlashcard.card_id)
-                            flashcard = null;
-                        showToast('Flashcard deleted. ', 10000); // TODO: add undo function (client side ??)
-                        onClose(false);
-                    }
-                    catch (error) {
-                        showToast(`Error while deleting flashcard: ${error}`, 10000);
-                    }
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.type = 'button';
+        deleteButton.addEventListener('click', async function() {
+            if (confirm("Are you sure you want to delete this flashcard?")) {
+                try {
+                    await submitFlashcardDelete(editFlashcard.card_id);
+                    if (nextFlashcard && nextFlashcard.card_id === editFlashcard.card_id)
+                        nextFlashcard = null;
+                    if (flashcard && flashcard.card_id === editFlashcard.card_id)
+                        flashcard = null;
+                    showToast('Flashcard deleted. ', 10000); // TODO: add undo function (client side ??)
+                    onClose(false);
                 }
-            });
-            buttonsDiv.appendChild(deleteButton);
-        }
+                catch (error) {
+                    showToast(`Error while deleting flashcard: ${error}`, 10000);
+                }
+            }
+        });
+        buttonsDiv.appendChild(deleteButton);
 
         // Save button
         const saveButton = document.createElement('button');
@@ -942,7 +937,8 @@
                 onClose(false);
             }
             catch (error) {
-                console.error("Error while adding/editing flashcard: ", error);
+                showToast(`Error while editing flashcard: ${JSON.stringify(error)}`, 10000);
+                console.error("Error while editing flashcard: ", error);
             }
         });
     
@@ -1713,7 +1709,7 @@
             addFlashcardOption.textContent = 'Add flashcard';
             addFlashcardOption.addEventListener('click', (event) => {
                 editFlashcard = null;
-                screens['addEdit'].activate();
+                screens['add'].activate();
             });
             deckThreeDots.addOption(addFlashcardOption);
         }
@@ -1761,12 +1757,21 @@
                 row.addEventListener('click', function() {
                     scrollPosition = scrollContainer.scrollTop; // Save scroll position when leaving list screen
                     editFlashcard = card; // Update the global variable with the selected flashcard
-                    screens["addEdit"].activate(); // Switch to the edit screen
+                    screens["edit"].activate(); // Switch to the edit screen
                 });
             });
 
             scrollContainer.scrollTop = scrollPosition; // Restore saved scroll position, if any
         }
+    }
+
+
+    ////////////////
+    // Add screen //
+    ////////////////
+
+    function createAddScreen() {
+        screenDiv.innerHTML = 'TODO: Implement me!';
     }
 
     
