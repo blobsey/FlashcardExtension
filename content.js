@@ -352,7 +352,7 @@
 
     // Screens that are higher have more "priority", ex. if both edit and list are active, edit will be drawn
     const screens = {
-        "add": new Screen(createAddScreen)
+        "add": new Screen(createAddScreen),
         "edit": new Screen(createEditScreen),
         "list": new Screen(createListScreen),
         "confirm": new Screen(createConfirmScreen),
@@ -365,11 +365,11 @@
         for (const key in screens) {
             if (screens[key].active) {
                 screen = screens[key];
+                break;
             }
         }
 
         // Draw highest priority screen
-        const screen = getCurrentScreen();
         if (screen) {
             if (screen === currentScreen) {
                 /* Hack to workaround race condition where
