@@ -575,12 +575,22 @@ async function createAddScreen() {
     popOutButton.id = 'pop-out-button';
     loadSvg(popOutButton, 'popout');
     popOutButton.addEventListener('click', async (event) => {
-        const popup = await browser.windows.create({
-            url:  browser.runtime.getURL(`blank.html?screenToLoad=add`),
-            type: 'popup',
-            width: 500,
-            height: 600
-        });
+        try {
+            await browser.runtime.sendMessage({ 
+                action: "setBlankHtmlData", 
+                data: {
+                    tabTitle: 'Add Flashcards'
+                } 
+            });
+            
+            const popup = await browser.windows.create({
+                url:  browser.runtime.getURL(`blank.html?screenToLoad=add`),
+                type: 'normal',
+            });
+        }
+        catch (error) {
+            console.error('Error trying to open pop-out add window: ', error);
+        }
     });
     contentDiv.appendChild(popOutButton);
 

@@ -307,9 +307,8 @@
                     });
                 }
                 break;
-            case 'list':
-                screens["list"].activate();
-                break;
+            default:
+                screens[screen].activate();
         }
     }
     
@@ -1770,8 +1769,112 @@
     // Add screen //
     ////////////////
 
+    class FlashcardEditorWidget {
+        constructor(cardFront = '', cardBack = '') {
+            // Create the main container
+            this.element = document.createElement('div');
+            this.element.className = 'blobsey-flashcard-editor-widget';
+    
+            // Create the header with collapse functionality
+            const header = document.createElement('div');
+            header.className = 'blobsey-flashcard-header';
+            header.textContent = 'Flashcard Editor';
+            header.style.cursor = 'pointer';
+            this.element.appendChild(header);
+    
+            // Add collapse logic
+            const self = this; // capture `this`
+            header.addEventListener('click', () => {
+                container.style.display = container.style.display === 'none' ? 'flex' : 'none';
+            });
+    
+            // Create the container for inputs and checkbox
+            const container = document.createElement('div');
+            container.className = 'blobsey-flashcard-editor-container';
+            this.element.appendChild(container);
+
+            this.inputsDiv = document.createElement('div');
+            this.inputsDiv.className = 'blobsey-flashcard-inputsDiv';
+            container.appendChild(this.inputsDiv);
+    
+            // Create the textarea for the front of the flashcard
+            this.frontTextarea = document.createElement('textarea');
+            this.frontTextarea.className = 'blobsey-flashcard-frontTextarea';
+            this.frontTextarea.value = cardFront;
+            this.frontTextarea.placeholder = 'Front of Flashcard';
+            this.inputsDiv.appendChild(this.frontTextarea);
+
+            // Create the checkbox to toggle preview
+            const checkboxContainerDiv = document.createElement('div');
+            checkboxContainerDiv.className = 'blobsey-flashcard-checkboxContainerDiv';
+            this.previewCheckbox = document.createElement('input');
+            this.previewCheckbox.type = 'checkbox';
+            this.previewCheckbox.className = 'blobsey-flashcard-previewCheckbox';
+            // Show/hide preview based on the checkbox
+            this.previewCheckbox.addEventListener('change', () => {
+                this.previewDiv.classList.toggle('hidden');
+                this.inputsDiv.classList.toggle('halfsize');
+                this.updatePreview();
+            });
+            checkboxContainerDiv.appendChild(this.previewCheckbox);
+            const previewLabel = document.createElement('label');
+            previewLabel.textContent = 'Show Preview';
+            checkboxContainerDiv.appendChild(previewLabel);
+            this.inputsDiv.appendChild(checkboxContainerDiv);
+    
+            // Create the input for the back of the flashcard
+            this.backInput = document.createElement('input');
+            this.backInput.className = 'blobsey-flashcard-backInput';
+            this.backInput.value = cardBack;
+            this.backInput.placeholder = 'Back of Flashcard';
+            this.inputsDiv.appendChild(this.backInput);
+    
+            // Create the preview div
+            this.previewDiv = document.createElement('div');
+            this.previewDiv.className = 'blobsey-flashcard-previewDiv';
+            this.previewDiv.classList.add('hidden');
+            container.appendChild(this.previewDiv);
+    
+            // Update the preview when the content of the textarea changes
+            this.frontTextarea.addEventListener('input', () => this.updatePreview());
+    
+            // Hide preview by default
+            this.updatePreview();
+        }
+    
+        // Update the preview div with the markdown
+        updatePreview() {
+            if (!this.previewCheckbox.checked) {
+                return;
+            }
+    
+            // Debounce to prevent jank
+            clearTimeout(this.updateTimeout);
+            this.updateTimeout = setTimeout(() => {
+                const markdown = this.frontTextarea.value;
+                const formattedCardFront = marked.parse(markdown);
+                const sanitizedCardFront = DOMPurify.sanitize(formattedCardFront);
+                this.previewDiv.innerHTML = sanitizedCardFront;
+            }, 10);
+        }
+    
+        // Method to get the entire element
+        getElement() {
+            return this.element;
+        }
+    }
+    
+
     function createAddScreen() {
-        screenDiv.innerHTML = 'TODO: Implement me!';
+        screenDiv.innerHTML = '';
+
+        const widgets = [];
+
+        const initialWidget = new FlashcardEditorWidget();
+        widgets.push(initialWidget);
+        screenDiv.appendChild(initialWidget.element);
+
+
     }
 
     
