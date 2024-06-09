@@ -585,7 +585,7 @@ async function createAddScreen() {
             
             const popup = await browser.windows.create({
                 url:  browser.runtime.getURL(`blank.html?screenToLoad=add`),
-                type: 'normal',
+                type: 'popup',
             });
         }
         catch (error) {

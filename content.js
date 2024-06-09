@@ -1774,54 +1774,64 @@
             // Create the main container
             this.element = document.createElement('div');
             this.element.className = 'blobsey-flashcard-editor-widget';
-    
+        
             // Create the header with collapse functionality
             const header = document.createElement('div');
-            header.className = 'blobsey-flashcard-header';
-            header.textContent = 'Flashcard Editor';
+            header.className = 'blobsey-flashcard-widget-header';
             header.style.cursor = 'pointer';
             this.element.appendChild(header);
-    
+        
             // Add collapse logic
-            const self = this; // capture `this`
             header.addEventListener('click', () => {
-                container.style.display = container.style.display === 'none' ? 'flex' : 'none';
+                this.container.style.display = this.container.style.display === 'none' ? 'flex' : 'none';
             });
-    
+        
             // Create the container for inputs and checkbox
-            const container = document.createElement('div');
-            container.className = 'blobsey-flashcard-editor-container';
-            this.element.appendChild(container);
-
+            this.container = document.createElement('div');
+            this.container.className = 'blobsey-flashcard-editor-container';
+            this.element.appendChild(this.container);
+    
             this.inputsDiv = document.createElement('div');
             this.inputsDiv.className = 'blobsey-flashcard-inputsDiv';
-            container.appendChild(this.inputsDiv);
-    
+            this.container.appendChild(this.inputsDiv);
+        
             // Create the textarea for the front of the flashcard
             this.frontTextarea = document.createElement('textarea');
             this.frontTextarea.className = 'blobsey-flashcard-frontTextarea';
             this.frontTextarea.value = cardFront;
             this.frontTextarea.placeholder = 'Front of Flashcard';
             this.inputsDiv.appendChild(this.frontTextarea);
-
+    
             // Create the checkbox to toggle preview
             const checkboxContainerDiv = document.createElement('div');
             checkboxContainerDiv.className = 'blobsey-flashcard-checkboxContainerDiv';
             this.previewCheckbox = document.createElement('input');
             this.previewCheckbox.type = 'checkbox';
             this.previewCheckbox.className = 'blobsey-flashcard-previewCheckbox';
+                
+            // Assign a unique id to each checkbox so the label corresponds to only this checkbox
+            const checkboxId = 'blobsey-flashcard-previewcheckbox-' + Math.random().toString(36).substring(2, 15);
+            this.previewCheckbox.id = checkboxId;
+    
             // Show/hide preview based on the checkbox
             this.previewCheckbox.addEventListener('change', () => {
+                if (!this.previewCheckbox.checked) {
+                    this.inputsDiv.style.removeProperty('width');
+                    this.previewDiv.style.removeProperty('width');
+                }
+                this.resizer.classList.toggle('hidden');
                 this.previewDiv.classList.toggle('hidden');
                 this.inputsDiv.classList.toggle('halfsize');
                 this.updatePreview();
             });
             checkboxContainerDiv.appendChild(this.previewCheckbox);
             const previewLabel = document.createElement('label');
+            previewLabel.setAttribute('for', checkboxId); 
             previewLabel.textContent = 'Show Preview';
+            previewLabel.style.cursor = 'pointer';
             checkboxContainerDiv.appendChild(previewLabel);
             this.inputsDiv.appendChild(checkboxContainerDiv);
-    
+        
             // Create the input for the back of the flashcard
             this.backInput = document.createElement('input');
             this.backInput.className = 'blobsey-flashcard-backInput';
@@ -1829,32 +1839,76 @@
             this.backInput.placeholder = 'Back of Flashcard';
             this.inputsDiv.appendChild(this.backInput);
     
+            // Create the resizer element
+            this.resizer = document.createElement('div');
+            this.resizer.className = 'blobsey-flashcard-widget-resizer hidden';
+            this.resizer.textContent = '⋮';
+            this.container.appendChild(this.resizer);
+            this.resizer.addEventListener('mousedown', this.initResize.bind(this));
+        
             // Create the preview div
             this.previewDiv = document.createElement('div');
-            this.previewDiv.className = 'blobsey-flashcard-previewDiv';
-            this.previewDiv.classList.add('hidden');
-            container.appendChild(this.previewDiv);
-    
+            this.previewDiv.className = 'blobsey-flashcard-previewDiv hidden';
+            this.container.appendChild(this.previewDiv);
+        
             // Update the preview when the content of the textarea changes
             this.frontTextarea.addEventListener('input', () => this.updatePreview());
-    
+        
             // Hide preview by default
             this.updatePreview();
         }
     
+        // Resizing helper functions
+        initResize(event) {
+            event.preventDefault();
+            this.inputsDiv.classList.add('resizing');
+            this.previewDiv.classList.add('resizing');
+            document.addEventListener('mousemove', this.resizeBound = this.resize.bind(this));
+            document.addEventListener('mouseup', this.stopResizeBound = this.stopResize.bind(this));
+        }
+    
+        resize(event) {
+            const containerRect = this.container.getBoundingClientRect();
+            const resizerWidth = this.resizer.offsetWidth / 2;
+            const offsetX = event.clientX - containerRect.left - resizerWidth;
+            const percentage = Math.max(25, Math.min(75, (offsetX / containerRect.width) * 100));
+            
+            this.inputsDiv.style.width = `${percentage}%`;
+            this.previewDiv.style.width = `${100 - percentage}%`;
+        }
+        
+        stopResize() {
+            this.inputsDiv.classList.remove('resizing');
+            this.previewDiv.classList.remove('resizing');
+            document.removeEventListener('mousemove', this.resizeBound);
+            document.removeEventListener('mouseup', this.stopResizeBound);
+        }
+        
         // Update the preview div with the markdown
         updatePreview() {
             if (!this.previewCheckbox.checked) {
+                this.previewDiv.innerHTML = '';
                 return;
             }
-    
+        
             // Debounce to prevent jank
             clearTimeout(this.updateTimeout);
             this.updateTimeout = setTimeout(() => {
                 const markdown = this.frontTextarea.value;
                 const formattedCardFront = marked.parse(markdown);
                 const sanitizedCardFront = DOMPurify.sanitize(formattedCardFront);
-                this.previewDiv.innerHTML = sanitizedCardFront;
+                if (sanitizedCardFront) 
+                    this.previewDiv.innerHTML = sanitizedCardFront;
+                else {
+                    this.previewDiv.innerHTML = '';
+                    const placeholderCat = document.createElement('div');
+                    placeholderCat.id = 'blobsey-flashcard-cat2';
+                    loadSvg(placeholderCat, 'cat2');
+                    const typeSomethingSpan = document.createElement('span');
+                    typeSomethingSpan.textContent = 'Card front is empty';
+                    placeholderCat.appendChild(typeSomethingSpan);
+                    this.previewDiv.appendChild(placeholderCat);
+                }
             }, 10);
         }
     
@@ -1864,18 +1918,52 @@
         }
     }
     
+    
 
     function createAddScreen() {
         screenDiv.innerHTML = '';
+    
+        const widgetsContainerDiv = document.createElement('div');
+        widgetsContainerDiv.id = 'blobsey-flashcard-widgets-container';
+        screenDiv.appendChild(widgetsContainerDiv);
+    
+        let widgets = [];
 
-        const widgets = [];
-
-        const initialWidget = new FlashcardEditorWidget();
-        widgets.push(initialWidget);
-        screenDiv.appendChild(initialWidget.element);
-
-
+        // Add another flashcard button
+        const addAnotherFlashcardButton = document.createElement('button');
+        addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
+        loadSvg(addAnotherFlashcardButton, 'addFlashcard');
+        
+        widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
+    
+        // Function to use with 'Add another flashcard' button
+        function addWidget() {
+            const newWidget = new FlashcardEditorWidget();
+            widgets.push(newWidget);
+            
+            const widgetElement = newWidget.getElement();
+            
+            const closeButton = document.createElement('button');
+            closeButton.className = 'blobsey-flashcard-widget-close-button';
+            closeButton.addEventListener('click', () => {
+                widgetElement.remove();
+                widgets = widgets.filter(widget => widget !== newWidget);
+            });
+            
+            widgetElement.appendChild(closeButton);
+            widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
+        }
+    
+        // Initial widget
+        addWidget();
+        
+        // Attach function to button, must be done after the function is actually defined
+        addAnotherFlashcardButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            addWidget();
+        });
     }
+    
 
     
 })();
