@@ -427,11 +427,13 @@
     function trapFocus(event) {
         const focusableElements = Array.from(overlayDiv.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
         const focusedIndex = focusableElements.indexOf(shadowRoot.activeElement);
+        console.log(focusableElements);
 
         // If current element is from overlay, find the next and focus it
         if (focusedIndex !== -1) {
             const nextIndex = event.shiftKey ? focusedIndex - 1 : focusedIndex + 1;
             focusableElements[(nextIndex % focusableElements.length)].focus();
+            console.log(focusableElements[(nextIndex % focusableElements.length)]);
         }
         else if (focusableElements.length > 0) {
             focusableElements[0].focus();
@@ -1783,7 +1785,8 @@
         
             // Add collapse logic
             header.addEventListener('click', () => {
-                this.container.style.display = this.container.style.display === 'none' ? 'flex' : 'none';
+                this.container.classList.toggle('collapsed');
+                header.classList.toggle('collapsed');
             });
         
             // Create the container for inputs and checkbox
@@ -1800,6 +1803,7 @@
             this.frontTextarea.className = 'blobsey-flashcard-frontTextarea';
             this.frontTextarea.value = cardFront;
             this.frontTextarea.placeholder = 'Front of Flashcard';
+            this.frontTextarea.addEventListener('input', function() { adjustHeight(this) });
             this.inputsDiv.appendChild(this.frontTextarea);
     
             // Create the checkbox to toggle preview
@@ -1874,7 +1878,7 @@
             const percentage = Math.max(25, Math.min(75, (offsetX / containerRect.width) * 100));
             
             this.inputsDiv.style.width = `${percentage}%`;
-            this.previewDiv.style.width = `${100 - percentage}%`;
+            this.previewDiv.style.width = `calc(${100 - percentage}% - 3em)`;
         }
         
         stopResize() {
@@ -1887,7 +1891,6 @@
         // Update the preview div with the markdown
         updatePreview() {
             if (!this.previewCheckbox.checked) {
-                this.previewDiv.innerHTML = '';
                 return;
             }
         
