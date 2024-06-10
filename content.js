@@ -425,7 +425,9 @@
 
     // Mimick default tab behavior, but only include overlay elements
     function trapFocus(event) {
-        const focusableElements = Array.from(overlayDiv.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+        const focusableElements = Array.from(overlayDiv.querySelectorAll(
+            'button, [href], input, select, textarea:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+        )); 
         const focusedIndex = focusableElements.indexOf(shadowRoot.activeElement);
         console.log(focusableElements);
 
@@ -1771,30 +1773,27 @@
     // Add screen //
     ////////////////
 
+    // NOTE: Expects textarea to have a parent element!
     function makeAutoresizing(textarea) {
         // Create a clone of the textarea
         const clone = document.createElement('textarea');
-        clone.className = 'blobsey-flashcard-frontTextarea-clone';
+        clone.className = `${textarea.className} clone`;
         clone.style.position = 'absolute';
         clone.style.top = '-9999px';
-        clone.style.left = '0';
         clone.style.visibility = 'hidden';
-        shadowRoot.appendChild(clone);
+        clone.setAttribute('tabindex', '-1');
+        textarea.parentElement.appendChild(clone);
     
         function adjustHeight() {
-            const maxHeightVh = (window.innerHeight * 40) / 100; // 40vh min height
-    
-            // Synchronize the clone's width with the original textarea
             clone.style.width = `${textarea.clientWidth}px`;
-            clone.value = textarea.value;
-            
+            clone.value = textarea.value;            
             const contentHeight = clone.scrollHeight;
             textarea.style.height = 'auto';
-            textarea.style.height = `${Math.max(maxHeightVh, contentHeight) + 10}px`;
+            textarea.style.height = `${contentHeight + 28}px`;
         }
     
         textarea.addEventListener('input', adjustHeight);
-        window.addEventListener('resize', adjustHeight); // Optional: also adjust on window resize
+        window.addEventListener('resize', adjustHeight); 
         adjustHeight(); // Initial adjustment
     }
     
@@ -1831,8 +1830,10 @@
             this.frontTextarea.className = 'blobsey-flashcard-frontTextarea';
             this.frontTextarea.value = cardFront;
             this.frontTextarea.placeholder = 'Front of Flashcard';
-            makeAutoresizing(this.frontTextarea);
             this.inputsDiv.appendChild(this.frontTextarea);
+
+            // Must be after appendChild, as makeAutoresizing() depends on textarea having parent
+            makeAutoresizing(this.frontTextarea); 
     
             // Create the checkbox to toggle preview
             const checkboxContainerDiv = document.createElement('div');

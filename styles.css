@@ -339,13 +339,13 @@ input[type="checkbox"]:checked:before {
     transition: initial;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-frontTextarea,
-.blobsey-flashcard-ui .blobsey-flashcard-frontTextarea-clone {
+.blobsey-flashcard-ui .blobsey-flashcard-frontTextarea {
     color: #d1d5db;
     font: 14px monospace, sans-serif;
     border: none;
     padding: 10px;
-    height: 40vh;
+    min-height: 20vh;
+    max-height: 75vh;
     border-radius: 3px;
     outline: none;
     background-color: transparent;
@@ -354,6 +354,7 @@ input[type="checkbox"]:checked:before {
     white-space: pre-wrap;
     resize: none;
     line-height: 1;
+    transition: height .05s ease;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-checkboxContainerDiv {
