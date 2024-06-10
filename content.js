@@ -1771,6 +1771,34 @@
     // Add screen //
     ////////////////
 
+    function makeAutoresizing(textarea) {
+        // Create a clone of the textarea
+        const clone = document.createElement('textarea');
+        clone.className = 'blobsey-flashcard-frontTextarea-clone';
+        clone.style.position = 'absolute';
+        clone.style.top = '-9999px';
+        clone.style.left = '0';
+        clone.style.visibility = 'hidden';
+        shadowRoot.appendChild(clone);
+    
+        function adjustHeight() {
+            const maxHeightVh = (window.innerHeight * 40) / 100; // 40vh min height
+    
+            // Synchronize the clone's width with the original textarea
+            clone.style.width = `${textarea.clientWidth}px`;
+            clone.value = textarea.value;
+            
+            const contentHeight = clone.scrollHeight;
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.max(maxHeightVh, contentHeight) + 10}px`;
+        }
+    
+        textarea.addEventListener('input', adjustHeight);
+        window.addEventListener('resize', adjustHeight); // Optional: also adjust on window resize
+        adjustHeight(); // Initial adjustment
+    }
+    
+
     class FlashcardEditorWidget {
         constructor(cardFront = '', cardBack = '') {
             // Create the main container
@@ -1803,7 +1831,7 @@
             this.frontTextarea.className = 'blobsey-flashcard-frontTextarea';
             this.frontTextarea.value = cardFront;
             this.frontTextarea.placeholder = 'Front of Flashcard';
-            this.frontTextarea.addEventListener('input', function() { adjustHeight(this) });
+            makeAutoresizing(this.frontTextarea);
             this.inputsDiv.appendChild(this.frontTextarea);
     
             // Create the checkbox to toggle preview

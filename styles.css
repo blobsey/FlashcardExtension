@@ -339,7 +339,8 @@ input[type="checkbox"]:checked:before {
     transition: initial;
 }
 
-.blobsey-flashcard-ui .blobsey-flashcard-frontTextarea {
+.blobsey-flashcard-ui .blobsey-flashcard-frontTextarea,
+.blobsey-flashcard-ui .blobsey-flashcard-frontTextarea-clone {
     color: #d1d5db;
     font: 14px monospace, sans-serif;
     border: none;
@@ -352,6 +353,7 @@ input[type="checkbox"]:checked:before {
     display: block;
     white-space: pre-wrap;
     resize: none;
+    line-height: 1;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-checkboxContainerDiv {
