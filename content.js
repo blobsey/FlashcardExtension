@@ -1819,25 +1819,7 @@
         window.addEventListener('resize', adjustHeight); 
         adjustHeight(); // Initial adjustment
     }
-
-    async function saveWidgetsToStorage(widgets) {
-        const cachedFlashcardWidgets = widgets.map(widget => ({
-            frontText: widget.frontTextarea.value || '',
-            backText: widget.backInput.value || '',
-        }));
-        try {
-            await browser.runtime.sendMessage({ 
-                action: "setCachedFlashcardWidgets", 
-                data: JSON.stringify(cachedFlashcardWidgets)
-            });
-        }
-        catch (error) {
-            console.error('Error caching widget data: ', error);
-            showToast(`Error caching widget data: ${error}`, 5000);
-        }
-    }
     
-
     class FlashcardEditorWidget {
         constructor(cardFront = '', cardBack = '') {
             // Create the main container
@@ -2035,9 +2017,19 @@
         // overlayDiv might not already be focused, so focus it before focusing anything within
         const overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay'); 
         overlayDiv.focus();
-    
+
         try {
             const userData = await getUserData();
+            const { result, addScreenData } = await browser.runtime.sendMessage({ action: "getAddScreenData" });
+            if (result !== "success") {
+                throw new Error(JSON.stringify(data));
+            }
+            let cachedWidgets, cachedDeck;
+            if (addScreenData) {
+                const parsed = JSON.parse(addScreenData);
+                cachedWidgets = parsed.widgets;
+                cachedDeck = parsed.deck;
+            }
             screenDiv.innerHTML = '';
     
             const widgetsContainerDiv = document.createElement('div');
@@ -2057,11 +2049,13 @@
                 const option = document.createElement('option');
                 option.value = deck;
                 option.textContent = deck;
-                if (deck === userData.deck) {
+                if (deck === cachedDeck) {
                     option.selected = true;
                 }
                 deckSelect.appendChild(option);
             });
+
+            deckSelect.addEventListener('change', saveAddScreenData);
             buttonsDivTop.appendChild(deckSelect);
         
             let widgets = [];
@@ -2091,7 +2085,7 @@
                     widgets.forEach(widget => widget.getElement().remove());
                     widgets = [];
                     await browser.runtime.sendMessage({ 
-                        action: "setCachedFlashcardWidgets", 
+                        action: "setAddScreenData", 
                         data: JSON.stringify([])
                     });
                 }
@@ -2163,19 +2157,45 @@
             });
 
             // Fetch any cached flashcard widgets, if none exist create an empty widget
-            const { result, cachedFlashcardWidgets } = await browser.runtime.sendMessage({ action: "getCachedFlashcardWidgets" });
-            if (result !== "success") {
-                throw new Error(JSON.stringify(data));
-            }
-            if (cachedFlashcardWidgets) {
-                const parsedWidgets = JSON.parse(cachedFlashcardWidgets);
-                parsedWidgets.forEach(({ frontText, backText }) => {
+            if (cachedWidgets) {
+                cachedWidgets.forEach(({ frontText, backText }) => {
                     addWidget(frontText, backText);
                 });
             }
             if (widgets.length === 0) {
                 addWidget();
             }
+
+            async function saveAddScreenData() {
+                try {
+                    // Fetch the current add screen data
+                    const { result, addScreenData } = await browser.runtime.sendMessage({ action: "getAddScreenData" });
+                    if (result !== "success") {
+                        throw new Error("Failed to retrieve add screen data");
+                    }
+            
+                    // Parse the current data
+                    let currentData = addScreenData ? JSON.parse(addScreenData) : { deck: '', widgets: [] };
+                    currentData.deck = deckSelect.value;
+                    
+                    // Update the widgets from the DOM
+                    currentData.widgets = widgets.map(widgetElement => {
+                        return {
+                            frontText: widgetElement.frontTextarea.value || '',
+                            backText: widgetElement.backInput.value || '',
+                        };
+                    });
+            
+                    // Save the updated data back to storage
+                    await browser.runtime.sendMessage({ 
+                        action: "setAddScreenData", 
+                        data: JSON.stringify(currentData)
+                    });
+                } catch (error) {
+                    console.error('Error saving add screen data: ', error);
+                    showToast(`Error saving add screen data: ${error}`, 5000);
+                }
+            }            
 
             // Function to use with 'Add another flashcard' button
             function addWidget(cardFront = '', cardBack = '') {
@@ -2194,13 +2214,13 @@
                     if ((frontText === '' && backText === '')|| confirm(areYouSureText)) {
                         widgetElement.remove();
                         widgets = widgets.filter(widget => widget !== newWidget);
-                        saveWidgetsToStorage(widgets);
+                        saveAddScreenData(); // Call asynchronously
                     }
                 });
 
                 const injectedOnInput = (event) => {
                     event.target.classList.remove('error');
-                    saveWidgetsToStorage(widgets);
+                    saveAddScreenData(); // Call asynchronously
                 };
                 // Listeners to save state on input changes
                 newWidget.frontTextarea.addEventListener('input', injectedOnInput);
@@ -2215,8 +2235,7 @@
                     addFlashcardButton.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }, 0);
 
-
-                saveWidgetsToStorage(widgets);
+                saveAddScreenData(); // Call asynchronously
             }
             
             // Attach function to button
