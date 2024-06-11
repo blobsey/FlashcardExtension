@@ -2078,7 +2078,6 @@
                         action: "setCachedFlashcardWidgets", 
                         data: JSON.stringify([])
                     });
-                    showToast('Cleared all flashcard widgets');
                 }
             }
             clearButton.addEventListener('click', (event) => {
@@ -2122,6 +2121,8 @@
                 // Insert close button after header to make tabindex more logical
                 widgetElement.insertBefore(closeButton, widgetElement.children[1]);
                 widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
+
+                newWidget.frontTextarea.focus();
 
                 saveWidgetsToStorage(widgets);
             }
@@ -2182,6 +2183,7 @@
 
                     const results = await Promise.all(promises);
                     showToast(`${widgets.length} flashcards successfully added to '${deckSelect.value}'`, 5000);
+                    clearFunc();
                 }
                 catch (error) {
                     showToast(`Error adding flashcards: ${error}`, 5000);
