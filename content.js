@@ -1837,7 +1837,7 @@
             this.frontTextarea = document.createElement('textarea');
             this.frontTextarea.className = 'blobsey-flashcard-frontTextarea';
             this.frontTextarea.value = cardFront;
-            this.frontTextarea.placeholder = 'Front of Flashcard';
+            this.frontTextarea.placeholder = 'Front text';
             this.inputsDiv.appendChild(this.frontTextarea);
 
             // Must be after appendChild, as makeAutoresizing() depends on textarea having parent
@@ -1878,7 +1878,7 @@
             this.backInput = document.createElement('input');
             this.backInput.className = 'blobsey-flashcard-backInput';
             this.backInput.value = cardBack;
-            this.backInput.placeholder = 'Back of Flashcard';
+            this.backInput.placeholder = 'Back text';
             this.inputsDiv.appendChild(this.backInput);
     
             // Create the resizer element
@@ -2002,8 +2002,14 @@
                 const closeButton = document.createElement('button');
                 closeButton.className = 'blobsey-flashcard-widget-close-button';
                 closeButton.addEventListener('click', () => {
-                    widgetElement.remove();
-                    widgets = widgets.filter(widget => widget !== newWidget);
+                    // Detect if editor is 'dirty' and if so show a prompt before actually deleting
+                    const frontText = newWidget.frontTextarea.value;
+                    const backText = newWidget.backInput.value;
+                    const areYouSureText = "Really delete this flashcard? (unsaved work will be lost!)"
+                    if ((frontText === '' && backText === '')|| confirm(areYouSureText)) {
+                        widgetElement.remove();
+                        widgets = widgets.filter(widget => widget !== newWidget);
+                    }
                 });
                 
                 widgetElement.appendChild(closeButton);
