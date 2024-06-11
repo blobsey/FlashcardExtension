@@ -1832,10 +1832,19 @@
                 else
                     this.collapse();
             };
-            this.header.addEventListener('mousedown', collapseToggle);
-            this.header.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    collapseFunc(event);
+
+            /* Silly hack to make mousedown and click listeners work together for keyboard navigation
+            sets a flag isMousedown if clicked with mouse, then clears it in the click handler.
+            If clicked via keyboard, then the click handler should always fire */
+            const isMousedown = false;
+            this.header.addEventListener('click', (event) => {
+                isMousedown = true;
+                collapseToggle(event);
+            });
+            this.header.addEventListener('mousedown', (event) => {
+                if (!isMousedown) {
+                    collapseToggle(event);
+                    isMousedown = false;
                 }
             });
 
