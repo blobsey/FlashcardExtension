@@ -436,7 +436,7 @@
         });
         
         const focusedIndex = focusableElements.indexOf(shadowRoot.activeElement);
-        console.log(focusableElements);
+        // console.log(focusableElements);
 
         // If current element is from overlay, find the next and focus it
         if (focusedIndex !== -1) {
@@ -451,6 +451,7 @@
             overlayDiv.focus();
         }
     }
+    
 
     // Create overlay which darkens/blurs screen, prepare screenDiv for rendering
     async function createOverlayIfNotExists() {
@@ -1805,6 +1806,23 @@
         window.addEventListener('resize', adjustHeight); 
         adjustHeight(); // Initial adjustment
     }
+
+    async function saveWidgetsToStorage(widgets) {
+        const cachedFlashcardWidgets = widgets.map(widget => ({
+            frontText: widget.frontTextarea.value || '',
+            backText: widget.backInput.value || '',
+        }));
+        try {
+            await browser.runtime.sendMessage({ 
+                action: "setCachedFlashcardWidgets", 
+                data: JSON.stringify(cachedFlashcardWidgets)
+            });
+        }
+        catch (error) {
+            console.error('Error caching widget data: ', error);
+            showToast(`Error caching widget data: ${error}`, 5000);
+        }
+    }
     
 
     class FlashcardEditorWidget {
@@ -2035,7 +2053,7 @@
             // Add Collapse/Expand All button
             const collapseExpandButton = document.createElement('button');
             collapseExpandButton.id = 'blobsey-flashcard-collapse-expand-button';
-            collapseExpandButton.textContent = 'Collapse All';
+            collapseExpandButton.textContent = 'Collapse all';
             buttonsDivTop.appendChild(collapseExpandButton);
             collapseExpandButton.addEventListener('click', () => {
                 const shouldCollapse = collapseExpandButton.textContent.includes('Collapse');
@@ -2046,12 +2064,39 @@
                         widget.expand();
                     }
                 });
-                collapseExpandButton.textContent = shouldCollapse ? 'Expand All' : 'Collapse All';
+                collapseExpandButton.textContent = shouldCollapse ? 'Expand all' : 'Collapse all';
             });
+
+            const clearButton = document.createElement('button');
+            clearButton.id = 'blobsey-flashcard-clear-widgets-button';
+            clearButton.textContent = 'Clear all';
+            const clearFunc = async (prompt) => {
+                if (widgets.length > 0 && (!prompt || confirm(prompt))) {
+                    widgets.forEach(widget => widget.getElement().remove());
+                    widgets = [];
+                    await browser.runtime.sendMessage({ 
+                        action: "setCachedFlashcardWidgets", 
+                        data: JSON.stringify([])
+                    });
+                    showToast('Cleared all flashcard widgets');
+                }
+            }
+            clearButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                clearFunc('Really clear all flashcards? (Unsaved work will be lost!');
+            });
+            buttonsDivTop.appendChild(clearButton);
     
+            // Add another flashcard button
+            const addAnotherFlashcardButton = document.createElement('button');
+            addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
+            loadSvg(addAnotherFlashcardButton, 'addFlashcard');
+            addAnotherFlashcardButton.title = 'Add another flashcard';
+            widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
+
             // Function to use with 'Add another flashcard' button
-            function addWidget() {
-                const newWidget = new FlashcardEditorWidget();
+            function addWidget(cardFront = '', cardBack = '') {
+                const newWidget = new FlashcardEditorWidget(cardFront, cardBack);
                 widgets.push(newWidget);
                 
                 const widgetElement = newWidget.getElement();
@@ -2066,29 +2111,45 @@
                     if ((frontText === '' && backText === '')|| confirm(areYouSureText)) {
                         widgetElement.remove();
                         widgets = widgets.filter(widget => widget !== newWidget);
+                        saveWidgetsToStorage(widgets);
                     }
                 });
+
+                // Listeners to save state on input changes
+                newWidget.frontTextarea.addEventListener('input', () => saveWidgetsToStorage(widgets));
+                newWidget.backInput.addEventListener('input', () => saveWidgetsToStorage(widgets));
                 
                 // Insert close button after header to make tabindex more logical
                 widgetElement.insertBefore(closeButton, widgetElement.children[1]);
                 widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
+
+                saveWidgetsToStorage(widgets);
             }
-    
-            // Add another flashcard button
-            const addAnotherFlashcardButton = document.createElement('button');
-            addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
-            loadSvg(addAnotherFlashcardButton, 'addFlashcard');
-            addAnotherFlashcardButton.title = 'Add another flashcard';
-            widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
             
-            // Attach function to button, must be done after the function is actually defined
+            // Attach function to button
             addAnotherFlashcardButton.addEventListener('click', (event) => {
                 event.preventDefault();
                 addWidget();
             });
     
-            // Initial widget
-            addWidget();
+            // Fetch any cached flashcard widgets, if none exist create an empty widget
+            const { result, cachedFlashcardWidgets } = await browser.runtime.sendMessage({ action: "getCachedFlashcardWidgets" });
+            if (result !== "success") {
+                throw new Error(JSON.stringify(data));
+            }
+            if (cachedFlashcardWidgets) {
+                const parsedWidgets = JSON.parse(cachedFlashcardWidgets);
+                parsedWidgets.forEach(({ frontText, backText }) => {
+                    addWidget(frontText, backText);
+                });
+            }
+            if (widgets.length === 0) {
+                addWidget();
+            }
+            // overlayDiv might not already be focused, so focus it before focusing anything within
+            const overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay'); 
+            overlayDiv.focus();
+            widgets[0].frontTextarea.focus();
             
             const buttonsDivBottom = document.createElement('div');
             buttonsDivBottom.id = 'blobsey-flashcard-addscreen-buttonsDivBottom';

@@ -52,6 +52,13 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Handlers for requests
 const requestHandlers = {
+    "setCachedFlashcardWidgets": async (request) => {
+        await browser.storage.local.set({ cachedFlashcardWidgets: request.data });
+        return "Set flashcard widgets data successfully";
+    },
+    "getCachedFlashcardWidgets": async (request, sender) => {
+        return await browser.storage.local.get("cachedFlashcardWidgets");
+    },
     "getThisTab": async (request, sender) => {
         return { tab: sender.tab };
     },
