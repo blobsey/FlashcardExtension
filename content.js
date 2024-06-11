@@ -427,7 +427,14 @@
     function trapFocus(event) {
         const focusableElements = Array.from(overlayDiv.querySelectorAll(
             'button, [href], input, select, textarea:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
-        )); 
+        )).filter(el => {
+            // Check if element is visible
+            const isVisible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+            // Check if element is not disabled
+            const isNotDisabled = !el.hasAttribute('disabled');
+            return isVisible && isNotDisabled;
+        });
+        
         const focusedIndex = focusableElements.indexOf(shadowRoot.activeElement);
         console.log(focusableElements);
 
@@ -1816,12 +1823,13 @@
             headerText.className = 'blobsey-flashcard-widget-headerText';
             header.appendChild(headerText);
         
+            this.collapsed = false;
             // Add collapse logic
-            header.addEventListener('click', () => {
-                this.container.classList.toggle('collapsed');
-                header.classList.toggle('collapsed');
-                headerText.classList.toggle('collapsed');
-                headerText.textContent = this.frontTextarea.value;
+            header.addEventListener('mousedown', () => {
+                if (this.collapsed)
+                    this.expand();
+                else
+                    this.collapse();
             });
         
             // Create the container for inputs and checkbox
@@ -1951,6 +1959,21 @@
                     this.previewDiv.appendChild(placeholderCat);
                 }
             }, 10);
+        }
+
+        collapse() {
+            this.collapsed = true;
+            this.container.classList.add('collapsed');
+            header.classList.add('collapsed');
+            headerText.classList.add('collapsed');
+            headerText.textContent = this.frontTextarea.value;
+        }
+
+        expand() {
+            this.collapsed = false;
+            this.container.classList.remove('collapsed');
+            header.classList.remove('collapsed');
+            headerText.classList.remove('collapsed');
         }
     
         // Method to get the entire element

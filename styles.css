@@ -272,6 +272,9 @@ input[type="checkbox"]:checked:before {
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-add-flashcard-button {
+    position: absolute;
+    top: 1em;
+    right: 1em;
     width: 8em;
 }
 
@@ -281,7 +284,7 @@ input[type="checkbox"]:checked:before {
     color: rgba(255, 255, 255, 0.75);
     padding: 8px;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     cursor: pointer;
 }
 
@@ -310,11 +313,12 @@ input[type="checkbox"]:checked:before {
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-header {
     width: calc(100% - 2em);
-    border: 1px solid rgba(255, 255, 255, 0.75); 
+    border: none;
+    background-color: rgba(255, 255, 255, .05);
     border-bottom: none;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
-    margin: .25em auto 0 1em;
+    margin: 10px auto 0 1em;
     height: 2em;
     display: flex; /* to make sure text is centered vertically */
     flex-direction: row;
@@ -322,7 +326,7 @@ input[type="checkbox"]:checked:before {
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-header:hover {
-    background-color: rgba(255, 255, 255, .1);
+    background-color: rgba(255, 255, 255, .075);
     background-clip: content-box;
 }
 
@@ -347,8 +351,7 @@ input[type="checkbox"]:checked:before {
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-header.collapsed {
-    border-radius: 3px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.75); 
+    border-radius: 3px;    
 }
 
 
@@ -359,7 +362,8 @@ input[type="checkbox"]:checked:before {
     overflow: hidden;
     width: calc(100% - 2em);
     margin: 0 auto 0 1em;
-    border: 1px solid rgba(255, 255, 255, 0.75); 
+    border: none;
+    background-color: rgba(255, 255, 255, .05);
     border-top: none;
     border-bottom-right-radius: 3px;
     border-bottom-left-radius: 3px;
@@ -403,7 +407,7 @@ input[type="checkbox"]:checked:before {
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-checkboxContainerDiv {
-    /* opacity: 50%; */
+    opacity: 50%;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -437,8 +441,14 @@ input[type="checkbox"]:checked:before {
     flex-direction: row;
     align-items: center;
     max-width: 58em;
+    border: none;
+    background-color: rgba(255, 255, 255, .05);
     width: calc(100% - 2em); /* gives 1em margin on each side */
-    margin: .5em 1em 10em 1em; /* NOTE TO SELF: don't use width: 100% with margins lmao */
+    margin: 10px 1em 10em 1em; /* NOTE TO SELF: don't use width: 100% with margins lmao */
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-add-another-flashcard-button:hover {
+    background-color: rgba(255, 255, 255, .075);
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-add-another-flashcard-button:focus {
@@ -447,8 +457,8 @@ input[type="checkbox"]:checked:before {
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-close-button {
     position: absolute;
-    top: .33em;
-    right: .35em;
+    top: 10px;
+    right: 4px;
     border: none;
     cursor: pointer;
     display: flex;
