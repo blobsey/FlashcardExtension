@@ -351,9 +351,9 @@
 
     // Screens that are higher have more "priority", ex. if both edit and list are active, edit will be drawn
     const screens = {
-        "add": new Screen(createAddScreen),
         "edit": new Screen(createEditScreen),
         "list": new Screen(createListScreen),
+        "add": new Screen(createAddScreen),
         "confirm": new Screen(createConfirmScreen),
         "flashcard": new Screen(createFlashcardScreen)
     };
@@ -1335,7 +1335,9 @@
         searchBar.value = searchText;
         searchBar.focus();
     
-        createCloseButton();
+        createCloseButton(() => {
+            screens["list"].deactivate();
+        });
     
         // Create a container for the table
         scrollContainer = document.createElement('div');
@@ -1809,11 +1811,17 @@
             header.className = 'blobsey-flashcard-widget-header';
             header.style.cursor = 'pointer';
             this.element.appendChild(header);
+            
+            const headerText = document.createElement('div');
+            headerText.className = 'blobsey-flashcard-widget-headerText';
+            header.appendChild(headerText);
         
             // Add collapse logic
             header.addEventListener('click', () => {
                 this.container.classList.toggle('collapsed');
                 header.classList.toggle('collapsed');
+                headerText.classList.toggle('collapsed');
+                headerText.textContent = this.frontTextarea.value;
             });
         
             // Create the container for inputs and checkbox
@@ -1855,6 +1863,7 @@
                 this.resizer.classList.toggle('hidden');
                 this.previewDiv.classList.toggle('hidden');
                 this.inputsDiv.classList.toggle('halfsize');
+                this.element.classList.toggle('expanded');
                 this.updatePreview();
             });
             checkboxContainerDiv.appendChild(this.previewCheckbox);
@@ -1904,7 +1913,7 @@
             const containerRect = this.container.getBoundingClientRect();
             const resizerWidth = this.resizer.offsetWidth / 2;
             const offsetX = event.clientX - containerRect.left - resizerWidth;
-            const percentage = Math.max(25, Math.min(75, (offsetX / containerRect.width) * 100));
+            const percentage = Math.max(20, Math.min(80, (offsetX / containerRect.width) * 100));
             
             this.inputsDiv.style.width = `${percentage}%`;
             this.previewDiv.style.width = `calc(${100 - percentage}% - 3em)`;
@@ -1950,52 +1959,116 @@
         }
     }
     
+    async function createAddScreen() {
+        loadSvg(screenDiv, 'loadingBig');
     
+        try {
+            const userData = await getUserData();
+            screenDiv.innerHTML = '';
+    
+            const widgetsContainerDiv = document.createElement('div');
+            widgetsContainerDiv.id = 'blobsey-flashcard-widgets-container';
+            screenDiv.appendChild(widgetsContainerDiv);
 
-    function createAddScreen() {
-        screenDiv.innerHTML = '';
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.id = 'blobsey-flashcard-addscreen-buttonsDiv';
+            widgetsContainerDiv.appendChild(buttonsDiv);
     
-        const widgetsContainerDiv = document.createElement('div');
-        widgetsContainerDiv.id = 'blobsey-flashcard-widgets-container';
-        screenDiv.appendChild(widgetsContainerDiv);
-    
-        let widgets = [];
-
-        // Add another flashcard button
-        const addAnotherFlashcardButton = document.createElement('button');
-        addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
-        loadSvg(addAnotherFlashcardButton, 'addFlashcard');
-        
-        widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
-    
-        // Function to use with 'Add another flashcard' button
-        function addWidget() {
-            const newWidget = new FlashcardEditorWidget();
-            widgets.push(newWidget);
+            // Deck select
+            const deckSelect = document.createElement('select');
+            deckSelect.id = 'blobsey-flashcard-deckSelect';
+            deckSelect.name = 'deck';
             
-            const widgetElement = newWidget.getElement();
-            
-            const closeButton = document.createElement('button');
-            closeButton.className = 'blobsey-flashcard-widget-close-button';
-            closeButton.addEventListener('click', () => {
-                widgetElement.remove();
-                widgets = widgets.filter(widget => widget !== newWidget);
+            userData.decks.forEach(deck => {
+                const option = document.createElement('option');
+                option.value = deck;
+                option.textContent = deck;
+                if (deck === userData.deck) {
+                    option.selected = true;
+                }
+                deckSelect.appendChild(option);
             });
-            
-            widgetElement.appendChild(closeButton);
-            widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
-        }
-    
-        // Initial widget
-        addWidget();
+            buttonsDiv.appendChild(deckSelect);
         
-        // Attach function to button, must be done after the function is actually defined
-        addAnotherFlashcardButton.addEventListener('click', (event) => {
-            event.preventDefault();
+            let widgets = [];
+    
+            // Function to use with 'Add another flashcard' button
+            function addWidget() {
+                const newWidget = new FlashcardEditorWidget();
+                widgets.push(newWidget);
+                
+                const widgetElement = newWidget.getElement();
+                
+                const closeButton = document.createElement('button');
+                closeButton.className = 'blobsey-flashcard-widget-close-button';
+                closeButton.addEventListener('click', () => {
+                    widgetElement.remove();
+                    widgets = widgets.filter(widget => widget !== newWidget);
+                });
+                
+                widgetElement.appendChild(closeButton);
+                widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
+            }
+    
+            // Add another flashcard button
+            const addAnotherFlashcardButton = document.createElement('button');
+            addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
+            loadSvg(addAnotherFlashcardButton, 'addFlashcard');
+            addAnotherFlashcardButton.title = 'Add another flashcard';
+            widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
+            
+            // Attach function to button, must be done after the function is actually defined
+            addAnotherFlashcardButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                addWidget();
+            });
+    
+            // Initial widget
             addWidget();
-        });
+    
+            // Add flashcard button
+            const addFlashcardButton = document.createElement('button');
+            addFlashcardButton.id = 'blobsey-flashcard-add-flashcard-button';
+            addFlashcardButton.textContent = 'Add Flashcard(s)';
+            buttonsDiv.appendChild(addFlashcardButton);
+    
+            // Attach event listener to "Add Flashcards" button
+            addFlashcardButton.addEventListener('click', async () => {
+                try {
+                    addFlashcardButton.disabled = true;
+                    loadSvg(addFlashcardButton, 'loadingSmall');
+                    widgets.forEach(widget => {
+                        if(!widget.frontTextarea.value || !widget.backInput.value) {
+                            throw new Error("Some flashcards are blank!");
+                        }
+                    });
+     
+                    const selectedDeck = deckSelect.value;
+
+                    const promises = widgets.map(widget => {
+                        const cardFront = widget.frontTextarea.value;
+                        const cardBack = widget.backInput.value;
+                        return submitFlashcardAdd(cardFront, cardBack, selectedDeck);
+                    });
+
+                    const results = await Promise.all(promises);
+                    showToast(`${widgets.length} flashcards successfully added to '${deckSelect.value}'`, 5000);
+                }
+                catch (error) {
+                    showToast(`Error adding flashcards: ${error}`, 5000);
+                    console.error('Error adding flashcards:', error);
+                }
+                finally {
+                    addFlashcardButton.textContent = 'Add Flashcard(s)';
+                    addFlashcardButton.disabled = false;
+                }
+            });
+        }
+        catch (error) {
+            screenDiv.textContent = `Error while drawing Add screen: ${error}`;
+            console.error('Error while drawing Add screen: ', error);
+        }
     }
     
-
     
 })();

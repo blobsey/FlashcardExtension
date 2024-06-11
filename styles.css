@@ -264,18 +264,48 @@ input[type="checkbox"]:checked:before {
 
 /* Add flashcard screen */
 
+.blobsey-flashcard-ui #blobsey-flashcard-addscreen-buttonsDiv {
+    display: flex;
+    flex-direction: row;
+    padding: 1em;
+    justify-content: end;
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-add-flashcard-button {
+    width: 8em;
+}
+
+.blobsey-flashcard-ui select {
+    font: .75rem monospace;
+    background-color: black;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(128, 128, 128, 0.5);
+    cursor: pointer;
+}
+
 .blobsey-flashcard-ui #blobsey-flashcard-widgets-container {
     width: 100%;
     height: 100%;
-    display: block; /* block instead of flex to make widgets flush */
+    display: flex; 
+    flex-direction: column;
     overflow-y: scroll;
+    align-items: start;
+    justify-content: start;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-editor-widget {
     position: relative;
     display: flex;
     flex-direction: column;
-    width: 100%
+    width: 100%;
+    max-width: 60em;
+    transition: max-width .3s ease;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-editor-widget.expanded {
+    max-width: 100%;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-header {
@@ -284,7 +314,35 @@ input[type="checkbox"]:checked:before {
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
     margin: 1em 1em 0 1em;
-    height: 40px;
+    height: 2em;
+    display: flex; /* to make sure text is centered vertically */
+    flex-direction: row;
+    align-items: center;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-widget-header:hover {
+    background-color: rgba(255, 255, 255, .1);
+    background-clip: content-box;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-widget-headerText {
+    opacity: 50%;
+    font-family: monospace, system-ui, sans-serif;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    height: 1.2em;
+    white-space: nowrap;
+    visibility: hidden;
+    padding-right: 40px;
+    margin: 0 1em;
+    line-height: 1.2em;
+}
+
+/* Show a sneak peek of card when widget is collapsed */
+.blobsey-flashcard-ui .blobsey-flashcard-widget-headerText.collapsed {
+    visibility: visible;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-header.collapsed {
@@ -310,7 +368,7 @@ input[type="checkbox"]:checked:before {
     display: flex;
     flex-direction: column;
     padding: 0em 2em 2em 2em;
-    transition: width 0.3s ease;
+    transition: width 0.3s ease, padding 0.3s ease;
 }
 
 /* silly hack to put an outline inside the padding */
@@ -348,12 +406,12 @@ input[type="checkbox"]:checked:before {
     max-height: 75vh;
     border-radius: 3px;
     outline: none;
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, .00);
     overflow-y: auto;
     display: block;
     white-space: pre-wrap;
     resize: none;
-    line-height: 1;
+    line-height: 1.25em;
     transition: height .05s ease;
 }
 
@@ -392,8 +450,9 @@ input[type="checkbox"]:checked:before {
     display: flex;
     flex-direction: row;
     align-items: center;
+    max-width: 58em;
     width: calc(100% - 2em); /* gives 1em margin on each side */
-    margin: auto; /* NOTE TO SELF: don't use width: 100% with margins lmao */
+    margin: 1em 1em 10em 1em; /* NOTE TO SELF: don't use width: 100% with margins lmao */
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-add-another-flashcard-button:focus {
@@ -406,15 +465,15 @@ input[type="checkbox"]:checked:before {
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-close-button {
     position: absolute;
-    top: calc(1em + 2px);
-    right: calc(.5em - 2px);
+    top: 18px;
+    right: 8px;
     border: none;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 38px;
-    height: 38px;
+    width: calc(2em - 6px);
+    height: calc(2em - 6px);
 }
 
 
