@@ -2183,8 +2183,11 @@
                 widgetElement.insertBefore(closeButton, widgetElement.children[1]);
                 widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
 
-                newWidget.frontTextarea.focus();
-                addFlashcardButton.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                setTimeout(() => {
+                    newWidget.frontTextarea.focus();
+                    addFlashcardButton.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 0);
+
 
                 saveWidgetsToStorage(widgets);
             }
@@ -2195,6 +2198,10 @@
                 addWidget();
             });
 
+            // Hack to scroll to bottom on page load
+            setTimeout(() => {
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 100);
         }
         catch (error) {
             screenDiv.textContent = `Error while drawing Add screen: ${error}`;
