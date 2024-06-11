@@ -2019,6 +2019,9 @@
     
     async function createAddScreen() {
         loadSvg(screenDiv, 'loadingBig');
+        // overlayDiv might not already be focused, so focus it before focusing anything within
+        const overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay'); 
+        overlayDiv.focus();
     
         try {
             const userData = await getUserData();
@@ -2093,65 +2096,6 @@
             addAnotherFlashcardButton.title = 'Add another flashcard';
             widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
 
-            // Function to use with 'Add another flashcard' button
-            function addWidget(cardFront = '', cardBack = '') {
-                const newWidget = new FlashcardEditorWidget(cardFront, cardBack);
-                widgets.push(newWidget);
-                
-                const widgetElement = newWidget.getElement();
-                
-                const closeButton = document.createElement('button');
-                closeButton.className = 'blobsey-flashcard-widget-close-button';
-                closeButton.addEventListener('click', () => {
-                    // Detect if editor is 'dirty' and if so show a prompt before actually deleting
-                    const frontText = newWidget.frontTextarea.value;
-                    const backText = newWidget.backInput.value;
-                    const areYouSureText = "Really delete this flashcard? (unsaved work will be lost!)"
-                    if ((frontText === '' && backText === '')|| confirm(areYouSureText)) {
-                        widgetElement.remove();
-                        widgets = widgets.filter(widget => widget !== newWidget);
-                        saveWidgetsToStorage(widgets);
-                    }
-                });
-
-                // Listeners to save state on input changes
-                newWidget.frontTextarea.addEventListener('input', () => saveWidgetsToStorage(widgets));
-                newWidget.backInput.addEventListener('input', () => saveWidgetsToStorage(widgets));
-                
-                // Insert close button after header to make tabindex more logical
-                widgetElement.insertBefore(closeButton, widgetElement.children[1]);
-                widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
-
-                newWidget.frontTextarea.focus();
-
-                saveWidgetsToStorage(widgets);
-            }
-            
-            // Attach function to button
-            addAnotherFlashcardButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                addWidget();
-            });
-    
-            // Fetch any cached flashcard widgets, if none exist create an empty widget
-            const { result, cachedFlashcardWidgets } = await browser.runtime.sendMessage({ action: "getCachedFlashcardWidgets" });
-            if (result !== "success") {
-                throw new Error(JSON.stringify(data));
-            }
-            if (cachedFlashcardWidgets) {
-                const parsedWidgets = JSON.parse(cachedFlashcardWidgets);
-                parsedWidgets.forEach(({ frontText, backText }) => {
-                    addWidget(frontText, backText);
-                });
-            }
-            if (widgets.length === 0) {
-                addWidget();
-            }
-            // overlayDiv might not already be focused, so focus it before focusing anything within
-            const overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay'); 
-            overlayDiv.focus();
-            widgets[0].frontTextarea.focus();
-            
             const buttonsDivBottom = document.createElement('div');
             buttonsDivBottom.id = 'blobsey-flashcard-addscreen-buttonsDivBottom';
             widgetsContainerDiv.appendChild(buttonsDivBottom);
@@ -2194,6 +2138,63 @@
                     addFlashcardButton.disabled = false;
                 }
             });
+
+            // Fetch any cached flashcard widgets, if none exist create an empty widget
+            const { result, cachedFlashcardWidgets } = await browser.runtime.sendMessage({ action: "getCachedFlashcardWidgets" });
+            if (result !== "success") {
+                throw new Error(JSON.stringify(data));
+            }
+            if (cachedFlashcardWidgets) {
+                const parsedWidgets = JSON.parse(cachedFlashcardWidgets);
+                parsedWidgets.forEach(({ frontText, backText }) => {
+                    addWidget(frontText, backText);
+                });
+            }
+            if (widgets.length === 0) {
+                addWidget();
+            }
+
+            // Function to use with 'Add another flashcard' button
+            function addWidget(cardFront = '', cardBack = '') {
+                const newWidget = new FlashcardEditorWidget(cardFront, cardBack);
+                widgets.push(newWidget);
+                
+                const widgetElement = newWidget.getElement();
+                
+                const closeButton = document.createElement('button');
+                closeButton.className = 'blobsey-flashcard-widget-close-button';
+                closeButton.addEventListener('click', () => {
+                    // Detect if editor is 'dirty' and if so show a prompt before actually deleting
+                    const frontText = newWidget.frontTextarea.value;
+                    const backText = newWidget.backInput.value;
+                    const areYouSureText = "Really delete this flashcard? (unsaved work will be lost!)"
+                    if ((frontText === '' && backText === '')|| confirm(areYouSureText)) {
+                        widgetElement.remove();
+                        widgets = widgets.filter(widget => widget !== newWidget);
+                        saveWidgetsToStorage(widgets);
+                    }
+                });
+
+                // Listeners to save state on input changes
+                newWidget.frontTextarea.addEventListener('input', () => saveWidgetsToStorage(widgets));
+                newWidget.backInput.addEventListener('input', () => saveWidgetsToStorage(widgets));
+                
+                // Insert close button after header to make tabindex more logical
+                widgetElement.insertBefore(closeButton, widgetElement.children[1]);
+                widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
+
+                newWidget.frontTextarea.focus();
+                addFlashcardButton.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+                saveWidgetsToStorage(widgets);
+            }
+            
+            // Attach function to button
+            addAnotherFlashcardButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                addWidget();
+            });
+
         }
         catch (error) {
             screenDiv.textContent = `Error while drawing Add screen: ${error}`;
