@@ -1814,23 +1814,31 @@
             this.element.className = 'blobsey-flashcard-editor-widget';
         
             // Create the header with collapse functionality
-            const header = document.createElement('div');
-            header.className = 'blobsey-flashcard-widget-header';
-            header.style.cursor = 'pointer';
-            this.element.appendChild(header);
+            this.header = document.createElement('button');
+            this.header.className = 'blobsey-flashcard-widget-header';
+            this.element.appendChild(this.header);
             
-            const headerText = document.createElement('div');
-            headerText.className = 'blobsey-flashcard-widget-headerText';
-            header.appendChild(headerText);
+            this.headerText = document.createElement('div');
+            this.headerText.className = 'blobsey-flashcard-widget-headerText';
+            this.header.appendChild(this.headerText);
+
         
             this.collapsed = false;
             // Add collapse logic
-            header.addEventListener('mousedown', () => {
+            const collapseToggle = (event) => {
+                event.preventDefault();
                 if (this.collapsed)
                     this.expand();
                 else
                     this.collapse();
+            };
+            this.header.addEventListener('mousedown', collapseToggle);
+            this.header.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    collapseFunc(event);
+                }
             });
+
         
             // Create the container for inputs and checkbox
             this.container = document.createElement('div');
@@ -1964,16 +1972,16 @@
         collapse() {
             this.collapsed = true;
             this.container.classList.add('collapsed');
-            header.classList.add('collapsed');
-            headerText.classList.add('collapsed');
-            headerText.textContent = this.frontTextarea.value;
+            this.header.classList.add('collapsed');
+            this.headerText.classList.add('collapsed');
+            this.headerText.textContent = this.frontTextarea.value;
         }
 
         expand() {
             this.collapsed = false;
             this.container.classList.remove('collapsed');
-            header.classList.remove('collapsed');
-            headerText.classList.remove('collapsed');
+            this.header.classList.remove('collapsed');
+            this.headerText.classList.remove('collapsed');
         }
     
         // Method to get the entire element
@@ -1993,10 +2001,10 @@
             widgetsContainerDiv.id = 'blobsey-flashcard-widgets-container';
             screenDiv.appendChild(widgetsContainerDiv);
 
-            const buttonsDiv = document.createElement('div');
-            buttonsDiv.id = 'blobsey-flashcard-addscreen-buttonsDiv';
-            widgetsContainerDiv.appendChild(buttonsDiv);
-    
+            const buttonsDivTop = document.createElement('div');
+            buttonsDivTop.id = 'blobsey-flashcard-addscreen-buttonsDivTop';
+            widgetsContainerDiv.appendChild(buttonsDivTop);
+
             // Deck select
             const deckSelect = document.createElement('select');
             deckSelect.id = 'blobsey-flashcard-deckSelect';
@@ -2011,9 +2019,26 @@
                 }
                 deckSelect.appendChild(option);
             });
-            buttonsDiv.appendChild(deckSelect);
+            buttonsDivTop.appendChild(deckSelect);
         
             let widgets = [];
+
+            // Add Collapse/Expand All button
+            const collapseExpandButton = document.createElement('button');
+            collapseExpandButton.id = 'blobsey-flashcard-collapse-expand-button';
+            collapseExpandButton.textContent = 'Collapse All';
+            buttonsDivTop.appendChild(collapseExpandButton);
+            collapseExpandButton.addEventListener('click', () => {
+                const shouldCollapse = collapseExpandButton.textContent.includes('Collapse');
+                widgets.forEach(widget => {
+                    if (shouldCollapse) {
+                        widget.collapse();
+                    } else {
+                        widget.expand();
+                    }
+                });
+                collapseExpandButton.textContent = shouldCollapse ? 'Expand All' : 'Collapse All';
+            });
     
             // Function to use with 'Add another flashcard' button
             function addWidget() {
@@ -2035,7 +2060,8 @@
                     }
                 });
                 
-                widgetElement.appendChild(closeButton);
+                // Insert close button after header to make tabindex more logical
+                widgetElement.insertBefore(closeButton, widgetElement.children[1]);
                 widgetsContainerDiv.insertBefore(widgetElement, addAnotherFlashcardButton);
             }
     
@@ -2054,12 +2080,16 @@
     
             // Initial widget
             addWidget();
-    
+            
+            const buttonsDivBottom = document.createElement('div');
+            buttonsDivBottom.id = 'blobsey-flashcard-addscreen-buttonsDivBottom';
+            widgetsContainerDiv.appendChild(buttonsDivBottom);
+
             // Add flashcard button
             const addFlashcardButton = document.createElement('button');
             addFlashcardButton.id = 'blobsey-flashcard-add-flashcard-button';
             addFlashcardButton.textContent = 'Add Flashcard(s)';
-            buttonsDiv.appendChild(addFlashcardButton);
+            buttonsDivBottom.appendChild(addFlashcardButton);
     
             // Attach event listener to "Add Flashcards" button
             addFlashcardButton.addEventListener('click', async () => {
@@ -2071,7 +2101,7 @@
                             throw new Error("Some flashcards are blank!");
                         }
                     });
-     
+        
                     const selectedDeck = deckSelect.value;
 
                     const promises = widgets.map(widget => {
