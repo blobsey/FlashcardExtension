@@ -1836,16 +1836,16 @@
             /* Silly hack to make mousedown and click listeners work together for keyboard navigation
             sets a flag isMousedown if clicked with mouse, then clears it in the click handler.
             If clicked via keyboard, then the click handler should always fire */
-            const isMousedown = false;
-            this.header.addEventListener('click', (event) => {
+            let isMousedown = false;
+            this.header.addEventListener('mousedown', (event) => {
                 isMousedown = true;
                 collapseToggle(event);
             });
-            this.header.addEventListener('mousedown', (event) => {
-                if (!isMousedown) {
+            this.header.addEventListener('click', (event) => {
+                if (!isMousedown) 
                     collapseToggle(event);
-                    isMousedown = false;
-                }
+                isMousedown = false;
+
             });
 
         
