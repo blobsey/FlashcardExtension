@@ -109,6 +109,8 @@
     text-align: center;
 }
 
+
+
 /* Checkbox */
 input[type="checkbox"] {
     appearance: none;  /* Removes default system appearance */
@@ -363,7 +365,7 @@ input[type="checkbox"]:checked:before {
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-header.collapsed {
-    border-radius: 3px;    
+    border-radius: 3px;
 }
 
 
@@ -418,6 +420,10 @@ input[type="checkbox"]:checked:before {
     transition: height .05s ease;
 }
 
+.blobsey-flashcard-ui .blobsey-flashcard-frontTextarea.error {
+    box-shadow: inset 0 0 1px 1px red;
+}
+
 .blobsey-flashcard-ui .blobsey-flashcard-checkboxContainerDiv {
     opacity: 50%;
     display: flex;
@@ -445,6 +451,10 @@ input[type="checkbox"]:checked:before {
 
 .blobsey-flashcard-ui .blobsey-flashcard-previewDiv.resizing {
     transition: initial;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-backInput.error {
+    box-shadow: inset 0 0 1px 1px red;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-add-another-flashcard-button {

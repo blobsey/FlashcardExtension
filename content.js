@@ -2124,11 +2124,21 @@
                 try {
                     addFlashcardButton.disabled = true;
                     loadSvg(addFlashcardButton, 'loadingSmall');
+                    let hasErrors = false;
                     widgets.forEach(widget => {
                         if(!widget.frontTextarea.value || !widget.backInput.value) {
-                            throw new Error("Some flashcards are blank!");
+                            const errorWidget = widget.getElement();
+                            if (!widget.frontTextarea.value)
+                                widget.frontTextarea.classList.add('error');
+                            if (!widget.backInput.value)
+                                widget.backInput.classList.add('error');
+                            errorWidget.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                            hasErrors = true;
                         }
                     });
+                    if (hasErrors) {
+                        throw new Error("Some flashcards are blank!");
+                    }
         
                     const selectedDeck = deckSelect.value;
 
@@ -2188,9 +2198,13 @@
                     }
                 });
 
+                const injectedOnInput = (event) => {
+                    event.target.classList.remove('error');
+                    saveWidgetsToStorage(widgets);
+                };
                 // Listeners to save state on input changes
-                newWidget.frontTextarea.addEventListener('input', () => saveWidgetsToStorage(widgets));
-                newWidget.backInput.addEventListener('input', () => saveWidgetsToStorage(widgets));
+                newWidget.frontTextarea.addEventListener('input', injectedOnInput);
+                newWidget.backInput.addEventListener('input', injectedOnInput);
                 
                 // Insert close button after header to make tabindex more logical
                 widgetElement.insertBefore(closeButton, widgetElement.children[1]);
