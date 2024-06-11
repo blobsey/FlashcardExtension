@@ -13,11 +13,24 @@
             event.stopPropagation();
             event.stopImmediatePropagation();
 
-            if (kbShortcuts.hasOwnProperty(key)) {
+            const shortcutKey = getShortcutKey(event);
+
+            if (kbShortcuts.hasOwnProperty(shortcutKey)) {
                 event.preventDefault();
-                kbShortcuts[key](event);
+                kbShortcuts[shortcutKey](event);
             }
         }
+    }
+
+    /* This is a helper function to support Ctrl and Shift keys by 
+    concatenating them to key into kbShortcuts. to a combo-shortcut, 
+    do something like kbShortcuts["Ctrl+Shift+N"] */
+    function getShortcutKey(event) {
+        const keys = [];
+        if (event.ctrlKey) keys.push('Ctrl');
+        if (event.shiftKey) keys.push('Shift');
+        keys.push(event.key);
+        return keys.join('+');
     }
 
     // Global variables for the root div and root of shadow DOM
@@ -2197,6 +2210,10 @@
                 event.preventDefault();
                 addWidget();
             });
+
+            kbShortcuts["Ctrl+Shift+N"] = () => {
+                addWidget();
+            };
 
             // Hack to scroll to bottom on page load
             setTimeout(() => {

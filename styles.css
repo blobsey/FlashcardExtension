@@ -173,7 +173,7 @@ input[type="checkbox"]:checked:before {
 
 .blobsey-flashcard-ui button:focus {
     color: rgba(255, 255, 255, 1);
-    border-color: rgba(255, 255, 255, 1);
+    outline: 1px solid rgba(255, 255, 255, .75);
 }
 
 .blobsey-flashcard-ui button:disabled {
@@ -843,7 +843,7 @@ input[type="checkbox"]:checked:before {
 
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button:focus {
     color: rgba(255, 255, 255, 1);
-    border-color: rgba(255, 255, 255, 1);
+    outline: 1px solid rgba(255, 255, 255, .75);
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-set-active-deck-button:disabled {
