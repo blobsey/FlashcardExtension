@@ -151,6 +151,7 @@
         }
         catch (error) {
             console.error("Error while fetching userdata: ", error);
+            return null;
         }
     }
 
@@ -2024,7 +2025,7 @@
             const userData = await getUserData();
             const { result, addScreenData } = await browser.runtime.sendMessage({ action: "getAddScreenData" });
             if (result !== "success") {
-                throw new Error(JSON.stringify(data));
+                showToast("Error loading cached data!", 5000);
             }
             let cachedWidgets, cachedDeck;
             if (addScreenData) {
@@ -2047,15 +2048,21 @@
             deckSelect.id = 'blobsey-flashcard-addScreen-deckSelect';
             deckSelect.name = 'deck';
             
-            userData.decks.forEach(deck => {
-                const option = document.createElement('option');
-                option.value = deck;
-                option.textContent = deck;
-                if (deck === cachedDeck) {
-                    option.selected = true;
-                }
-                deckSelect.appendChild(option);
-            });
+            if (userData) {
+                userData.decks.forEach(deck => {
+                    const option = document.createElement('option');
+                    option.value = deck;
+                    option.textContent = deck;
+                    if (deck === cachedDeck) {
+                        option.selected = true;
+                    }
+                    deckSelect.appendChild(option);
+                });
+            }
+            else {
+                console.error("Error loading userData, using Offline mode!");
+                showToast("Error loading userData, using Offline mode!");
+            }
 
             deckSelect.addEventListener('change', saveAddScreenData);
             buttonsDivTop.appendChild(deckSelect);
