@@ -351,13 +351,15 @@
             this.render = render;
         }
     
-        activate() {
+        activate(...args) {
             this.active = true;
+            this.args = args;
             update();
         }
     
-        deactivate() {
+        deactivate(...args) {
             this.active = false;
+            this.args = args;
             update();
         }
     }
@@ -396,7 +398,7 @@
                 currentScreen = screen;
                 kbShortcuts = {"Tab": trapFocus};
                 createOverlayIfNotExists().then(() => {
-                    screen.render();
+                    screen.render(...screen.args);
                 });
                 return;
             }
@@ -1732,10 +1734,10 @@
         // "Add Flashcard" option
         if (deckSelect.selectedOption !== '') {
             const addFlashcardOption = document.createElement('div');
-            addFlashcardOption.textContent = 'Add flashcard';
-            addFlashcardOption.addEventListener('click', (event) => {
-                editFlashcard = null;
-                screens['add'].activate();
+            addFlashcardOption.textContent = 'Add flashcards';
+            addFlashcardOption.addEventListener('click', async (event) => {
+                screens['add'].activate(true); // true is passed to 'closeable' arg of createAddScreen
+                screens['list'].deactivate();
             });
             deckThreeDots.addOption(addFlashcardOption);
         }
@@ -2012,7 +2014,7 @@
         }
     }
     
-    async function createAddScreen() {
+    async function createAddScreen(closeable = false) {
         loadSvg(screenDiv, 'loadingBig');
         // overlayDiv might not already be focused, so focus it before focusing anything within
         const overlayDiv = shadowRoot.getElementById('blobsey-flashcard-overlay'); 
@@ -2042,7 +2044,7 @@
 
             // Deck select
             const deckSelect = document.createElement('select');
-            deckSelect.id = 'blobsey-flashcard-deckSelect';
+            deckSelect.id = 'blobsey-flashcard-addScreen-deckSelect';
             deckSelect.name = 'deck';
             
             userData.decks.forEach(deck => {
@@ -2247,6 +2249,16 @@
             kbShortcuts["Ctrl+Shift+N"] = () => {
                 addWidget();
             };
+
+            // Close button
+            if (closeable) {
+                createCloseButton(() => {
+                    /* NOTE: This is a silly hack because you can only get to the add screen
+                    while in the overlay from the list screen. TODO: Don't do this! */
+                    screens['list'].activate(); 
+                    screens['add'].deactivate();
+                });
+            }
 
             // Hack to scroll to bottom on page load
             setTimeout(() => {

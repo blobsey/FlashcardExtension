@@ -275,6 +275,14 @@ input[type="checkbox"]:checked:before {
     justify-content: flex-start;
 }
 
+.blobsey-flashcard-ui #blobsey-flashcard-addScreen-deckSelect {
+    background-color: transparent;
+}
+
+.blobsey-flashcard-ui #blobsey-flashcard-addScreen-deckSelect option {
+    color: black;
+}
+
 .blobsey-flashcard-ui #blobsey-flashcard-addscreen-buttonsDivBottom {
     width: calc(100% - 2em);
     max-width: 58em;
