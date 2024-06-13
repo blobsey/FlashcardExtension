@@ -90,47 +90,43 @@
         // On page load, if we are in blank.html then open screen specified by query parameter
         if (window.location.href.includes('blank.html')) {
             const { result, blankHtmlData } = await browser.runtime.sendMessage({ action: "getBlankHtmlData" });
-            if (blankHtmlData.screenshotUri) {
-                document.body.style.backgroundImage = `url(${blankHtmlData.screenshotUri})`;
-                document.body.style.backgroundSize = 'cover';
-            }
-
-            if (blankHtmlData.tabTitle) 
-                document.title = blankHtmlData.tabTitle;
-
-            if (blankHtmlData.tabFaviconUrl) {
-                const link = document.createElement('link');
-                link.type = 'image/x-icon';
-                link.rel = 'shortcut icon';
-                link.href = blankHtmlData.tabFaviconUrl;
-                document.getElementsByTagName('head')[0].appendChild(link);
+            if (blankHtmlData) {
+                if (blankHtmlData.screenshotUri) {
+                    document.body.style.backgroundImage = `url(${blankHtmlData.screenshotUri})`;
+                    document.body.style.backgroundSize = 'cover';
+                }
+    
+                if (blankHtmlData.tabTitle) 
+                    document.title = blankHtmlData.tabTitle;
+    
+                if (blankHtmlData.tabFaviconUrl) {
+                    const link = document.createElement('link');
+                    link.type = 'image/x-icon';
+                    link.rel = 'shortcut icon';
+                    link.href = blankHtmlData.tabFaviconUrl;
+                    document.getElementsByTagName('head')[0].appendChild(link);
+                }
             }
 
             const urlParams = new URLSearchParams(window.location.search);
             const screenToLoad = urlParams.get('screenToLoad') || 'list';
             showExpandedPopupScreen(screenToLoad);
         }
-
         // Prevents webpage from stealing focus when overlay is active
-        function handleFocusIn(event) {
-            // A bit hacky: if the webpage tries to steal focus, instead focus the first focusable overlay element
-            // NOTE: event.preventDefault() doesnt work with focusin events
-            if (overlayDiv && !overlayDiv.contains(event.target)) {
-                // Find the first focusable element within the overlay
-                const focusableElement = overlayDiv.querySelector(
-                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                );
-                
-                if (focusableElement) {
-                    focusableElement.focus();
-                } else {
-                    overlayDiv.focus();
-                }
-            }
-        }
 
         // Add focusin listener once overlay is bootstrapped
-        document.addEventListener('focusin', handleFocusIn);
+        document.addEventListener('focusin', () => {
+            // Silly hack thats triggered  instead focus the first focusable overlay element
+            // NOTE: event.preventDefault() doesnt work with focusin events
+
+            const focusableElements = getFocusableElements();
+            const focusedIndex = focusableElements.indexOf(shadowRoot.activeElement);
+    
+            // If current element is from overlay, find the next and focus it
+            if (focusedIndex === -1 && focusableElements.length > 0) {
+                focusableElements[0].focus();
+            }
+        });
     });
 
 
@@ -289,7 +285,21 @@
         }
     }
     
+    function getFocusableElements() {
+        const fetchedOverlay = shadowRoot.getElementById('blobsey-flashcard-overlay'); 
+        if (!fetchedOverlay) 
+            return [];
 
+        return Array.from(fetchedOverlay.querySelectorAll(
+            'button:not([tabindex="-1"]), [href], input:not([tabindex="-1"]), select:not([tabindex="-1"]), textarea:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+        )).filter(el => {
+            // Check if element is visible
+            const isVisible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+            // Check if element is not disabled
+            const isNotDisabled = !el.hasAttribute('disabled');
+            return isVisible && isNotDisabled;
+        });
+    }
 
     // Fetch flashcard, if it exists then bootstrap overlay
     async function showFlashcard() {
@@ -323,6 +333,7 @@
                 break;
             default:
                 screens[screen].activate();
+                break;
         }
     }
     
@@ -438,27 +449,16 @@
         document.documentElement.style.overflow = originalOverflowState;
     }
 
-
     // Mimick default tab behavior, but only include overlay elements
     function trapFocus(event) {
-        const focusableElements = Array.from(overlayDiv.querySelectorAll(
-            'button, [href], input, select, textarea:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
-        )).filter(el => {
-            // Check if element is visible
-            const isVisible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-            // Check if element is not disabled
-            const isNotDisabled = !el.hasAttribute('disabled');
-            return isVisible && isNotDisabled;
-        });
+        const focusableElements = getFocusableElements();
         
         const focusedIndex = focusableElements.indexOf(shadowRoot.activeElement);
-        // console.log(focusableElements);
 
         // If current element is from overlay, find the next and focus it
         if (focusedIndex !== -1) {
             const nextIndex = event.shiftKey ? focusedIndex - 1 : focusedIndex + 1;
             focusableElements[(nextIndex % focusableElements.length)].focus();
-            console.log(focusableElements[(nextIndex % focusableElements.length)]);
         }
         else if (focusableElements.length > 0) {
             focusableElements[0].focus();
@@ -2014,6 +2014,8 @@
             return this.element;
         }
     }
+
+    let widgets;
     
     async function createAddScreen(closeable = false) {
         loadSvg(screenDiv, 'loadingBig');
@@ -2067,7 +2069,7 @@
             deckSelect.addEventListener('change', saveAddScreenData);
             buttonsDivTop.appendChild(deckSelect);
         
-            let widgets = [];
+            widgets = [];
 
             // Add Collapse/Expand All button
             const collapseExpandButton = document.createElement('button');
@@ -2093,10 +2095,7 @@
                 if (widgets.length > 0 && (!prompt || confirm(prompt))) {
                     widgets.forEach(widget => widget.getElement().remove());
                     widgets = [];
-                    await browser.runtime.sendMessage({ 
-                        action: "setAddScreenData", 
-                        data: JSON.stringify([])
-                    });
+                    saveAddScreenData();
                 }
             }
             clearButton.addEventListener('click', (event) => {
@@ -2183,8 +2182,17 @@
                         throw new Error("Failed to retrieve add screen data");
                     }
             
+                    let currentData = {};
                     // Parse the current data
-                    let currentData = addScreenData ? JSON.parse(addScreenData) : { deck: '', widgets: [] };
+                    try {
+                        const parsed = JSON.parse(addScreenData);
+                        currentData.deck = parsed.deck || '';
+                        currentData.widgets = parsed.widgets && Array.isArray(parsed.widgets) ? parsed.widgets : [];
+                    }
+                    catch (error) {
+                        console.warn('Error parsing currentData (overwriting anyways): ', error);
+                        currentData = { deck: '', widgets: [] };
+                    }
                     currentData.deck = deckSelect.value;
                     
                     // Update the widgets from the DOM
