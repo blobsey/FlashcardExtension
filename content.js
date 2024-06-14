@@ -879,38 +879,25 @@
         // Front textarea input
         const containerDiv = document.createElement('div');
         containerDiv.id = 'blobsey-flashcard-display-container';
-        const frontInput = document.createElement('textarea');
-        frontInput.value = editFlashcard.card_front;
-        frontInput.placeholder = 'Front of Flashcard';
-        frontInput.id = 'edit-screen-textarea-front'; 
-    
-        // Make textarea expand when typing more
-        frontInput.addEventListener('input', function() { adjustHeight(this) });
-    
-        containerDiv.appendChild(frontInput);
         screenDiv.appendChild(containerDiv);
-        frontInput.focus();
-        
-        adjustHeight(frontInput); // Initially fit textarea to content
-    
-        const backInput = document.createElement('input');
-        backInput.type = 'text';
-        backInput.value = editFlashcard.card_back;
-        backInput.placeholder = 'Back of Flashcard';
-        backInput.id = 'edit-screen-input-back'; 
-        containerDiv.appendChild(backInput);
+
+        const editorWidget = new FlashcardEditorWidget(editFlashcard.card_front, editFlashcard.card_back, false);
+        containerDiv.appendChild(editorWidget.getElement());
+        editorWidget.frontTextarea.focus();
     
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = 'blobsey-flashcard-buttons-div'
         containerDiv.appendChild(buttonsDiv);
 
         // Save initial values so we can detect when editor is "dirty"
-        const initialFrontValue = frontInput.value;
-        const initialBackValue = backInput.value;
+        const initialFrontValue = editorWidget.frontTextarea.value;
+        const initialBackValue = editorWidget.backInput.value;
     
         // Function to close edit screen to pass in to cancel, save, delete, and close buttons
         const onClose = ((prompt = true) => {
-            if ((typeof prompt === 'boolean' && !prompt) || (frontInput.value === initialFrontValue && backInput.value === initialBackValue) || confirm("Really close? (Unsaved edits will be lost)")) {
+            if ((typeof prompt === 'boolean' && !prompt) || 
+            (editorWidget.frontTextarea.value === initialFrontValue && editorWidget.backInput.value === initialBackValue) || 
+            confirm("Really close? (Unsaved edits will be lost)")) {
                 editFlashcard = null;
                 screenDiv.style.transition = ''; // Clean up animations on close
                 screens["edit"].deactivate();
@@ -934,6 +921,8 @@
         deleteButton.addEventListener('click', async function() {
             if (confirm("Are you sure you want to delete this flashcard?")) {
                 try {
+                    deleteButton.disabled = true;
+                    loadSvg(deleteButton, 'loadingSmall');
                     await submitFlashcardDelete(editFlashcard.card_id);
                     if (nextFlashcard && nextFlashcard.card_id === editFlashcard.card_id)
                         nextFlashcard = null;
@@ -956,16 +945,22 @@
     
         saveButton.addEventListener('click', async (event) => {
             event.preventDefault();
+            loadSvg(saveButton, 'loadingSmall');
+            saveButton.disabled = true;
             try {
                 if (editFlashcard)
-                    flashcard = await submitFlashcardEdit(editFlashcard.card_id, frontInput.value, backInput.value);
+                    flashcard = await submitFlashcardEdit(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backInput.value);
                 else
-                    await submitFlashcardAdd(frontInput.value, backInput.value, deckSelect.selectedOption);
+                    await submitFlashcardAdd(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backInput.value);
                 onClose(false);
             }
             catch (error) {
                 showToast(`Error while editing flashcard: ${JSON.stringify(error)}`, 10000);
                 console.error("Error while editing flashcard: ", error);
+            }
+            finally {
+                saveButton.textContent = 'Save';
+                saveButton.disabled = false;
             }
         });
     
@@ -1824,13 +1819,17 @@
     }
     
     class FlashcardEditorWidget {
-        constructor(cardFront = '', cardBack = '') {
+        constructor(cardFront = '', cardBack = '', collapsible = true) {
             // Create the main container
             this.element = document.createElement('div');
             this.element.className = 'blobsey-flashcard-editor-widget';
         
-            // Create the header with collapse functionality
-            this.header = document.createElement('button');
+            // Create the header with collapse functionality if collapsible
+            if (collapsible)
+                this.header = document.createElement('button');
+            else 
+                this.header = document.createElement('div');
+
             this.header.className = 'blobsey-flashcard-widget-header';
             this.element.appendChild(this.header);
             
@@ -1838,32 +1837,32 @@
             this.headerText.className = 'blobsey-flashcard-widget-headerText';
             this.header.appendChild(this.headerText);
 
-        
-            this.collapsed = false;
-            // Add collapse logic
-            const collapseToggle = (event) => {
-                event.preventDefault();
-                if (this.collapsed)
-                    this.expand();
-                else
-                    this.collapse();
-            };
-
             /* Silly hack to make mousedown and click listeners work together for keyboard navigation
             sets a flag isMousedown if clicked with mouse, then clears it in the click handler.
             If clicked via keyboard, then the click handler should always fire */
             let isMousedown = false;
-            this.header.addEventListener('mousedown', (event) => {
-                isMousedown = true;
-                collapseToggle(event);
-            });
-            this.header.addEventListener('click', (event) => {
-                if (!isMousedown) 
+            if (collapsible) {
+                this.collapsed = false;
+                // Add collapse logic
+                const collapseToggle = (event) => {
+                    event.preventDefault();
+                    if (this.collapsed)
+                        this.expand();
+                    else
+                        this.collapse();
+                };
+
+                this.header.addEventListener('mousedown', (event) => {
+                    isMousedown = true;
                     collapseToggle(event);
-                isMousedown = false;
-
-            });
-
+                });
+                this.header.addEventListener('click', (event) => {
+                    if (!isMousedown) 
+                        collapseToggle(event);
+                    isMousedown = false;
+    
+                });
+            }
         
             // Create the container for inputs and checkbox
             this.container = document.createElement('div');
