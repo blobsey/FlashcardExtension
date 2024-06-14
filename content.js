@@ -862,13 +862,6 @@
     // Add/Edit Screen //
     /////////////////////
 
-    // Helper function to make textarea grow vertically
-    function adjustHeight(textarea) {
-        const maxHeightVh = (window.innerHeight * 40) / 100; // 40vh == min height
-        textarea.style.height = 'auto';
-        textarea.style.height = `${Math.max(maxHeightVh, textarea.scrollHeight) + 10}px`;
-    }
-
     function createEditScreen() {
         screenDiv.innerHTML = ''; // Clear current content
 
@@ -1815,7 +1808,7 @@
     
         textarea.addEventListener('input', adjustHeight);
         window.addEventListener('resize', adjustHeight); 
-        adjustHeight(); // Initial adjustment
+        requestAnimationFrame(adjustHeight); // Initial adjustment
     }
     
     class FlashcardEditorWidget {
