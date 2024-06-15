@@ -12,6 +12,7 @@ To do:
 - Manifest v3
 - Make `List` screen paginated
 - Save history of `Screen`s
+- Image uploads
 
 
 ### Third-Party Licenses ###
