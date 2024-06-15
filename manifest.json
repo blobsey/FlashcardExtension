@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Flashcard-Extension",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Periodically quizzes the user with flashcards when they are doomscrolling",
   "permissions": [
     "activeTab",
