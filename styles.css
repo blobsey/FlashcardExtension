@@ -413,6 +413,11 @@ input[type="checkbox"]:checked:before {
     border-top: none;
     border-bottom-right-radius: 3px;
     border-bottom-left-radius: 3px;
+    transition: min-height .3s ease;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-editor-container.resizing {
+    transition: initial;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-editor-container.collapsed {
@@ -588,7 +593,9 @@ input[type="checkbox"]:checked:before {
     z-index: 10000;
     transition: background-color 0.2s ease;
     position: relative;
-    top: -.5em;
+    height: 10em;
+    margin: auto 0;
+    transform: translateY(-1em);
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-widget-resizer::after {
@@ -654,6 +661,11 @@ input[type="checkbox"]:checked:before {
 .blobsey-flashcard-ui .blobsey-flashcard-widget-bottomResizer:hover::after {
     background-color: rgba(255, 255, 255, .2);
 }
+
+.blobsey-flashcard-ui .blobsey-flashcard-widget-bottomResizer.hidden {
+    display: none;
+}
+
 
 /* Close button */
 

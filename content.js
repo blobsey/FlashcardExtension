@@ -1892,8 +1892,10 @@
                 if (!this.previewCheckbox.checked) {
                     this.inputsDiv.style.removeProperty('width');
                     this.previewDiv.style.removeProperty('width');
+                    this.container.style.removeProperty('min-height');
                 }
                 this.resizer.classList.toggle('hidden');
+                this.bottomResizer.classList.toggle('hidden');
                 this.previewDiv.classList.toggle('hidden');
                 this.inputsDiv.classList.toggle('halfsize');
                 this.element.classList.toggle('expanded');
@@ -1933,7 +1935,7 @@
 
             // Create the bottom resizer element
             this.bottomResizer = document.createElement('div');
-            this.bottomResizer.className = 'blobsey-flashcard-widget-bottomResizer';
+            this.bottomResizer.className = 'blobsey-flashcard-widget-bottomResizer hidden';
             this.container.appendChild(this.bottomResizer);
             this.bottomResizer.addEventListener('mousedown', this.initMinHeightResize.bind(this));
 
