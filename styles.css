@@ -33,6 +33,8 @@
     box-sizing: border-box;
     font-family: system-ui, sans-serif;
     color: white; 
+    scrollbar-color: rgba(125, 125, 125, 0.5) transparent;
+    scrollbar-width: thin;
 }
 
 .blobsey-flashcard-ui {
