@@ -413,7 +413,6 @@ input[type="checkbox"]:checked:before {
     border-top: none;
     border-bottom-right-radius: 3px;
     border-bottom-left-radius: 3px;
-    resize: vertical;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-editor-container.collapsed {
@@ -476,6 +475,10 @@ input[type="checkbox"]:checked:before {
     text-align: center;
 }
 
+.blobsey-flashcard-ui .blobsey-flashcard-backInput.error {
+    box-shadow: inset 0 0 1px 1px red;
+}
+
 .blobsey-flashcard-ui .blobsey-flashcard-previewDiv {
     margin: auto;
     padding: 0 .25em; /* added because of weird horizontal scroll jank */
@@ -490,6 +493,7 @@ input[type="checkbox"]:checked:before {
     transition: right 0.3s ease;
     overflow-y: auto;
     overflow-x: auto;
+    flex-shrink: 0;
 }
 
 .blobsey-flashcard-ui .blobsey-flashcard-previewDiv ol, 
@@ -508,10 +512,6 @@ input[type="checkbox"]:checked:before {
 
 .blobsey-flashcard-ui .blobsey-flashcard-previewDiv.resizing {
     transition: initial;
-}
-
-.blobsey-flashcard-ui .blobsey-flashcard-backInput.error {
-    box-shadow: inset 0 0 1px 1px red;
 }
 
 .blobsey-flashcard-ui #blobsey-flashcard-add-another-flashcard-button {
@@ -591,6 +591,24 @@ input[type="checkbox"]:checked:before {
     top: -.5em;
 }
 
+.blobsey-flashcard-ui .blobsey-flashcard-widget-resizer::after {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 16px;
+    background-color: rgba(255, 255, 255, .1);
+    border-radius: 5px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: background-color 0.3s;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-widget-resizer:hover::after {
+    background-color: rgba(255, 255, 255, .2);
+}
+
 .blobsey-flashcard-ui .blobsey-flashcard-widget-resizer:hover {
     color: rgba(255, 255, 255, 0.5);
 }
@@ -610,6 +628,32 @@ input[type="checkbox"]:checked:before {
     user-select: none;
 }
 
+
+.blobsey-flashcard-ui .blobsey-flashcard-widget-bottomResizer {
+    width: 100%;
+    height: 1.8em;
+    cursor: ns-resize;
+    position: absolute;
+    bottom: 0;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-widget-bottomResizer::after {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 4px;
+    background-color: rgba(255, 255, 255, .1);
+    border-radius: 5px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: background-color 0.3s;
+}
+
+.blobsey-flashcard-ui .blobsey-flashcard-widget-bottomResizer:hover::after {
+    background-color: rgba(255, 255, 255, .2);
+}
 
 /* Close button */
 

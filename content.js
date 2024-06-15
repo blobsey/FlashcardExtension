@@ -1917,7 +1917,6 @@
             // Create the resizer element
             this.resizer = document.createElement('div');
             this.resizer.className = 'blobsey-flashcard-widget-resizer hidden';
-            this.resizer.textContent = '⋮';
             this.container.appendChild(this.resizer);
             this.resizer.addEventListener('mousedown', this.initResize.bind(this));
         
@@ -1931,6 +1930,13 @@
         
             // Hide preview by default
             this.updatePreview();
+
+            // Create the bottom resizer element
+            this.bottomResizer = document.createElement('div');
+            this.bottomResizer.className = 'blobsey-flashcard-widget-bottomResizer';
+            this.container.appendChild(this.bottomResizer);
+            this.bottomResizer.addEventListener('mousedown', this.initMinHeightResize.bind(this));
+
         }
     
         // Resizing helper functions
@@ -2000,7 +2006,33 @@
             this.header.classList.remove('collapsed');
             this.headerText.classList.remove('collapsed');
         }
-    
+
+        // Bottom resizer methods
+        initMinHeightResize(event) {
+            event.preventDefault();
+            this.startY = event.clientY;
+            this.startHeight = this.container.offsetHeight;
+            this.container.classList.add('resizing');
+            document.addEventListener('mousemove', this.minHeightResizeBound = this.minHeightResize.bind(this));
+            document.addEventListener('mouseup', this.stopMinHeightResizeBound = this.stopMinHeightResize.bind(this));
+        }
+
+        minHeightResize(event) {
+            const dy = event.clientY - this.startY;
+            const newMinHeight = this.startHeight + dy;
+
+            if (newMinHeight > 50) {  // Ensure it doesn't go below an initial minimum
+                this.container.style.minHeight = newMinHeight + 'px';
+            }
+        }
+
+        stopMinHeightResize() {
+            this.container.classList.remove('resizing');
+            document.removeEventListener('mousemove', this.minHeightResizeBound);
+            document.removeEventListener('mouseup', this.stopMinHeightResizeBound);
+        }
+        
+        
         // Method to get the entire element
         getElement() {
             return this.element;
