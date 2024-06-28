@@ -1893,12 +1893,19 @@
                     this.inputsDiv.style.removeProperty('width');
                     this.previewDiv.style.removeProperty('width');
                     this.container.style.removeProperty('min-height');
+                    this.resizer.classList.add('hidden');
+                    this.bottomResizer.classList.add('hidden');
                 }
-                this.resizer.classList.toggle('hidden');
-                this.bottomResizer.classList.toggle('hidden');
+                else {
+                    setTimeout(() => {
+                        this.resizer.classList.toggle('hidden');
+                        this.bottomResizer.classList.toggle('hidden');
+                    }, 300);
+                }
+                this.element.classList.toggle('expanded');
                 this.previewDiv.classList.toggle('hidden');
                 this.inputsDiv.classList.toggle('halfsize');
-                this.element.classList.toggle('expanded');
+
                 this.updatePreview();
             });
             checkboxContainerDiv.appendChild(this.previewCheckbox);
@@ -1999,7 +2006,7 @@
             this.container.classList.add('collapsed');
             this.header.classList.add('collapsed');
             this.headerText.classList.add('collapsed');
-            this.headerText.textContent = this.frontTextarea.value;
+            this.headerText.textContent = this.frontTextarea.value || '<empty flashcard>';
         }
 
         expand() {
@@ -2071,6 +2078,51 @@
             buttonsDivTop.id = 'blobsey-flashcard-addscreen-buttonsDivTop';
             widgetsContainerDiv.appendChild(buttonsDivTop);
 
+            const clearButton = document.createElement('button');
+            clearButton.id = 'blobsey-flashcard-clear-widgets-button';
+            clearButton.textContent = 'Clear all';
+            const clearFunc = async (prompt) => {
+                if (widgets.length > 0 && (!prompt || confirm(prompt))) {
+                    widgets.forEach(widget => widget.getElement().remove());
+                    widgets = [];
+                    await saveAddScreenData();
+                    addWidget();
+                }
+            }
+            clearButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                clearFunc('Really clear all flashcards? (Unsaved work will be lost!');
+            });
+            buttonsDivTop.appendChild(clearButton);
+
+            // Add Collapse/Expand All button
+            const collapseExpandButton = document.createElement('button');
+            collapseExpandButton.id = 'blobsey-flashcard-collapse-expand-button';
+            collapseExpandButton.textContent = 'Collapse all';
+            buttonsDivTop.appendChild(collapseExpandButton);
+            collapseExpandButton.addEventListener('click', () => {
+                const shouldCollapse = collapseExpandButton.textContent.includes('Collapse');
+                widgets.forEach(widget => {
+                    if (shouldCollapse) {
+                        widget.collapse();
+                    } else {
+                        widget.expand();
+                    }
+                });
+                collapseExpandButton.textContent = shouldCollapse ? 'Expand all' : 'Collapse all';
+            });
+
+            // Add another flashcard button
+            const addAnotherFlashcardButton = document.createElement('button');
+            addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
+            loadSvg(addAnotherFlashcardButton, 'addFlashcard');
+            addAnotherFlashcardButton.title = 'Add another flashcard';
+            widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
+
+            const buttonsDivBottom = document.createElement('div');
+            buttonsDivBottom.id = 'blobsey-flashcard-addscreen-buttonsDivBottom';
+            widgetsContainerDiv.appendChild(buttonsDivBottom);
+
             // Deck select
             const deckSelect = document.createElement('select');
             deckSelect.id = 'blobsey-flashcard-addScreen-deckSelect';
@@ -2093,53 +2145,9 @@
             }
 
             deckSelect.addEventListener('change', saveAddScreenData);
-            buttonsDivTop.appendChild(deckSelect);
+            buttonsDivBottom.appendChild(deckSelect);
         
             widgets = [];
-
-            // Add Collapse/Expand All button
-            const collapseExpandButton = document.createElement('button');
-            collapseExpandButton.id = 'blobsey-flashcard-collapse-expand-button';
-            collapseExpandButton.textContent = 'Collapse all';
-            buttonsDivTop.appendChild(collapseExpandButton);
-            collapseExpandButton.addEventListener('click', () => {
-                const shouldCollapse = collapseExpandButton.textContent.includes('Collapse');
-                widgets.forEach(widget => {
-                    if (shouldCollapse) {
-                        widget.collapse();
-                    } else {
-                        widget.expand();
-                    }
-                });
-                collapseExpandButton.textContent = shouldCollapse ? 'Expand all' : 'Collapse all';
-            });
-
-            const clearButton = document.createElement('button');
-            clearButton.id = 'blobsey-flashcard-clear-widgets-button';
-            clearButton.textContent = 'Clear all';
-            const clearFunc = async (prompt) => {
-                if (widgets.length > 0 && (!prompt || confirm(prompt))) {
-                    widgets.forEach(widget => widget.getElement().remove());
-                    widgets = [];
-                    saveAddScreenData();
-                }
-            }
-            clearButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                clearFunc('Really clear all flashcards? (Unsaved work will be lost!');
-            });
-            buttonsDivTop.appendChild(clearButton);
-    
-            // Add another flashcard button
-            const addAnotherFlashcardButton = document.createElement('button');
-            addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
-            loadSvg(addAnotherFlashcardButton, 'addFlashcard');
-            addAnotherFlashcardButton.title = 'Add another flashcard';
-            widgetsContainerDiv.appendChild(addAnotherFlashcardButton);
-
-            const buttonsDivBottom = document.createElement('div');
-            buttonsDivBottom.id = 'blobsey-flashcard-addscreen-buttonsDivBottom';
-            widgetsContainerDiv.appendChild(buttonsDivBottom);
 
             // Add flashcard button
             const addFlashcardButton = document.createElement('button');
@@ -2257,6 +2265,7 @@
                     if ((frontText === '' && backText === '')|| confirm(areYouSureText)) {
                         widgetElement.remove();
                         widgets = widgets.filter(widget => widget !== newWidget);
+                        addFlashcardButton.textContent = `Add flashcard${widgets.length === 1 ? '' : 's'}`;
                         saveAddScreenData(); // Call asynchronously
                     }
                 });
@@ -2276,7 +2285,9 @@
                 setTimeout(() => {
                     newWidget.frontTextarea.focus();
                     addFlashcardButton.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }, 0);
+                }, 50);
+
+                addFlashcardButton.textContent = `Add flashcard${widgets.length === 1 ? '' : 's'}`;
 
                 saveAddScreenData(); // Call asynchronously
             }

@@ -11,6 +11,7 @@ To do:
 
 - Manifest v3
 - Make `List` screen paginated
+- Add batch-selection to `List` screen
 - Save history of `Screen`s
 - Image uploads
 
