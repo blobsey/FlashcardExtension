@@ -14,6 +14,7 @@ To do:
 - Add batch-selection to `List` screen
 - Save history of `Screen`s
 - Image uploads
+- Syntax highlighting
 
 
 ### Third-Party Licenses ###

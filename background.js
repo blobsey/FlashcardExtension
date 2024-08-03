@@ -177,10 +177,10 @@ const requestHandlers = {
         return data;
     },
     "editFlashcard": async (request) => {
-        const body = { card_front: request.card_front, card_back: request.card_back };
         const data = await handleApiRequest(`/edit/${request.card_id}`, {
             method: 'PUT',
             body: { 
+                card_type: request.card_type,
                 card_front: request.card_front, 
                 card_back: request.card_back 
             }
@@ -200,6 +200,7 @@ const requestHandlers = {
         const data = await handleApiRequest('/add', {
             method: 'POST',
             body: { 
+                card_type: request.card_type,
                 card_front: request.card_front, 
                 card_back: request.card_back,
                 deck: request.deck
@@ -208,7 +209,7 @@ const requestHandlers = {
         return data;
     },
     "listFlashcards": async (request) => {
-        const deck = request.deck || ""; // Get the deck parameter from the request
+        const deck = request.deck || ""; // Blank means user's selected deck in userdata
         const data = await handleApiRequest(`/list?deck=${encodeURIComponent(deck)}`);
         return data;
     },

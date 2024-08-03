@@ -170,10 +170,11 @@
     }
     
     // Edits a flashcard
-    async function submitFlashcardEdit(card_id, frontText, backText) {
+    async function submitFlashcardEdit(card_id, card_type, frontText, backText) {
         const response = await browser.runtime.sendMessage({
             action: "editFlashcard",
             card_id: card_id,
+            card_type: card_type,
             card_front: frontText,
             card_back: backText
         });
@@ -205,10 +206,11 @@
       }
 
     // Adds a flashcard
-    async function submitFlashcardAdd(card_front, card_back, deck) {
+    async function submitFlashcardAdd(card_type, card_front, card_back, deck) {
         try {
             const response = await browser.runtime.sendMessage({
                 action: "addFlashcard",
+                card_type: card_type,
                 card_front: card_front,
                 card_back: card_back,
                 deck: deck
@@ -382,6 +384,7 @@
         "list": new Screen(createListScreen),
         "add": new Screen(createAddScreen),
         "confirm": new Screen(createConfirmScreen),
+        "grade": new Screen(createGradeScreen),
         "flashcard": new Screen(createFlashcardScreen)
     };
 
@@ -568,27 +571,43 @@
         frontDiv.innerHTML = sanitizedCardFront;
         containerDiv.appendChild(frontDiv);
 
-        const userInput = document.createElement('input');
-        userInput.type = 'text';
-        userInput.placeholder = 'Type answer here'
-        containerDiv.appendChild(userInput);
+        switch (flashcard.card_type) {
+            case 'cloze':
+                const userInput = document.createElement('input');
+                userInput.type = 'text';
+                userInput.placeholder = 'Type answer here'
+                containerDiv.appendChild(userInput);
+        
+                userInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); 
+                        
+                        userAnswer = userInput.value;
+        
+                        const isCorrect = userAnswer.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
+                        if (isCorrect) { ++count; }
+                        grade = isCorrect ? 3 : 1;
+            
+                        screens["confirm"].activate();
+                    }
+                });
+                userInput.focus();
+                break;
+            default:
+            case 'basic':
+                const flipButton = document.createElement('button');
+                flipButton.textContent = 'Flip';
+                flipButton.id = 'blobsey-flashcard-flip-button';
+                flipButton.addEventListener('click', (event) => {
+                    ++count;
+                    event.preventDefault();
+                    screens["grade"].activate();
+                });
+                containerDiv.appendChild(flipButton);
+                flipButton.focus();
 
-        userInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent the default action to avoid any unintended effects
-                
-                userAnswer = userInput.value;
-
-                const isCorrect = userAnswer.trim().toLowerCase() === flashcard.card_back.trim().toLowerCase();
-                if (isCorrect) { ++count; }
-                grade = isCorrect ? 3 : 1;
-    
-                screens["confirm"].activate();
-            }
-        });
-
-
-        userInput.focus();
+                break;
+        }
     }
 
     function prettyPrintMilliseconds(milliseconds) {
@@ -621,11 +640,62 @@
         return fragment;
     }
     
+    //////////////////
+    // Grade screen //
+    //////////////////
     
+    async function createGradeScreen() {
+        screenDiv.innerHTML = '';
+    
+        if (flashcard) {
+            // Display the flashcard content
+            const formattedCardFront = marked.parse(flashcard.card_front);
+            const sanitizedCardFront = DOMPurify.sanitize(formattedCardFront);
+    
+            const frontDiv = document.createElement('div');
+            frontDiv.id = 'blobsey-flashcard-frontDiv';
+            frontDiv.innerHTML = sanitizedCardFront;
+            screenDiv.appendChild(frontDiv);
 
-    ////////////////////
-    // Confirm screen //
-    ////////////////////
+            // Line between front and back of card
+            const dividerDiv = document.createElement('div');
+            dividerDiv.id = 'blobsey-flashcard-divider';
+            dividerDiv.classList.add('blobsey-flashcard-underline');
+            screenDiv.appendChild(dividerDiv);
+    
+            const backDiv = document.createElement('div');
+            backDiv.id = 'blobsey-flashcard-backDiv';
+            backDiv.innerHTML = DOMPurify.sanitize(marked.parse(flashcard.card_back));
+            screenDiv.appendChild(backDiv);
+
+            // Will be used for saying "No more cards today" message, if applicable
+            const messageDiv = document.createElement('div');
+            screenDiv.appendChild(messageDiv);
+    
+            // Create grading buttons
+            const gradingButtonsDiv = document.createElement('div');
+            gradingButtonsDiv.id = 'blobsey-flashcard-grading-buttons';
+            screenDiv.appendChild(gradingButtonsDiv);
+
+            const gradeButtons = {
+                'Again': '1',
+                'Hard': '2',
+                'Good': '3',
+                'Easy': '4'
+            }
+            for (let key in gradeButtons) {
+                const button = document.createElement('button');
+                button.textContent = key;
+                button.addEventListener('click', async () => {
+                    grade = gradeButtons[key];
+                    screens['grade'].deactivate();
+                    screens['confirm'].activate();
+                }); 
+
+                gradingButtonsDiv.appendChild(button);
+            }
+        }
+    }
 
     // Helper function to calculate the nextFlashcardTime based on currentTime + calculated timeGrant
     async function grantTime(minutes) {
@@ -670,7 +740,11 @@
         element.appendChild(svgImg);
     }
 
-    // Shows review screen, really should be async because of strict ordering of review -> fetch -> display
+    ////////////////////
+    // Confirm screen //
+    ////////////////////
+
+    // Shows review screen, needs to be async because of strict ordering of review -> fetch -> display
     async function createConfirmScreen() {
         screenDiv.innerHTML = '';
         
@@ -693,29 +767,37 @@
             diffDiv.id = 'blobsey-flashcard-diffDiv';
         
             // User Answer Section
-            const userAnswerLabel = document.createElement('strong');
-            userAnswerLabel.classList.add('diff-label');
-            userAnswerLabel.textContent = 'Your answer:';
-            diffDiv.appendChild(userAnswerLabel);
-        
-            const userAnswerSpan = document.createElement('span');
-            userAnswerSpan.classList.add('diff-answer');
-            userAnswerSpan.textContent = userAnswer;
-            diffDiv.appendChild(userAnswerSpan);
-        
-            // Correct Answer Section
-            const correctAnswerLabel = document.createElement('strong');
-            correctAnswerLabel.classList.add('diff-label');
-            correctAnswerLabel.textContent = 'Correct answer:';
-            diffDiv.appendChild(correctAnswerLabel);
-        
-            const correctAnswerSpan = document.createElement('span');
-            correctAnswerSpan.classList.add('diff-answer');
-            correctAnswerSpan.textContent = flashcard.card_back;
-            diffDiv.appendChild(correctAnswerSpan);
-        
-            // Append the diffDiv to the screenDiv
-            screenDiv.appendChild(diffDiv);
+            if (flashcard.card_type === 'cloze') {
+                const userAnswerLabel = document.createElement('strong');
+                userAnswerLabel.classList.add('diff-label');
+                userAnswerLabel.textContent = 'Your answer:';
+                diffDiv.appendChild(userAnswerLabel);
+            
+                const userAnswerSpan = document.createElement('span');
+                userAnswerSpan.classList.add('diff-answer');
+                userAnswerSpan.textContent = userAnswer;
+                diffDiv.appendChild(userAnswerSpan);
+
+                // Correct Answer Section
+                const correctAnswerLabel = document.createElement('strong');
+                correctAnswerLabel.classList.add('diff-label');
+                correctAnswerLabel.textContent = 'Correct answer:';
+                diffDiv.appendChild(correctAnswerLabel);
+            
+                const correctAnswerSpan = document.createElement('span');
+                correctAnswerSpan.classList.add('diff-answer');
+                correctAnswerSpan.textContent = flashcard.card_back;
+                diffDiv.appendChild(correctAnswerSpan);
+            
+                // Append the diffDiv to the screenDiv
+                screenDiv.appendChild(diffDiv);
+            }
+            else {
+                const backDiv = document.createElement('div');
+                backDiv.id = 'blobsey-flashcard-backDiv';
+                backDiv.innerHTML = DOMPurify.sanitize(marked.parse(flashcard.card_back));
+                screenDiv.appendChild(backDiv);
+            }
         }
         else {
             const flashcardDeletedDiv = document.createElement('div');
@@ -723,8 +805,6 @@
             screenDiv.appendChild(flashcardDeletedDiv);
         }
         
-        
-
         // Buttons container
         const buttonsDiv = document.createElement('div');
         buttonsDiv.id = "blobsey-flashcard-buttons-div";
@@ -739,7 +819,7 @@
                     grade: grade
                 });
                 
-                if (grade === 3) {
+                if (grade > 1) {
                     await grantTime(1);
                 }
             }
@@ -845,7 +925,7 @@
         }
 
         // Start the animation after a 0.5-second delay
-        if (grade && grade === 3) {
+        if (grade && grade > 1) {
             countNote.innerHTML = 'Time: ';
             countNote.appendChild(prettyPrintMilliseconds(existingTimeGrant - 60000));
             setTimeout(startAnimation, 500);
@@ -884,12 +964,12 @@
 
         // Save initial values so we can detect when editor is "dirty"
         const initialFrontValue = editorWidget.frontTextarea.value;
-        const initialBackValue = editorWidget.backInput.value;
+        const initialBackValue = editorWidget.backTextarea.value;
     
         // Function to close edit screen to pass in to cancel, save, delete, and close buttons
         const onClose = ((prompt = true) => {
             if ((typeof prompt === 'boolean' && !prompt) || 
-            (editorWidget.frontTextarea.value === initialFrontValue && editorWidget.backInput.value === initialBackValue) || 
+            (editorWidget.frontTextarea.value === initialFrontValue && editorWidget.backTextarea.value === initialBackValue) || 
             confirm("Really close? (Unsaved edits will be lost)")) {
                 editFlashcard = null;
                 screenDiv.style.transition = ''; // Clean up animations on close
@@ -942,9 +1022,9 @@
             saveButton.disabled = true;
             try {
                 if (editFlashcard)
-                    flashcard = await submitFlashcardEdit(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backInput.value);
+                    flashcard = await submitFlashcardEdit(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backTextarea.value);
                 else
-                    await submitFlashcardAdd(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backInput.value);
+                    await submitFlashcardAdd(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backTextarea.value);
                 onClose(false);
             }
             catch (error) {
@@ -1856,6 +1936,9 @@
     
                 });
             }
+
+            // Flag which is used to determine if markdown preview should be shown
+            this.showPreview = false;
         
             // Create the container for inputs and checkbox
             this.container = document.createElement('div');
@@ -1874,54 +1957,22 @@
             this.inputsDiv.appendChild(this.frontTextarea);
 
             // Must be after appendChild, as makeAutoresizing() depends on textarea having parent
-            makeAutoresizing(this.frontTextarea); 
-    
-            // Create the checkbox to toggle preview
-            const checkboxContainerDiv = document.createElement('div');
-            checkboxContainerDiv.className = 'blobsey-flashcard-checkboxContainerDiv';
-            this.previewCheckbox = document.createElement('input');
-            this.previewCheckbox.type = 'checkbox';
-            this.previewCheckbox.className = 'blobsey-flashcard-previewCheckbox';
-                
-            // Assign a unique id to each checkbox so the label corresponds to only this checkbox
-            const checkboxId = 'blobsey-flashcard-previewcheckbox-' + Math.random().toString(36).substring(2, 15);
-            this.previewCheckbox.id = checkboxId;
-    
-            // Show/hide preview based on the checkbox
-            this.previewCheckbox.addEventListener('change', () => {
-                if (!this.previewCheckbox.checked) {
-                    this.inputsDiv.style.removeProperty('width');
-                    this.previewDiv.style.removeProperty('width');
-                    this.container.style.removeProperty('min-height');
-                    this.resizer.classList.add('hidden');
-                    this.bottomResizer.classList.add('hidden');
-                }
-                else {
-                    setTimeout(() => {
-                        this.resizer.classList.toggle('hidden');
-                        this.bottomResizer.classList.toggle('hidden');
-                    }, 300);
-                }
-                this.element.classList.toggle('expanded');
-                this.previewDiv.classList.toggle('hidden');
-                this.inputsDiv.classList.toggle('halfsize');
+            makeAutoresizing(this.frontTextarea);
 
-                this.updatePreview();
-            });
-            checkboxContainerDiv.appendChild(this.previewCheckbox);
-            const previewLabel = document.createElement('label');
-            previewLabel.setAttribute('for', checkboxId); 
-            previewLabel.textContent = 'Show Preview';
-            previewLabel.style.cursor = 'pointer';
-            checkboxContainerDiv.appendChild(previewLabel);
-            this.inputsDiv.appendChild(checkboxContainerDiv);
+            // Line between front and back of card
+            const dividerDiv = document.createElement('div');
+            dividerDiv.id = 'blobsey-flashcard-widget-divider';
+            dividerDiv.classList.add('blobsey-flashcard-widget-divider');
+            this.inputsDiv.appendChild(dividerDiv);
         
             // Create the input for the back of the flashcard
-            this.backInput = document.createElement('input');
-            this.backInput.className = 'blobsey-flashcard-backInput';
-            this.backInput.value = cardBack;
-            this.backInput.placeholder = 'Back text';
-            this.inputsDiv.appendChild(this.backInput);
+            this.backTextarea = document.createElement('textarea');
+            this.backTextarea.className = 'blobsey-flashcard-backTextarea';
+            this.backTextarea.value = cardBack;
+            this.backTextarea.placeholder = 'Back text';
+            this.inputsDiv.appendChild(this.backTextarea);
+
+            makeAutoresizing(this.backTextarea);
     
             // Create the resizer element
             this.resizer = document.createElement('div');
@@ -1945,7 +1996,29 @@
             this.bottomResizer.className = 'blobsey-flashcard-widget-bottomResizer hidden';
             this.container.appendChild(this.bottomResizer);
             this.bottomResizer.addEventListener('mousedown', this.initMinHeightResize.bind(this));
+        }
 
+        togglePreview() {
+            if (!this.showPreview) {
+                this.showPreview = true;
+                this.inputsDiv.style.removeProperty('width');
+                this.previewDiv.style.removeProperty('width');
+                this.container.style.removeProperty('min-height');
+                this.resizer.classList.add('hidden');
+                this.bottomResizer.classList.add('hidden');
+            }
+            else {
+                setTimeout(() => {
+                    this.resizer.classList.toggle('hidden');
+                    this.bottomResizer.classList.toggle('hidden');
+                }, 300);
+                this.showPreview = false;
+            }
+            this.element.classList.toggle('expanded');
+            this.previewDiv.classList.toggle('hidden');
+            this.inputsDiv.classList.toggle('halfsize');
+
+            this.updatePreview();
         }
     
         // Resizing helper functions
@@ -1976,7 +2049,7 @@
         
         // Update the preview div with the markdown
         updatePreview() {
-            if (!this.previewCheckbox.checked) {
+            if (!this.showPreview) {
                 return;
             }
         
@@ -2162,12 +2235,12 @@
                     loadSvg(addFlashcardButton, 'loadingSmall');
                     let hasErrors = false;
                     widgets.forEach(widget => {
-                        if(!widget.frontTextarea.value || !widget.backInput.value) {
+                        if(!widget.frontTextarea.value || !widget.backTextarea.value) {
                             const errorWidget = widget.getElement();
                             if (!widget.frontTextarea.value)
                                 widget.frontTextarea.classList.add('error');
-                            if (!widget.backInput.value)
-                                widget.backInput.classList.add('error');
+                            if (!widget.backTextarea.value)
+                                widget.backTextarea.classList.add('error');
                             errorWidget.scrollIntoView({ behavior: 'smooth', block: 'end' });
                             hasErrors = true;
                         }
@@ -2180,7 +2253,7 @@
 
                     const promises = widgets.map(widget => {
                         const cardFront = widget.frontTextarea.value;
-                        const cardBack = widget.backInput.value;
+                        const cardBack = widget.backTextarea.value;
                         return submitFlashcardAdd(cardFront, cardBack, selectedDeck);
                     });
 
@@ -2233,7 +2306,7 @@
                     currentData.widgets = widgets.map(widgetElement => {
                         return {
                             frontText: widgetElement.frontTextarea.value || '',
-                            backText: widgetElement.backInput.value || '',
+                            backText: widgetElement.backTextarea.value || '',
                         };
                     });
             
@@ -2260,7 +2333,7 @@
                 closeButton.addEventListener('click', () => {
                     // Detect if editor is 'dirty' and if so show a prompt before actually deleting
                     const frontText = newWidget.frontTextarea.value;
-                    const backText = newWidget.backInput.value;
+                    const backText = newWidget.backTextarea.value;
                     const areYouSureText = "Really delete this flashcard? (unsaved work will be lost!)"
                     if ((frontText === '' && backText === '')|| confirm(areYouSureText)) {
                         widgetElement.remove();
@@ -2276,7 +2349,7 @@
                 };
                 // Listeners to save state on input changes
                 newWidget.frontTextarea.addEventListener('input', injectedOnInput);
-                newWidget.backInput.addEventListener('input', injectedOnInput);
+                newWidget.backTextarea.addEventListener('input', injectedOnInput);
                 
                 // Insert close button after header to make tabindex more logical
                 widgetElement.insertBefore(closeButton, widgetElement.children[1]);
@@ -2284,13 +2357,17 @@
 
                 setTimeout(() => {
                     newWidget.frontTextarea.focus();
-                    addFlashcardButton.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    anchorDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }, 50);
 
                 addFlashcardButton.textContent = `Add flashcard${widgets.length === 1 ? '' : 's'}`;
 
                 saveAddScreenData(); // Call asynchronously
             }
+
+            const anchorDiv = document.createElement('div');
+            anchorDiv.id = 'blobsey-flashcard-anchor-div';
+            buttonsDivBottom.appendChild(anchorDiv);
             
             // Attach function to button
             addAnotherFlashcardButton.addEventListener('click', (event) => {
