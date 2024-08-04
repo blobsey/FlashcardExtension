@@ -1021,10 +1021,11 @@
             loadSvg(saveButton, 'loadingSmall');
             saveButton.disabled = true;
             try {
-                if (editFlashcard)
-                    flashcard = await submitFlashcardEdit(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backTextarea.value);
-                else
-                    await submitFlashcardAdd(editFlashcard.card_id, editorWidget.frontTextarea.value, editorWidget.backTextarea.value);
+                editFlashcard = await submitFlashcardEdit(editFlashcard.card_id, 'basic',editorWidget.frontTextarea.value, editorWidget.backTextarea.value);
+                if (flashcard && flashcard.id === editFlashcard.id)
+                    flashcard = editFlashcard
+                if (nextFlashcard && nextFlashcard.id === editFlashcard.id)
+                    nextFlashcard === editFlashcard
                 onClose(false);
             }
             catch (error) {
@@ -1984,9 +1985,34 @@
             this.previewDiv = document.createElement('div');
             this.previewDiv.className = 'blobsey-flashcard-previewDiv hidden';
             this.container.appendChild(this.previewDiv);
+
+            this.topAndBottomDiv = document.createElement('div');
+            this.topAndBottomDiv.className = 'blobsey-flashcard-topAndBottomDiv';
+            this.previewDiv.appendChild(this.topAndBottomDiv);
+
+            this.topPreviewDiv = document.createElement('div');
+            this.topPreviewDiv.className = 'blobsey-flashcard-topPreviewDiv';
+            this.topAndBottomDiv.appendChild(this.topPreviewDiv);
+
+            const previewDividerDiv = document.createElement('div');
+            previewDividerDiv.className = 'blobsey-flashcard-previewDividerDiv';
+            this.topAndBottomDiv.appendChild(previewDividerDiv);
+
+            this.bottomPreviewDiv = document.createElement('div');
+            this.bottomPreviewDiv.className = 'blobsey-flashcard-bottomPreviewDiv';
+            this.topAndBottomDiv.appendChild(this.bottomPreviewDiv);
+
+            this.placeholderCat = document.createElement('div');
+            this.placeholderCat.className = 'blobsey-flashcard-cat2';
+            loadSvg(this.placeholderCat, 'cat2');
+            const typeSomethingSpan = document.createElement('span');
+            typeSomethingSpan.textContent = 'Card is empty';
+            this.placeholderCat.appendChild(typeSomethingSpan);
+            this.previewDiv.appendChild(this.placeholderCat);
         
             // Update the preview when the content of the textarea changes
             this.frontTextarea.addEventListener('input', () => this.updatePreview());
+            this.backTextarea.addEventListener('input', () => this.updatePreview());
         
             // Hide preview by default
             this.updatePreview();
@@ -1999,19 +2025,19 @@
         }
 
         togglePreview() {
-            if (!this.showPreview) {
+            if (!this.showPreview) { // Showing 
                 this.showPreview = true;
+                setTimeout(() => {
+                    this.resizer.classList.remove('hidden');
+                    this.bottomResizer.classList.remove('hidden');
+                }, 300);
+            }
+            else { // Hiding
                 this.inputsDiv.style.removeProperty('width');
                 this.previewDiv.style.removeProperty('width');
                 this.container.style.removeProperty('min-height');
                 this.resizer.classList.add('hidden');
                 this.bottomResizer.classList.add('hidden');
-            }
-            else {
-                setTimeout(() => {
-                    this.resizer.classList.toggle('hidden');
-                    this.bottomResizer.classList.toggle('hidden');
-                }, 300);
                 this.showPreview = false;
             }
             this.element.classList.toggle('expanded');
@@ -2056,20 +2082,19 @@
             // Debounce to prevent jank
             clearTimeout(this.updateTimeout);
             this.updateTimeout = setTimeout(() => {
-                const markdown = this.frontTextarea.value;
-                const formattedCardFront = marked.parse(markdown);
+                const formattedCardFront = marked.parse(this.frontTextarea.value);
                 const sanitizedCardFront = DOMPurify.sanitize(formattedCardFront);
-                if (sanitizedCardFront) 
-                    this.previewDiv.innerHTML = sanitizedCardFront;
+                const formattedCardBack = marked.parse(this.backTextarea.value);
+                const sanitizedCardBack = DOMPurify.sanitize(formattedCardBack)
+                if (sanitizedCardFront || sanitizedCardBack) {
+                    this.topPreviewDiv.innerHTML = sanitizedCardFront;
+                    this.bottomPreviewDiv.innerHTML = sanitizedCardBack;
+                    this.placeholderCat.classList.add('hidden');
+                    this.topAndBottomDiv.classList.remove('hidden');
+                }
                 else {
-                    this.previewDiv.innerHTML = '';
-                    const placeholderCat = document.createElement('div');
-                    placeholderCat.id = 'blobsey-flashcard-cat2';
-                    loadSvg(placeholderCat, 'cat2');
-                    const typeSomethingSpan = document.createElement('span');
-                    typeSomethingSpan.textContent = 'Card front is empty';
-                    placeholderCat.appendChild(typeSomethingSpan);
-                    this.previewDiv.appendChild(placeholderCat);
+                    this.placeholderCat.classList.remove('hidden');
+                    this.topAndBottomDiv.classList.add('hidden');
                 }
             }, 10);
         }
@@ -2185,6 +2210,33 @@
                 collapseExpandButton.textContent = shouldCollapse ? 'Expand all' : 'Collapse all';
             });
 
+            const showPreviewCheckbox = document.createElement('input');
+            showPreviewCheckbox.type = 'checkbox';
+            showPreviewCheckbox.id = 'blobsey-flashcard-show-preview-checkbox';
+            showPreviewCheckbox.name = 'showPreview';
+
+            buttonsDivTop.appendChild(showPreviewCheckbox);
+
+            // Add event listener to the checkbox
+            showPreviewCheckbox.addEventListener('change', () => {
+                widgets.forEach(widget => {
+                    if (showPreviewCheckbox.checked) {
+                        widget.togglePreview();
+                    } else {
+                        if (widget.showPreview) {
+                            widget.togglePreview();
+                        }
+                    }
+                });
+            });
+
+            // Show preview checkbox
+            const showPreviewLabel = document.createElement('label');
+            showPreviewLabel.id = 'blobsey-flashcard-show-preview-label';
+            showPreviewLabel.htmlFor = 'blobsey-flashcard-show-preview-checkbox';
+            showPreviewLabel.textContent = 'Show preview';
+            buttonsDivTop.appendChild(showPreviewLabel);
+
             // Add another flashcard button
             const addAnotherFlashcardButton = document.createElement('button');
             addAnotherFlashcardButton.id = 'blobsey-flashcard-add-another-flashcard-button';
@@ -2252,9 +2304,10 @@
                     const selectedDeck = deckSelect.value;
 
                     const promises = widgets.map(widget => {
+                        const cardType = 'basic';
                         const cardFront = widget.frontTextarea.value;
                         const cardBack = widget.backTextarea.value;
-                        return submitFlashcardAdd(cardFront, cardBack, selectedDeck);
+                        return submitFlashcardAdd(cardType, cardFront, cardBack, selectedDeck);
                     });
 
                     const results = await Promise.all(promises);
@@ -2342,6 +2395,11 @@
                         saveAddScreenData(); // Call asynchronously
                     }
                 });
+
+                // Toggle preview if the checkbox is checked
+                if (showPreviewCheckbox.checked) {
+                    newWidget.togglePreview();
+                }
 
                 const injectedOnInput = (event) => {
                     event.target.classList.remove('error');
