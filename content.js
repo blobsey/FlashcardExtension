@@ -657,16 +657,26 @@
             frontDiv.innerHTML = sanitizedCardFront;
             screenDiv.appendChild(frontDiv);
 
+            // Will hold divier and backDiv, and will be 'revealed' in animation
+            const revealDiv = document.createElement('div');
+            revealDiv.id = 'blobsey-flashcard-revealDiv';
+            revealDiv.classList.add('hidden');
+            screenDiv.appendChild(revealDiv);
+
             // Line between front and back of card
             const dividerDiv = document.createElement('div');
             dividerDiv.id = 'blobsey-flashcard-divider';
             dividerDiv.classList.add('blobsey-flashcard-underline');
-            screenDiv.appendChild(dividerDiv);
+            revealDiv.appendChild(dividerDiv);
     
             const backDiv = document.createElement('div');
             backDiv.id = 'blobsey-flashcard-backDiv';
             backDiv.innerHTML = DOMPurify.sanitize(marked.parse(flashcard.card_back));
-            screenDiv.appendChild(backDiv);
+            revealDiv.appendChild(backDiv);
+
+            setTimeout(() => {
+                revealDiv.classList.remove('hidden');
+            }, 1);
 
             // Will be used for saying "No more cards today" message, if applicable
             const messageDiv = document.createElement('div');
@@ -677,6 +687,7 @@
             gradingButtonsDiv.id = 'blobsey-flashcard-grading-buttons';
             screenDiv.appendChild(gradingButtonsDiv);
 
+            // Values here serve a dual purpose: both the grade AND the kbShortcut
             const gradeButtons = {
                 'Again': '1',
                 'Hard': '2',
@@ -691,6 +702,13 @@
                     screens['grade'].deactivate();
                     screens['confirm'].activate();
                 }); 
+                kbShortcuts[gradeButtons[key]] = () => {
+                    // Focus first to highlight, then click it
+                    button.focus();
+                    setTimeout(() => {
+                        button.click();
+                    }, 250);
+                }
 
                 gradingButtonsDiv.appendChild(button);
             }

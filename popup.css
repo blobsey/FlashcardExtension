@@ -83,17 +83,18 @@ span { /* span is used to auto-widen textarea */
     width: 100%;
     text-align: center;
     border-top: none;
-    border-bottom: 1px solid;
-    border-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5) 25%, rgba(255, 255, 255, 0.5) 75%, rgba(255, 255, 255, 0)) 2;
+    border-left: none;
+    border-right: none;
+    border-bottom: 2px solid rgba(255, 255, 255, .1);
     outline: none;
 }
 
 #content button {
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.75); 
-    background: none;
+    color: rgb(255, 255, 255);
     transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+    background: rgba(255, 255, 255, .1);
+    border: transparent;
 }  
 
 #content button:disabled {
@@ -110,9 +111,8 @@ span { /* span is used to auto-widen textarea */
 }
 
 #content button:hover {
-    color: rgba(255, 255, 255, .85);
-    background-color: rgba(255, 255, 255, 0.1); 
-    border-color: rgba(255, 255, 255, .85);
+    color: rgb(255, 255, 255);
+    background-color: rgba(255, 255, 255, 0.2); 
 }
 
 #navbar {
@@ -185,14 +185,23 @@ span { /* span is used to auto-widen textarea */
     width: 100%;
     padding: .75em;
     border: none;
-    border-bottom: 1px solid;
-    border-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5) 25%, rgba(255, 255, 255, 0.5) 75%, rgba(255, 255, 255, 0)) 1;
+    background: transparent;
+    border-top: 1px solid rgba(255, 255, 255, .1);
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
     margin: 0;
     text-align: left;
 }
 
+#content #menu button:hover {
+    background-color: rgba(255, 255, 255, .1);
+}
+
 #content #menu button:focus {
     outline: 1px solid;
+}
+
+#content #menu button:first-child {
+    border-top: none;
 }
 
 #content #menu button:last-child {
