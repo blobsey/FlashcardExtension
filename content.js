@@ -707,7 +707,7 @@
                     button.focus();
                     setTimeout(() => {
                         button.click();
-                    }, 250);
+                    }, 75);
                 }
 
                 gradingButtonsDiv.appendChild(button);
